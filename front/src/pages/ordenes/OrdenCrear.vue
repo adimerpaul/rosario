@@ -3,9 +3,9 @@
     <q-card flat bordered>
       <q-card-section class="q-pa-xs">
         <div class="row">
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-5">
             <q-card flat bordered>
-              <q-card-section class="text-bold">Seleccionar Cliente</q-card-section>
+              <q-card-section class="text-bold q-pa-xs">Seleccionar Cliente</q-card-section>
               <div class="row">
                 <div class="col-12 col-md-8">
                   <q-input dense outlined debounce="300" v-model="clienteFiltro" placeholder="Buscar cliente..."
@@ -31,7 +31,11 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-for="(cli, index) in clientes" :key="cli.id">
+                <tr
+                  v-for="(cli, index) in clientes"
+                  :key="cli.id"
+                  :class="{ 'bg-blue-2': orden.cliente_id === cli.id }"
+                >
                   <!--                  <td>{{ index + 1 }}</td>-->
                   <td style="white-space: normal; max-width: 120px; word-break: break-word; font-size: 12px; line-height: 0.9;">
                     {{ cli.name }}
@@ -52,58 +56,70 @@
               </q-markup-table>
             </q-card>
           </div>
-          <div class="col-12 col-md-6">
-            <q-form @submit.prevent="guardarOrden">
-              <div class="row q-col-gutter-sm">
-<!--                <div class="col-12 col-md-4">-->
-<!--                  <q-input label="Nro Orden" v-model="orden.numero" outlined dense-->
-<!--                           :rules="[val => !!val || 'Requerido']"/>-->
-<!--                </div>-->
-<!--                <div class="col-12 col-md-4">-->
-<!--                  <q-input label="Fecha de Creación" type="date" v-model="orden.fecha_creacion" outlined dense-->
-<!--                           :rules="[val => !!val || 'Requerido']"/>-->
-<!--                </div>-->
-                <div class="col-12 col-md-4">
-                  <q-input label="Fecha de Entrega" type="date" v-model="orden.fecha_entrega" outlined dense/>
-                </div>
-                <div class="col-12 col-md-6">
-                  <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense/>
-                </div>
-                <div class="col-12 col-md-6">
-                  <q-input label="Celular" v-model="orden.celular" outlined dense/>
-                </div>
-                <div class="col-6 col-md-4">
-                  <q-input label="Costo Total" v-model.number="orden.costo_total" type="number" outlined dense
-                           @update:model-value="calcularSaldo"/>
-                </div>
-                <div class="col-6 col-md-4">
-                  <q-input label="Adelanto" v-model.number="orden.adelanto" type="number" outlined dense
-                           @update:model-value="calcularSaldo"/>
-                </div>
-                <div class="col-12 col-md-4">
-                  <q-input label="Saldo" v-model.number="orden.saldo" type="number" outlined dense readonly/>
-                </div>
-                <div class="col-12 col-md-4">
-                  <q-input label="Peso (kg)" v-model.number="orden.peso" type="number" outlined dense/>
-                </div>
-                <div class="col-12 col-md-8">
-                  <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense/>
-                </div>
-                <div class="col-12">
-                  <q-select label="Estado" v-model="orden.estado" :options="estados" outlined dense/>
-                </div>
-                <div class="col-12">
-                </div>
-                <div class="col-12 q-mt-sm">
-                  <q-banner v-if="orden.cliente" class="bg-grey-2">
-                    Cliente seleccionado: <b>{{ orden.cliente.name }}</b> (CI: {{ orden.cliente.ci }})
-                  </q-banner>
-                </div>
-              </div>
-              <div class="q-mt-md text-right">
-                <q-btn label="Guardar" type="submit" color="positive" :loading="loading"/>
-              </div>
-            </q-form>
+          <div class="col-12 col-md-7">
+            <q-card flat bordered>
+              <q-card-section class="text-bold q-pa-xs">
+                Crear Nueva Orden
+              </q-card-section>
+              <q-card-section class="q-pa-xs">
+                <q-form @submit.prevent="guardarOrden">
+                  <div class="row q-col-gutter-sm">
+                    <!--                <div class="col-12 col-md-4">-->
+                    <!--                  <q-input label="Nro Orden" v-model="orden.numero" outlined dense-->
+                    <!--                           :rules="[val => !!val || 'Requerido']"/>-->
+                    <!--                </div>-->
+                    <!--                <div class="col-12 col-md-4">-->
+                    <!--                  <q-input label="Fecha de Creación" type="date" v-model="orden.fecha_creacion" outlined dense-->
+                    <!--                           :rules="[val => !!val || 'Requerido']"/>-->
+                    <!--                </div>-->
+                    <div class="col-12 col-md-3">
+                      <q-input label="Fecha de Entrega" type="date" v-model="orden.fecha_entrega" outlined dense/>
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <q-input label="Celular" v-model="orden.celular" outlined dense/>
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <q-input label="Peso (kg)" v-model.number="orden.peso" type="number" outlined dense/>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <q-input label="Costo Total" v-model.number="orden.costo_total" type="number" outlined dense
+                               @update:model-value="calcularSaldo"/>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <q-input label="Adelanto" v-model.number="orden.adelanto" type="number" outlined dense
+                               @update:model-value="calcularSaldo"/>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <q-input label="Saldo" v-model.number="orden.saldo" type="number" outlined dense readonly/>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense/>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense/>
+                    </div>
+                    <!--                <div class="col-12">-->
+                    <!--                  <q-select label="Estado" v-model="orden.estado" :options="estados" outlined dense/>-->
+                    <!--                </div>-->
+                    <div class="col-12">
+                    </div>
+                    <div class="col-12 q-mt-sm">
+                      <q-banner v-if="orden.cliente" class="bg-grey-2">
+                        Cliente seleccionado: <b>{{ orden.cliente.name }}</b> (CI: {{ orden.cliente.ci }})
+                        <!--                    cip de estado-->
+                        <q-chip :color="orden.cliente.status === 'Confiable' ? 'green' : orden.cliente.status === 'No Confiable' ? 'red' : 'orange'"
+                                text-color="white" dense size="10px">
+                          {{ orden.cliente.status }}
+                        </q-chip>
+                      </q-banner>
+                    </div>
+                  </div>
+                  <div class="q-mt-md text-right">
+                    <q-btn label="Guardar" type="submit" color="positive" :loading="loading"/>
+                  </div>
+                </q-form>
+              </q-card-section>
+            </q-card>
           </div>
         </div>
       </q-card-section>
@@ -172,6 +188,8 @@ export default {
     seleccionarCliente(cliente) {
       this.orden.cliente = cliente;
       this.orden.cliente_id = cliente.id;
+      // colocar el celular del cleinte
+      this.orden.celular = cliente.cellphone || '';
     },
     guardarOrden() {
       if (!this.orden.cliente_id) {
