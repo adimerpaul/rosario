@@ -1,0 +1,44 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('ordenes', function (Blueprint $table) {
+            $table->id();
+//            numero fecha_creacion fecha_entrega detalle celular costo_total daleanto saldo estado peso nota
+            $table->string('numero')->unique();
+            $table->dateTime('fecha_creacion');
+            $table->dateTime('fecha_entrega')->nullable();
+            $table->text('detalle')->nullable();
+            $table->string('celular')->nullable();
+            $table->decimal('costo_total', 10, 2)->default(0.00);
+            $table->decimal('adelanto', 10, 2)->default(0.00);
+            $table->decimal('saldo', 10, 2)->default(0.00);
+            $table->string('estado')->default('Pendiente'); // pendiente, en_proceso, completada, cancelada
+            $table->decimal('peso', 8, 2)->default(0.00); // peso en kg
+            $table->text('nota')->nullable(); // nota adicional
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->unsignedBigInteger('cliente_id')->nullable(); // Relación con el cliente, puede ser nulo si no hay cliente asociado
+            $table->foreign('cliente_id')->references('id')->on('clients')->onDelete('cascade'); // Aseguramos la relación con la tabla clientes
+            $table->softDeletes(); // Para manejar eliminaciones lógicas
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('ordenes');
+    }
+};
