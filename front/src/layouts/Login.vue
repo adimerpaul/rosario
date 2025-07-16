@@ -43,7 +43,7 @@
                             :offset="[5, 10]"
                             class="text-white rounded-borders"
                           >
-                            <img src="logo-light.png" width="140"/>
+                            <img src="logo.png" width="70"/>
                           </q-carousel-control>
                         </template>
                       </q-carousel>
@@ -53,8 +53,8 @@
                     <q-form @submit.prevent="loginSubmit">
                     <div class="row q-ma-md">
                       <div class="col-12">
-                        <div class="" style="color: #5F5189">Bienvenido a Vela Educa</div>
-                        <div class="text-grey q-py-xs">Inicia sesión para continuar</div>
+                        <div style="color: #5F5189">Bienvenido a Joyería Rosario</div>
+                        <div class="text-grey q-py-xs">Inicia sesión para acceder a tu panel</div>
                       </div>
                       <div class="col-12">
                         <label class="text-subtitle">Usuario</label>
@@ -124,8 +124,8 @@
             <div>
 <!--              <q-separator/>-->
               <div class="text-center">
-                <div class="text-caption text-white">Vela Educa © {{ new Date().getFullYear() }}. Todos los derechos reservados.</div>
-                <div class="text-caption text-white">Desarrollado por Vela Educa</div>
+                <div class="text-caption text-white">Joyería Rosario © {{ new Date().getFullYear() }}. Todos los derechos reservados.</div>
+                <div class="text-caption text-white">Desarrollado por el equipo de Joyería Rosario</div>
               </div>
             </div>
           </div>
@@ -146,37 +146,37 @@ export default {
   name: 'Login',
   data() {
     return {
-      slide: 'automation',
+      slide: 'elegancia',
       slides: [
         {
-          name: 'automation',
-          icon: 'smart_toy',
-          title: 'Automatización de Procesos',
-          description: 'Un sistema de información reduce el trabajo manual y mejora la eficiencia operativa.'
+          name: 'elegancia',
+          icon: 'diamond',
+          title: 'Elegancia y Estilo',
+          description: 'Descubre colecciones que reflejan sofisticación y buen gusto.'
         },
         {
-          name: 'access',
-          icon: 'cloud_queue',
-          title: 'Acceso a la Información',
-          description: 'Permite obtener datos en tiempo real desde cualquier dispositivo con conexión.'
+          name: 'calidad',
+          icon: 'verified',
+          title: 'Calidad Garantizada',
+          description: 'Cada pieza es cuidadosamente seleccionada y certificada.'
         },
         {
-          name: 'security',
-          icon: 'security',
-          title: 'Seguridad de Datos',
-          description: 'Protege la información mediante autenticación, permisos y respaldos automáticos.'
+          name: 'exclusividad',
+          icon: 'star',
+          title: 'Diseños Exclusivos',
+          description: 'Ofrecemos joyas únicas para momentos inolvidables.'
         },
         {
-          name: 'decision',
-          icon: 'insights',
-          title: 'Toma de Decisiones',
-          description: 'Ayuda a tomar decisiones basadas en datos concretos, no suposiciones.'
+          name: 'servicio',
+          icon: 'support_agent',
+          title: 'Atención Personalizada',
+          description: 'Te acompañamos en cada paso para encontrar la joya perfecta.'
         },
         {
-          name: 'integration',
-          icon: 'hub',
-          title: 'Integración de Áreas',
-          description: 'Conecta diferentes departamentos para un flujo de trabajo coordinado y eficiente.'
+          name: 'confianza',
+          icon: 'lock',
+          title: 'Compra Segura',
+          description: 'Tus datos y transacciones están completamente protegidos.'
         }
       ],
       login: {
@@ -195,7 +195,6 @@ export default {
         username: this.login.username,
         password: this.login.password,
       }).then(response => {
-        // console.log(response.data);
         this.$store.isLogged = true;
         this.$store.user = response.data.user;
         this.$axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token;

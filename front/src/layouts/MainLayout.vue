@@ -57,7 +57,7 @@
       <q-list>
         <q-item-label header class="text-center">
 <!--          <template v-if="$store.user.agencia" >-->
-            <q-img src="/logo-light.png" width="100px"  />
+            <q-img src="/logo.png" width="20px"  />
 <!--          </template>-->
         </q-item-label>
 

@@ -105,9 +105,9 @@
                      :rules="[val => !!val || 'Campo requerido']" v-if="!user.id"/>
             <q-select v-model="user.role" label="Rol" dense outlined :options="roles"
                       :rules="[val => !!val || 'Campo requerido']"/>
-            <q-select v-model="user.docente_id" label="Docente" dense outlined :options="docentes"
-                      option-label="nombre" option-value="id" emit-value map-options
-                      :rules="[val => !!val || 'Campo requerido']"/>
+<!--            <q-select v-model="user.docente_id" label="Docente" dense outlined :options="docentes"-->
+<!--                      option-label="nombre" option-value="id" emit-value map-options-->
+<!--                      :rules="[val => !!val || 'Campo requerido']"/>-->
             <!--            <q-input v-model="user.phone" label="Telefono" dense outlined hint="" />-->
             <!--            <q-input v-model="user.codigo" label="Codigo" dense outlined hint="" />-->
             <!--            <q-input v-model="user.gestion" label="Gestion" dense outlined hint="" />-->
@@ -192,14 +192,14 @@ export default {
       actionUser: '',
       gestiones: [],
       filter: '',
-      roles: ['Administrador', 'Docente', 'Estudiante'],
+      roles: ['Administrador', 'Vendedor'],
       columns: [
         {name: 'actions', label: 'Acciones', align: 'center'},
         {name: 'name', label: 'Nombre', align: 'left', field: 'name'},
         {name: 'username', label: 'Usuario', align: 'left', field: 'username'},
         {name: 'avatar', label: 'Avatar', align: 'left', field: (row) => row.avatar},
         {name: 'role', label: 'Rol', align: 'left', field: 'role'},
-        { name: 'docente', label: 'Docente', align: 'left', field: (row) =>  row.docente?.nombre },
+        // { name: 'docente', label: 'Docente', align: 'left', field: (row) =>  row.docente?.nombre },
       ],
       permissions: [],
       dialogPermisos: false,
@@ -208,7 +208,7 @@ export default {
     }
   },
   async mounted() {
-    this.docentes = await this.$axios.get('docentes').then(res => res.data)
+    // this.docentes = await this.$axios.get('docentes').then(res => res.data)
     this.usersGet()
     // this.permissionsGet()
   },
@@ -267,7 +267,7 @@ export default {
         area_id: 1,
         username: '',
         cargo: '',
-        role: 'Estudiante',
+        role: 'Vendedor',
       }
       this.actionUser = 'Nuevo'
       this.userDialog = true
@@ -330,7 +330,7 @@ export default {
       this.$alert.dialogPrompt('Nueva contraseña', 'Ingrese la nueva contraseña', 'password')
         .onOk(password => {
           this.$axios.put('updatePassword/' + user.id, {
-            newPassword: password
+            password: password
           }).then(res => {
             this.usersGet()
             this.$alert.success('Contraseña actualizada de ' + user.username)
