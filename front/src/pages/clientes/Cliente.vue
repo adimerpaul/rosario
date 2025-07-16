@@ -158,7 +158,7 @@ export default {
       this.client = {
         name: '',
         ci: '',
-        carnet: '',
+        // carnet: '',
         status: 'Confiable',
         cellphone: '',
         address: '',
