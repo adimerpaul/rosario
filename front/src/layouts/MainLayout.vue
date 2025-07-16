@@ -105,12 +105,14 @@ const { proxy } = getCurrentInstance()
 const linksList = [
   {title: 'Principal', icon: 'home', link: '/', can: 'Todos'},
   {title: 'Usuarios', icon: 'people', link: '/usuarios', can: 'Administrador'},
-  {title: 'Cursos', icon: 'school', link: '/cursos', can: [ 'Administrador']},
-  {title: 'Estudiantes', icon: 'groups', link: '/estudiantes', can: [ 'Administrador']},
-  {title: 'Docentes', icon: 'person', link: '/docentes', can: [ 'Administrador']},
-  {title: 'Asignaciones', icon: 'assignment', link: '/asignaciones', can: [ 'Administrador']},
-  // {title: 'Asistencia', icon: 'check_circle', link: '/asistencia', can: ['Docente', 'Administrador']},
-  {title: 'Mis Cursos', icon: 'school', link: '/mis-cursos', can: ['Docente', 'Administrador']},
+//   clientes ordenes prestamos libroDIario ordenesRetrasadso y prestamosRetrasados
+  {title: 'Clientes', icon: 'people', link: '/clientes', can: 'Administrador'},
+  {title: 'Ordenes', icon: 'receipt_long', link: '/ordenes', can: 'Administrador'},
+  {title: 'Prestamos', icon: 'paid', link: '/prestamos', can: 'Administrador'},
+  {title: 'Libro Diario', icon: 'book', link: '/libro-diario', can: ['Administrador', 'Vendedor']},
+  {title: 'Ordenes Retrasadas', icon: 'schedule', link: '/ordenes-retrasadas', can: ['Administrador']},
+  {title: 'Prestamos Retrasados', icon: 'schedule_send', link: '/prestamos-retrasados', can: ['Administrador']},
+  {title: 'Reportes', icon: 'assessment', link: '/reportes', can: ['Administrador']},
 ]
 
 const leftDrawerOpen = ref(false)
