@@ -62,26 +62,6 @@ class DatabaseSeeder extends Seeder
                 'status' => 'Confiable',
             ]);
         }
-//        Schema::create('ordenes', function (Blueprint $table) {
-//            $table->id();
-//            $table->string('numero')->unique();
-//            $table->dateTime('fecha_creacion');
-//            $table->dateTime('fecha_entrega')->nullable();
-//            $table->text('detalle')->nullable();
-//            $table->string('celular')->nullable();
-//            $table->decimal('costo_total', 10, 2)->default(0.00);
-//            $table->decimal('adelanto', 10, 2)->default(0.00);
-//            $table->decimal('saldo', 10, 2)->default(0.00);
-//            $table->string('estado')->default('Pendiente'); // Pendiente, Entregado, Cancelada
-//            $table->decimal('peso', 8, 2)->default(0.00); // peso en kg
-//            $table->text('nota')->nullable(); // nota adicional
-//            $table->unsignedBigInteger('user_id');
-//            $table->foreign('user_id')->references('id')->on('users');
-//            $table->unsignedBigInteger('cliente_id')->nullable(); // Relación con el cliente, puede ser nulo si no hay cliente asociado
-//            $table->foreign('cliente_id')->references('id')->on('clients')->onDelete('cascade'); // Aseguramos la relación con la tabla clientes
-//            $table->softDeletes(); // Para manejar eliminaciones lógicas
-//            $table->timestamps();
-//        });
         Orden::create([
             'numero' => 'O001-2025',
             'fecha_creacion' => now(),
@@ -96,5 +76,12 @@ class DatabaseSeeder extends Seeder
             'user_id' => $user->id,
             'cliente_id' => 1, // Asignar al primer cliente creado
         ]);
+        $cogs = [
+            ['name' => 'Precio Compra', 'value' => 950.00, 'description' => 'Precio de compra del oro'],
+            ['name' => 'Precio Venta', 'value' => 1200.00, 'description' => 'Precio de venta del oro'],
+        ];
+        foreach ($cogs as $cog) {
+            \App\Models\Cog::create($cog);
+        }
     }
 }

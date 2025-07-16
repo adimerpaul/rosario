@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CogController;
 use App\Http\Controllers\OrdenController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -30,4 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ordenes', [OrdenController::class, 'store']);
     Route::put('/ordenes/{orden}', [OrdenController::class, 'update']);
     Route::delete('/ordenes/{orden}', [OrdenController::class, 'destroy']);
+
+    Route::get('cogs', [CogController::class, 'index']);
+    Route::put('cogs/{cog}', [CogController::class, 'update']);
 });

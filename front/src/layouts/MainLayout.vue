@@ -113,6 +113,7 @@ const linksList = [
   {title: 'Libro Diario', icon: 'book', link: '/libro-diario', can: ['Administrador', 'Vendedor']},
   {title: 'Ordenes Retrasadas', icon: 'schedule', link: '/ordenes-retrasadas', can: ['Administrador']},
   {title: 'Prestamos Retrasados', icon: 'schedule_send', link: '/prestamos-retrasados', can: ['Administrador']},
+  {title: 'Configuraciones', icon: 'settings', link: '/configuraciones', can: 'Administrador'},
   {title: 'Reportes', icon: 'assessment', link: '/reportes', can: ['Administrador']},
 ]
 
