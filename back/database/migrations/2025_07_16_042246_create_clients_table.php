@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('ci')->unique();
-            $table->string('carnet')->nullable();
+            $table->string('celular')->nullable();
             $table->enum('status', ['Confiable', 'No Confiable','VIP'])->default('Confiable');
             $table->text('observation')->nullable();
             $table->string('cellphone')->nullable();
