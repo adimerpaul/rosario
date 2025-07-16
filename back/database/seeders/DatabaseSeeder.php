@@ -7,6 +7,7 @@ use App\Models\AsignacionEstudiante;
 use App\Models\Curso;
 use App\Models\Docente;
 use App\Models\Estudiante;
+use App\Models\Orden;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -41,199 +42,6 @@ class DatabaseSeeder extends Seeder
                 'role' => 'Vendedor',
             ]);
         }
-//        protected $fillable = [
-//            'name',
-//            'ci',
-//            'carnet',
-//            'status',
-//            'observation',
-//            'cellphone',
-//            'address'
-//        ];
-//        <div class="scrollable container">
-//        <div class="row">
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        JUAN APAZA ANDRADE
-//        <a href="https://joyasrosario.com/client/edit/6025" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 765678</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 72466152</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 700</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        OSCAR MALLCU RIOS
-//        <a href="https://joyasrosario.com/client/edit/6024" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 7376363</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 72309911</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 3000</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        MARIA AYALA GUZMAN
-//        <a href="https://joyasrosario.com/client/edit/6023" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 9999999999</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 72453540</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 500</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        LINO TAPIA MAMANI
-//        <a href="https://joyasrosario.com/client/edit/6022" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 73646636</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 71849662</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 1000</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        RAUL REBOSO SANGA
-//        <a href="https://joyasrosario.com/client/edit/6021" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-danger"><b>Estado: NO CONFIABLE - POR FUNDIDO</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 7568866</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 62758581</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 1500</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        CRISTHIAN HUGO MONTAñO LEóN
-//        <a href="https://joyasrosario.com/client/edit/6020" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 3558219</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 76146106</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 0</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        JOSE VELIZ BUENO
-//        <a href="https://joyasrosario.com/client/edit/6019" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 999999999</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 68933410</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 9760</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        BRENELI ARDAYA MAMANI
-//        <a href="https://joyasrosario.com/client/edit/6018" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 767765</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 61815298</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 1000</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        LIZHET SAHRELA VARGAS FLORES
-//        <a href="https://joyasrosario.com/client/edit/6017" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 7415633</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 62755015</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 0</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                    <div class="col-md-4">
-//                <div class="card mt-3 shadow-lg">
-//                    <div class="card-header bg-danger text-light">
-//        FRANCISCO FRANCO CHAVEZ
-//        <a href="https://joyasrosario.com/client/edit/6016" class="btn">
-//                            <img src="/img/edit.png" height="25" width="25">
-//                        </a>
-//                    </div>
-//                    <ul class="list-group small">
-//                                                    <li class="list-group-item text-success"><b>Estado: CONFIABLE</b></li>
-//                                                <li class="list-group-item"><b>CI:</b> 99999999</li>
-//                        <li class="list-group-item"><b>Teléfono:</b> 77436125</li>
-//                        <li class="list-group-item"><b>Dirección:</b> </li>
-//                        <li class="list-group-item"><b>Ordenes :</b> Bs. 860</li>
-//                        <li class="list-group-item"><b>Prestamos:</b> Bs. 0 </li>
-//                    </ul>
-//                </div>
-//            </div>
-//                </div>
-//    </div>
         $clients = [
             ['name' => 'Juan Apaza Andrade', 'ci' => '765678', 'cellphone' => '72466152'],
             ['name' => 'Oscar Mallcu Rios', 'ci' => '7376363', 'cellphone' => '72309911'],
@@ -254,5 +62,39 @@ class DatabaseSeeder extends Seeder
                 'status' => 'Confiable',
             ]);
         }
+//        Schema::create('ordenes', function (Blueprint $table) {
+//            $table->id();
+//            $table->string('numero')->unique();
+//            $table->dateTime('fecha_creacion');
+//            $table->dateTime('fecha_entrega')->nullable();
+//            $table->text('detalle')->nullable();
+//            $table->string('celular')->nullable();
+//            $table->decimal('costo_total', 10, 2)->default(0.00);
+//            $table->decimal('adelanto', 10, 2)->default(0.00);
+//            $table->decimal('saldo', 10, 2)->default(0.00);
+//            $table->string('estado')->default('Pendiente'); // Pendiente, Entregado, Cancelada
+//            $table->decimal('peso', 8, 2)->default(0.00); // peso en kg
+//            $table->text('nota')->nullable(); // nota adicional
+//            $table->unsignedBigInteger('user_id');
+//            $table->foreign('user_id')->references('id')->on('users');
+//            $table->unsignedBigInteger('cliente_id')->nullable(); // Relación con el cliente, puede ser nulo si no hay cliente asociado
+//            $table->foreign('cliente_id')->references('id')->on('clients')->onDelete('cascade'); // Aseguramos la relación con la tabla clientes
+//            $table->softDeletes(); // Para manejar eliminaciones lógicas
+//            $table->timestamps();
+//        });
+        Orden::create([
+            'numero' => 'O001-2025',
+            'fecha_creacion' => now(),
+            'detalle' => 'Orden de prueba',
+            'celular' => '72466152',
+            'costo_total' => 100.00,
+            'adelanto' => 50.00,
+            'saldo' => 50.00,
+            'estado' => 'Pendiente',
+            'peso' => 0.5,
+            'nota' => 'Nota de prueba',
+            'user_id' => $user->id,
+            'cliente_id' => 1, // Asignar al primer cliente creado
+        ]);
     }
 }

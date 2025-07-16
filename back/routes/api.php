@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\OrdenController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,4 +25,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/clients', [ClientController::class, 'store']);
     Route::put('/clients/{client}', [ClientController::class, 'update']);
     Route::delete('/clients/{client}', [ClientController::class, 'destroy']);
+
+    Route::get('/ordenes', [OrdenController::class, 'index']); // listado filtrado
+    Route::post('/ordenes', [OrdenController::class, 'store']);
+    Route::put('/ordenes/{orden}', [OrdenController::class, 'update']);
+    Route::delete('/ordenes/{orden}', [OrdenController::class, 'destroy']);
 });

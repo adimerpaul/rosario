@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('ordenes', function (Blueprint $table) {
             $table->id();
-//            numero fecha_creacion fecha_entrega detalle celular costo_total daleanto saldo estado peso nota
             $table->string('numero')->unique();
             $table->dateTime('fecha_creacion');
             $table->dateTime('fecha_entrega')->nullable();
@@ -22,7 +21,7 @@ return new class extends Migration
             $table->decimal('costo_total', 10, 2)->default(0.00);
             $table->decimal('adelanto', 10, 2)->default(0.00);
             $table->decimal('saldo', 10, 2)->default(0.00);
-            $table->string('estado')->default('Pendiente'); // pendiente, en_proceso, completada, cancelada
+            $table->string('estado')->default('Pendiente'); // Pendiente, Entregado, Cancelada
             $table->decimal('peso', 8, 2)->default(0.00); // peso en kg
             $table->text('nota')->nullable(); // nota adicional
             $table->unsignedBigInteger('user_id');
