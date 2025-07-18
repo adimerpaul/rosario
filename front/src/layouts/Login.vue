@@ -24,6 +24,7 @@
                         arrows
                         :height="$q.screen.gt.sm ? '600px' : '230px'"
                         class="text-white shadow-1 rounded-borders bg-fondo"
+                        style="width: 100%;"
                       >
                         <q-carousel-slide
                           v-for="(slide, index) in slides"

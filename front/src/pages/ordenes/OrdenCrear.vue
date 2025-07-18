@@ -60,18 +60,13 @@
             <q-card flat bordered>
               <q-card-section class="text-bold q-pa-xs">
                 Crear Nueva Orden
+                <span class="text-grey text-caption">
+                  (Precio oro: {{ precioOro.value }})
+                </span>
               </q-card-section>
               <q-card-section class="q-pa-xs">
                 <q-form @submit.prevent="guardarOrden">
                   <div class="row q-col-gutter-sm">
-                    <!--                <div class="col-12 col-md-4">-->
-                    <!--                  <q-input label="Nro Orden" v-model="orden.numero" outlined dense-->
-                    <!--                           :rules="[val => !!val || 'Requerido']"/>-->
-                    <!--                </div>-->
-                    <!--                <div class="col-12 col-md-4">-->
-                    <!--                  <q-input label="Fecha de Creación" type="date" v-model="orden.fecha_creacion" outlined dense-->
-                    <!--                           :rules="[val => !!val || 'Requerido']"/>-->
-                    <!--                </div>-->
                     <div class="col-12 col-md-3">
                       <q-input label="Fecha de Entrega" type="date" v-model="orden.fecha_entrega" outlined dense/>
                     </div>
@@ -79,11 +74,13 @@
                       <q-input label="Celular" v-model="orden.celular" outlined dense/>
                     </div>
                     <div class="col-12 col-md-3">
-                      <q-input label="Peso (kg)" v-model.number="orden.peso" type="number" outlined dense/>
+                      <q-input label="Peso (kg)" v-model.number="orden.peso" type="number" outlined dense
+                                @update:model-value="calcularTotal" min="0" step="0.01" :rules="[val => val >= 0 || 'El peso debe ser positivo']"
+                      />
                     </div>
                     <div class="col-6 col-md-3">
                       <q-input label="Costo Total" v-model.number="orden.costo_total" type="number" outlined dense
-                               @update:model-value="calcularSaldo"/>
+                               @update:model-value="validarCostoTotal"/>
                     </div>
                     <div class="col-6 col-md-3">
                       <q-input label="Adelanto" v-model.number="orden.adelanto" type="number" outlined dense
@@ -152,18 +149,15 @@ export default {
       estados: ['Pendiente', 'Entregado', 'Cancelada'],
       clientes: [],
       clienteFiltro: '',
-      loading: false
+      loading: false,
+      precioOro: {value: 0},
+      costoBase: 0,
     }
   },
-  computed: {
-    // clientesFiltrados() {
-    //   return this.clientes.filter(cli =>
-    //     cli.name.toLowerCase().includes(this.clienteFiltro.toLowerCase())
-    //   ).slice(0, 20);
-    // }
-  },
-  mounted() {
+  async mounted() {
     this.getClientes();
+    const res = await this.$axios.get('cogs/2');
+    this.precioOro = res.data;
   },
   methods: {
     getClientes() {
@@ -184,6 +178,25 @@ export default {
     },
     calcularSaldo() {
       this.orden.saldo = (this.orden.costo_total || 0) - (this.orden.adelanto || 0);
+    },
+    validarCostoTotal(val) {
+      const maxPermitido = this.costoBase + 20;
+      const minPermitido = this.costoBase - 20;
+
+      if (val > maxPermitido || val < minPermitido) {
+        this.$alert.warning(
+          `El costo total solo puede modificarse ±20 Bs del valor calculado (${this.costoBase.toFixed(2)} Bs)`
+        );
+        this.orden.costo_total = this.costoBase;
+      }
+
+      this.calcularSaldo();
+    },
+    calcularTotal() {
+      const total = (this.orden.peso || 0) * (this.precioOro.value || 0);
+      this.costoBase = total;
+      this.orden.costo_total = total;
+      this.calcularSaldo();
     },
     seleccionarCliente(cliente) {
       this.orden.cliente = cliente;
