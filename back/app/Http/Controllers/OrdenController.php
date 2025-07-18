@@ -6,6 +6,9 @@ use App\Models\Orden;
 use Illuminate\Http\Request;
 
 class OrdenController extends Controller{
+    public function show(Orden $orden){
+        return Orden::with(['cliente:id,name,ci,status,cellphone'])->findOrFail($orden->id);
+    }
     public function index(Request $request)
     {
         $query = Orden::with(['user:id,name', 'cliente:id,name'])
@@ -52,16 +55,11 @@ class OrdenController extends Controller{
         $ultimoNumero = Orden::orderBy('id', 'desc')
             ->where('numero', 'like', 'O%'. '-'.$year)
             ->first();
-        error_log($ultimoNumero);
         if ($ultimoNumero) {
             $numero = $ultimoNumero->numero;
-            error_log('Ultimo numero: ' . $numero);
             $numeroPartes = explode('-', $numero);
-            error_log(json_encode($numeroPartes));
             $numeroPartesultimosDigitos = substr($numeroPartes[0], 1, 4);
             $numeroSecuencia = (int)$numeroPartesultimosDigitos + 1;
-            error_log('Numero secuencia: ' . $numeroSecuencia);
-//            $numeroSecuencia = (int)substr($numeroPartes[0],1, 5) + 1;
             $anio = date('Y');
             return 'O'.str_pad($numeroSecuencia, 4, '0', STR_PAD_LEFT) . '-' . $anio;
         } else {

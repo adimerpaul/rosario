@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/ordenes', [OrdenController::class, 'index']); // listado filtrado
     Route::post('/ordenes', [OrdenController::class, 'store']);
+    Route::get('/ordenes/{orden}', [OrdenController::class, 'show']);
     Route::put('/ordenes/{orden}', [OrdenController::class, 'update']);
     Route::delete('/ordenes/{orden}', [OrdenController::class, 'destroy']);
 
