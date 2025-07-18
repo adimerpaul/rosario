@@ -3,7 +3,7 @@
     <q-card flat bordered>
       <q-card-section class="q-pa-xs">
         <div class="row">
-          <div class="col-12 col-md-5">
+          <div class="col-12 col-md-6">
             <q-card flat bordered>
               <q-card-section class="text-bold q-pa-xs">Seleccionar Cliente</q-card-section>
               <div class="row">
@@ -59,16 +59,21 @@
               </q-markup-table>
             </q-card>
           </div>
-          <div class="col-12 col-md-7">
+          <div class="col-12 col-md-6">
             <q-card flat bordered>
               <q-card-section class="text-bold q-pa-xs">
-                Crear Nueva Orden
+                Actulizar Nueva Orden
                 <span class="text-grey text-caption">
                   (Precio oro: {{ precioOro.value }})
                 </span>
+<!--                <q-chip estado oreden-->
+                <q-chip :color="orden.estado === 'Pendiente' ? 'orange' : orden.estado === 'Entregado' ? 'green' : 'red'"
+                        text-color="white" dense size="10px">
+                  {{ orden.estado }}
+                </q-chip>
               </q-card-section>
               <q-card-section class="q-pa-xs">
-                <q-form @submit.prevent="guardarOrden">
+                <q-form>
                   <div class="row q-col-gutter-sm">
                     <div class="col-12 col-md-3">
                       <q-input label="Fecha de Entrega" type="date" v-model="orden.fecha_entrega" outlined dense/>
@@ -116,9 +121,65 @@
                   </div>
                   <div class="q-mt-md text-right">
 <!--                    <q-btn label="Guardar" type="submit" color="positive" :loading="loading"/>-->
-                    <q-btn label="Actualizar" type="button" color="primary" @click="actualizarOrden" :loading="loading"/>
+                    <q-btn label="Cancelar" type="button" color="negative" @click="$router.push('/ordenes')" class="q-mr-sm" :loading="loading"/>
+                    <q-btn label="Actualizar" type="button" color="orange" @click="actualizarOrden" :loading="loading"/>
                   </div>
                 </q-form>
+              </q-card-section>
+            </q-card>
+          </div>
+          <div class="col-12 col-md-6">
+            <q-card flat bordered>
+              <q-card-section class="q-pa-none">
+                <div class="text-bold q-pa-sm">Registrar Pago</div>
+                <div class="row q-col-gutter-sm q-pa-sm">
+<!--                  <div class="col-12 col-md-4">-->
+<!--                    <q-input dense outlined v-model="nuevoPago.fecha" type="date" label="Fecha"/>-->
+<!--                  </div>-->
+                  <div class="col-6 col-md-6">
+                    <q-input dense outlined v-model.number="nuevoPago.monto" type="number" label="Monto" min="1" step="0.01"/>
+                  </div>
+                  <div class="col-6 col-md-6 flex flex-center">
+                    <q-btn color="primary" label="Agregar Pago" icon="add" @click="agregarPago" :loading="loading" no-caps/>
+                  </div>
+                </div>
+
+                <q-markup-table flat bordered dense class="q-mt-sm">
+                  <thead>
+                  <tr class="bg-primary text-white">
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr v-for="p in pagos" :key="p.id">
+                    <td>{{ p.fecha}}</td>
+                    <td>{{ p.monto }}</td>
+                    <td>{{ p.user?.name || 'N/A' }}</td>
+                    <td>
+                      <q-chip dense square :color="p.estado === 'Activo' ? 'green' : 'grey'" text-color="white">
+                        {{ p.estado }}
+                      </q-chip>
+                    </td>
+                    <td>
+                      <q-btn
+                        v-if="p.estado === 'Activo'"
+                        class="q-mr-xs"
+                        icon="delete" color="negative" dense
+                        @click="eliminarPago(p.id)" size="xs" label="Anular" no-caps />
+                    </td>
+                  </tr>
+                  <tr v-if="!pagos.length">
+                    <td colspan="5" class="text-center text-grey">Sin pagos registrados</td>
+                  </tr>
+                  </tbody>
+                </q-markup-table>
+<!--                <pre>-->
+<!--                  {{pagos}}-->
+<!--                </pre>-->
               </q-card-section>
             </q-card>
           </div>
@@ -156,19 +217,40 @@ export default {
       loading: false,
       precioOro: {value: 0},
       costoBase: 0,
+      pagos: [],
+      nuevoPago: {
+        fecha: moment().format('YYYY-MM-DD'),
+        monto: null
+      }
     }
   },
   async mounted() {
-    this.getClientes();
-    const res = await this.$axios.get('cogs/2');
-    this.precioOro = res.data;
-
-    const id = this.$route.params.id;
-    const resOrden = await this.$axios.get(`ordenes/${id}`);
-    this.orden = resOrden.data;
-    this.costoBase = this.orden.peso * this.precioOro.value;
+    const resOro = await this.$axios.get('cogs/2');
+    this.precioOro = resOro.data;
+    // const resOrden = await this.$axios.get(`ordenes/${this.$route.params.id}`);
+    // this.orden = resOrden.data;
+    // this.costoBase = this.orden.peso * this.precioOro.value;
+    await this.getOrden();
+    await this.getClientes();
+    await this.cargarPagos(); // <- cargar los pagos al inicio
   },
   methods: {
+    async getOrden() {
+      this.loading = true;
+      try {
+        const res = await this.$axios.get(`ordenes/${this.$route.params.id}`);
+        this.orden = res.data;
+        this.costoBase = this.orden.peso * this.precioOro.value;
+        // this.calcularSaldo();
+        if (this.orden.cliente_id) {
+          this.seleccionarCliente(this.orden.cliente);
+        }
+      } catch (err) {
+        this.$alert.error(err.response?.data?.message || 'Error al cargar la orden');
+      } finally {
+        this.loading = false;
+      }
+    },
     actualizarOrden() {
       this.loading = true;
       this.$axios.put(`ordenes/${this.orden.id}`, {
@@ -227,23 +309,39 @@ export default {
       // colocar el celular del cleinte
       this.orden.celular = cliente.cellphone || '';
     },
-    guardarOrden() {
-      if (!this.orden.cliente_id) {
-        this.$alert.error('Debe seleccionar un cliente');
-        return;
-      }
+    async cargarPagos() {
+      const res = await this.$axios.get(`/ordenes/${this.orden.id}/pagos`);
+      this.pagos = res.data;
+    },
+    async agregarPago() {
       this.loading = true;
-      this.$axios.post('ordenes', {
-        ...this.orden,
-        user_id: this.$store.user.id
-      }).then(res => {
-        this.$alert.success('Orden creada con éxito');
-        this.$router.push('/ordenes');
-      }).catch(err => {
-        this.$alert.error(err.response?.data?.message || 'Error al guardar la orden');
-      }).finally(() => {
+      try {
+        await this.$axios.post('/ordenes/pagos', {
+          ...this.nuevoPago,
+          orden_id: this.orden.id
+        });
+        this.nuevoPago.monto = null;
+        await this.cargarPagos();
+        await this.getOrden();
+        this.$alert.success('Pago registrado');
+      } catch (err) {
+        this.$alert.error(err.response?.data?.message || 'Error al registrar pago');
+      } finally {
         this.loading = false;
-      });
+      }
+    },
+    async eliminarPago(id) {
+      this.loading = true;
+      try {
+        await this.$axios.put(`/ordenes/pagos/${id}`);
+        await this.cargarPagos();
+        await this.getOrden(); // recargar clientes para actualizar el saldo
+        this.$alert.success('Pago eliminado');
+      } catch (err) {
+        this.$alert.error('Error al eliminar pago');
+      } finally {
+        this.loading = false;
+      }
     }
   }
 }

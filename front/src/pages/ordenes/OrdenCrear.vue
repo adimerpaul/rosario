@@ -115,7 +115,8 @@
                     </div>
                   </div>
                   <div class="q-mt-md text-right">
-                    <q-btn label="Guardar" type="submit" color="positive" :loading="loading"/>
+                    <q-btn label="Cancelar" type="button" color="negative" @click="$router.push('/ordenes')" class="q-mr-sm" :loading="loading"/>
+                    <q-btn label="Guardar" type="submit" color="green" :loading="loading"/>
                   </div>
                 </q-form>
               </q-card-section>
