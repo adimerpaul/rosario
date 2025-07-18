@@ -63,7 +63,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
         Orden::create([
-            'numero' => 'O001-2025',
+            'numero' => 'O0001-2024',
             'fecha_creacion' => now(),
             'detalle' => 'Orden de prueba',
             'celular' => '72466152',
