@@ -68,6 +68,7 @@
               <thead>
               <tr class="bg-primary text-white">
                 <th>#</th>
+                <th>Opciones</th>
                 <th>Nro</th>
                 <th>Fecha</th>
                 <th>Cliente</th>
@@ -81,6 +82,9 @@
               <tbody>
               <tr v-for="(orden, index) in ordenes" :key="orden.id">
                 <td>{{ index + 1 }}</td>
+                <td>
+                  <q-btn dense flat icon="edit" color="primary" @click="$router.push('/ordenes/editar/' + orden.id)" />
+                </td>
                 <td>{{ orden.numero }}</td>
                 <td>{{ orden.fecha_creacion.substring(0,10) }}</td>
                 <td>{{ orden.cliente?.name || 'N/A' }}</td>

@@ -8,7 +8,11 @@ const routes = [
       {path: '/clientes', component: () => import('pages/clientes/Cliente.vue'), meta: {requiresAuth: true}},
       {path: '/ordenes', component: () => import('pages/ordenes/Ordenes.vue'), meta: {requiresAuth: true}},
       {path: '/ordenes/crear', name: 'crearOrden', component: () => import('pages/ordenes/OrdenCrear.vue'), meta: {requiresAuth: true}},
-      // Configuraciones
+      {
+        path: '/ordenes/editar/:id',
+        component: () => import('pages/ordenes/OrderEditar.vue'),
+        meta: {requiresAuth: true},
+      },
       {path: '/configuraciones', component: () => import('pages/configuraciones/Configuraciones.vue'), meta: {requiresAuth: true}},
     ]
   },

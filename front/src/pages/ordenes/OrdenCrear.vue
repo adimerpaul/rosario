@@ -9,7 +9,10 @@
               <div class="row">
                 <div class="col-12 col-md-8">
                   <q-input dense outlined debounce="300" v-model="clienteFiltro" placeholder="Buscar cliente..."
-                           class="q-mb-sm" clearable>
+                           class="q-mb-sm" clearable
+                           :debounce="400"
+                           @update:model-value="getClientes"
+                  >
                     <template v-slot:append>
                       <q-icon name="search"/>
                     </template>
