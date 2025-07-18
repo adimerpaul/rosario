@@ -34,4 +34,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('cogs', [CogController::class, 'index']);
     Route::put('cogs/{cog}', [CogController::class, 'update']);
+    Route::get('cogs/{id}', [CogController::class, 'show']);
 });

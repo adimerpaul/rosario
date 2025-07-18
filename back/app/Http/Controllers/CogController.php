@@ -20,4 +20,8 @@ class CogController extends Controller
         $cog->update(['value' => $request->value]);
         return response()->json(['message' => 'Actualizado correctamente']);
     }
+    function show($id){
+        $cog = Cog::findOrFail($id);
+        return response()->json($cog);
+    }
 }
