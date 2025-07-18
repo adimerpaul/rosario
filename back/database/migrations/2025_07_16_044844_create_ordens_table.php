@@ -16,14 +16,14 @@ return new class extends Migration
             $table->string('numero')->nullable();
             $table->dateTime('fecha_creacion');
             $table->date('fecha_entrega')->nullable();
-            $table->text('detalle')->nullable();
+            $table->text('detalle')->nullable()->default('');
             $table->string('celular')->nullable();
             $table->decimal('costo_total', 10, 2)->default(0.00);
             $table->decimal('adelanto', 10, 2)->default(0.00);
             $table->decimal('saldo', 10, 2)->default(0.00);
             $table->string('estado')->default('Pendiente'); // Pendiente, Entregado, Cancelada
             $table->decimal('peso', 8, 2)->default(0.00); // peso en kg
-            $table->text('nota')->nullable(); // nota adicional
+            $table->text('nota')->nullable()->default('');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->unsignedBigInteger('cliente_id')->nullable(); // Relación con el cliente, puede ser nulo si no hay cliente asociado
