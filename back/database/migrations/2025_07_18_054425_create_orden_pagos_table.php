@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('orden_id')->nullable();
             $table->foreign('orden_id')->references('id')->on('ordenes')->onDelete('cascade');
             $table->decimal('monto', 10, 2)->default(0.00);
+            $table->enum('estado', ['Activo', 'Anulado'])->default('Activo');
             $table->softDeletes();
             $table->timestamps();
         });

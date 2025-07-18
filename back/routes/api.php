@@ -3,6 +3,7 @@
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CogController;
 use App\Http\Controllers\OrdenController;
+use App\Http\Controllers\OrdenPagoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -36,4 +37,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('cogs', [CogController::class, 'index']);
     Route::put('cogs/{cog}', [CogController::class, 'update']);
     Route::get('cogs/{id}', [CogController::class, 'show']);
+
+    Route::get('/ordenes/{orden}/pagos', [OrdenPagoController::class, 'index']);
+    Route::post('/ordenes/pagos', [OrdenPagoController::class, 'store']);
+    Route::put('/ordenes/pagos/{pago}', [OrdenPagoController::class, 'update']);
 });

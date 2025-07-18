@@ -36,4 +36,8 @@ class Orden extends Model{
     function cliente(){
         return $this->belongsTo(Client::class, 'cliente_id');
     }
+    public function pagos()
+    {
+        return $this->hasMany(OrdenPago::class, 'orden_id');
+    }
 }

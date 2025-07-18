@@ -12,7 +12,8 @@ class OrdenPago extends Model{
         'fecha',
         'user_id',
         'orden_id',
-        'monto'
+        'monto',
+        'estado',
     ];
     protected $hidden = [
         'created_at',
