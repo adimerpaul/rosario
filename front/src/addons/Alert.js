@@ -20,6 +20,24 @@ export class Alert{
       classes: 'bg-white text-black text-bold left-yellow-border'
     });
   }
+  static info(message, subTitle = '') {
+    Notify.create({
+      progress: true,
+      color: 'white',
+      textColor: 'black',
+      position: 'top',
+      message,
+      caption: subTitle,
+      timeout: 1500,
+      icon: 'info',
+      iconColor: 'info',
+      actions: [
+        { icon: 'close', color: 'black', round: true, size: 'xs' }
+      ],
+      progressClass: 'bg-info',
+      classes: 'bg-white text-black text-bold left-blue-border'
+    });
+  }
   static success(message,subTitle = '') {
     Notify.create({
       progress: true,

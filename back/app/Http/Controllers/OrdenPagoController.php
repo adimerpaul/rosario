@@ -67,12 +67,14 @@ class OrdenPagoController extends Controller{
 //        }
         // Actualizar el saldo de la orden
         $orden->saldo += $pago->monto;
-        $orden->save();
+
+//        error_log("Saldo de la orden actualizado: " . $orden->saldo);
         if ($orden->saldo > 0) {
             $orden->estado = 'Pendiente'; // Cambiar estado a Pendiente si el saldo es mayor a 0
         } else {
             $orden->estado = 'Entregado'; // Cambiar estado a Entregado si el saldo es 0 o menor
         }
+        $orden->save();
         $pago->update([
             'estado' => 'Anulado'
         ]);

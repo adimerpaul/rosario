@@ -98,10 +98,18 @@
                       <q-input label="Saldo" v-model.number="orden.saldo" type="number" outlined dense readonly/>
                     </div>
                     <div class="col-12 col-md-6">
-                      <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense/>
+                      <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense clearable>
+                        <template v-slot:append>
+                          <q-btn icon="mic" @click="iniciarDictado('detalle')" color="primary" flat dense/>
+                        </template>
+                      </q-input>
                     </div>
                     <div class="col-12 col-md-6">
-                      <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense/>
+                      <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense clearable>
+                        <template v-slot:append>
+                          <q-btn icon="mic" @click="iniciarDictado('nota')" color="primary" flat dense/>
+                        </template>
+                      </q-input>
                     </div>
                     <!--                <div class="col-12">-->
                     <!--                  <q-select label="Estado" v-model="orden.estado" :options="estados" outlined dense/>-->
@@ -221,20 +229,54 @@ export default {
       nuevoPago: {
         fecha: moment().format('YYYY-MM-DD'),
         monto: null
-      }
+      },
+      reconocimiento: null,
+      reconocimientoCampo: null,
     }
   },
   async mounted() {
     const resOro = await this.$axios.get('cogs/2');
     this.precioOro = resOro.data;
-    // const resOrden = await this.$axios.get(`ordenes/${this.$route.params.id}`);
-    // this.orden = resOrden.data;
-    // this.costoBase = this.orden.peso * this.precioOro.value;
     await this.getOrden();
     await this.getClientes();
-    await this.cargarPagos(); // <- cargar los pagos al inicio
+    await this.cargarPagos();
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition){
+      this.reconocimiento = new SpeechRecognition();
+      this.reconocimiento.lang = 'es-ES';
+      this.reconocimiento.interimResults = false;
+      this.reconocimiento.continuous = false;
+
+      this.reconocimiento.onresult = (event) => {
+        const resultado = event.results[0][0].transcript.trim();
+
+        if (this.reconocimientoCampo === 'detalle') {
+          this.orden.detalle = this.orden.detalle
+            ? this.orden.detalle + ' ' + resultado
+            : resultado;
+        } else if (this.reconocimientoCampo === 'nota') {
+          this.orden.nota = this.orden.nota
+            ? this.orden.nota + ' ' + resultado
+            : resultado;
+        }
+      };
+
+      this.reconocimiento.onerror = (event) => {
+        console.error('Error de reconocimiento:', event.error);
+      };
+    }
   },
   methods: {
+    iniciarDictado(campo) {
+      if (!this.reconocimiento) {
+        this.$alert.warning('El reconocimiento de voz no está disponible en este navegador');
+        return;
+      }
+      this.reconocimientoCampo = campo;
+      this.reconocimiento.start();
+      this.$alert.info('Iniciando dictado... ');
+    },
     async getOrden() {
       this.loading = true;
       try {

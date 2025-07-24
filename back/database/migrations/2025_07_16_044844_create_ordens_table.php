@@ -27,7 +27,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->unsignedBigInteger('cliente_id')->nullable(); // Relación con el cliente, puede ser nulo si no hay cliente asociado
-            $table->foreign('cliente_id')->references('id')->on('clients')->onDelete('cascade'); // Aseguramos la relación con la tabla clientes
+            $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade'); // Aseguramos la relación con la tabla clientes
             $table->softDeletes(); // Para manejar eliminaciones lógicas
             $table->timestamps();
         });

@@ -93,10 +93,18 @@
                       <q-input label="Saldo" v-model.number="orden.saldo" type="number" outlined dense readonly/>
                     </div>
                     <div class="col-12 col-md-6">
-                      <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense/>
+                      <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense>
+                        <template v-slot:append>
+                          <q-btn icon="mic" @click="iniciarReconocimiento('detalle')" flat dense/>
+                        </template>
+                      </q-input>
                     </div>
                     <div class="col-12 col-md-6">
-                      <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense/>
+                      <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense>
+                        <template v-slot:append>
+                          <q-btn icon="mic" @click="iniciarReconocimiento('nota')" flat dense/>
+                        </template>
+                      </q-input>
                     </div>
                     <!--                <div class="col-12">-->
                     <!--                  <q-select label="Estado" v-model="orden.estado" :options="estados" outlined dense/>-->
@@ -156,14 +164,52 @@ export default {
       loading: false,
       precioOro: {value: 0},
       costoBase: 0,
+      reconocimiento: null,
+      reconocimientoCampo: false,
     }
   },
   async mounted() {
     this.getClientes();
     const res = await this.$axios.get('cogs/2');
     this.precioOro = res.data;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      this.reconocimiento = new SpeechRecognition();
+      this.reconocimiento.lang = 'es-BO';
+      this.reconocimiento.interimResults = false;
+      this.reconocimiento.continuous = false;
+
+      this.reconocimiento.onresult = (event) => {
+        const resultado = event.results[0][0].transcript;
+        if (this.reconocimientoCampo === 'detalle') {
+          this.orden.detalle = this.orden.detalle
+            ? this.orden.detalle + ' ' + resultado
+            : resultado;
+        } else if (this.reconocimientoCampo === 'nota') {
+          this.orden.nota = this.orden.nota
+            ? this.orden.nota + ' ' + resultado
+            : resultado;
+        }
+      };
+
+      this.reconocimiento.onerror = (event) => {
+        console.error('Error de reconocimiento:', event.error);
+      };
+    } else {
+      console.warn('Speech Recognition no está soportado en este navegador');
+    }
+
   },
   methods: {
+    iniciarReconocimiento(campo) {
+      if (!this.reconocimiento) {
+        this.$alert.warning('Reconocimiento de voz no soportado en este navegador');
+        return;
+      }
+      this.reconocimientoCampo = campo;
+      this.reconocimiento.start();
+    },
     getClientes() {
       this.loading = true;
       this.$axios.get('clients',{
