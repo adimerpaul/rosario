@@ -83,7 +83,19 @@
               <tr v-for="(orden, index) in ordenes" :key="orden.id">
                 <td>{{ index + 1 }}</td>
                 <td>
-                  <q-btn dense flat icon="edit" color="primary" @click="$router.push('/ordenes/editar/' + orden.id)" />
+<!--                  <q-btn dense flat icon="edit" color="primary" @click="$router.push('/ordenes/editar/' + orden.id)" />-->
+                  <q-btn-dropdown dense color="primary" no-caps label="Opciones" size="10px">
+                    <q-list>
+                      <q-item clickable @click="$router.push('/ordenes/editar/' + orden.id)" v-close-popup>
+                        <q-item-section avatar><q-icon name="edit" /></q-item-section>
+                        <q-item-section>Editar</q-item-section>
+                      </q-item>
+                      <q-item clickable @click="imprimirOrden(orden.id)" v-close-popup>
+                        <q-item-section avatar><q-icon name="print" /></q-item-section>
+                        <q-item-section>Imprimir</q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-btn-dropdown>
                 </td>
                 <td>{{ orden.numero }}</td>
                 <td>{{ orden.fecha_creacion.substring(0,10) }}</td>
@@ -134,6 +146,10 @@ export default {
     this.getOrdenes();
   },
   methods: {
+    imprimirOrden(id) {
+      const url = `${this.$axios.defaults.baseURL}/ordenes/${id}/pdf`;
+      window.open(url, '_blank'); // abre en nueva pestaña
+    },
     getUsuarios() {
       this.$axios.get('users').then(res => {
         this.usuarios = [{ id: null, name: 'Todos' }, ...res.data];

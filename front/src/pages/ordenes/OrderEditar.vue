@@ -5,7 +5,10 @@
         <div class="row">
           <div class="col-12 col-md-6">
             <q-card flat bordered>
-              <q-card-section class="text-bold q-pa-xs">Seleccionar Cliente</q-card-section>
+              <div class="flex">
+                <q-btn icon="arrow_back" @click="$router.push('/ordenes')" class="" no-caps size="10px" color="primary" label="Atras"/>
+                <q-card-section class="text-bold q-pa-xs">Seleccionar Cliente</q-card-section>
+              </div>
               <div class="row">
                 <div class="col-12 col-md-8">
                   <q-input dense outlined debounce="300" v-model="clienteFiltro" placeholder="Buscar cliente..."
