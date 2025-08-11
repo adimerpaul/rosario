@@ -30,7 +30,7 @@ class ClientController extends Controller{
     {
         $request->validate([
             'name' => 'required|string',
-            'ci' => 'required|unique:clients,ci,' . $client->id,
+//            'ci' => 'required|unique:clients,ci,' . $client->id,
         ]);
 
         $client->update($request->all());
