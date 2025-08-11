@@ -83,6 +83,9 @@
                         text-color="white" dense size="10px">
                   {{ orden.estado }}
                 </q-chip>
+<!--                imprimirOrden btn-->
+                <q-btn icon="print" color="primary" flat dense @click="imprimirOrden(orden.id)" class="q-ml-sm"
+                       :loading="loading" no-caps/>
               </q-card-section>
               <q-card-section class="q-pa-xs">
                 <q-form>
@@ -141,7 +144,7 @@
                   </div>
                   <div class="q-mt-md text-right">
 <!--                    <q-btn label="Guardar" type="submit" color="positive" :loading="loading"/>-->
-                    <q-btn label="Cancelar" type="button" color="negative" @click="$router.push('/ordenes')" class="q-mr-sm" :loading="loading"/>
+                    <q-btn label="Cancelar" type="button" color="negative" @click="cancelarOrden" class="q-mr-sm" :loading="loading"/>
                     <q-btn label="Actualizar" type="button" color="orange" @click="actualizarOrden" :loading="loading"/>
                   </div>
                 </q-form>
@@ -282,6 +285,10 @@ export default {
     }
   },
   methods: {
+    imprimirOrden(id) {
+      const url = `${this.$axios.defaults.baseURL}/ordenes/${id}/pdf`;
+      window.open(url, '_blank'); // abre en nueva pestaña
+    },
     iniciarDictado(campo) {
       if (!this.reconocimiento) {
         this.$alert.warning('El reconocimiento de voz no está disponible en este navegador');
@@ -306,6 +313,30 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    cancelarOrden() {
+      this.$q.dialog({
+        title: 'Cancelar Orden',
+        message: '¿Estás seguro de cancelar esta orden?',
+        cancel: true,
+        persistent: true,
+        ok: { label: 'Cancelar Orden', color: 'negative' },
+      }).onOk(() => {
+        this.loading = true
+        this.$axios.post(`ordenes/${this.orden.id}/cancelar`, {
+          // si quieres pasar motivo o anular pagos:
+          // motivo: this.motivoCancelacion,
+          // anular_pagos: true
+        })
+          .then(() => {
+            this.$alert.success('Orden cancelada correctamente')
+            this.$router.push('/ordenes')
+          })
+          .catch(err => {
+            this.$alert.error(err.response?.data?.message || 'Error al cancelar la orden')
+          })
+          .finally(() => { this.loading = false })
+      })
     },
     actualizarOrden() {
       this.loading = true;

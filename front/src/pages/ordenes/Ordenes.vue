@@ -94,6 +94,10 @@
                         <q-item-section avatar><q-icon name="print" /></q-item-section>
                         <q-item-section>Imprimir</q-item-section>
                       </q-item>
+                      <q-item clickable @click="imprimirGarantia(orden.id)" v-close-popup>
+                        <q-item-section avatar><q-icon name="assignment" /></q-item-section>
+                        <q-item-section>Imprimir Garantía</q-item-section>
+                      </q-item>
                     </q-list>
                   </q-btn-dropdown>
                 </td>
@@ -149,6 +153,10 @@ export default {
     imprimirOrden(id) {
       const url = `${this.$axios.defaults.baseURL}/ordenes/${id}/pdf`;
       window.open(url, '_blank'); // abre en nueva pestaña
+    },
+    imprimirGarantia(id) {
+      const url = `${this.$axios.defaults.baseURL}/ordenes/${id}/garantia`;
+      window.open(url, '_blank');
     },
     getUsuarios() {
       this.$axios.get('users').then(res => {
