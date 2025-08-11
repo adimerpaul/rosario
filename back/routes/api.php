@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CogController;
+use App\Http\Controllers\DailyCashController;
+use App\Http\Controllers\DailyCashesController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\OrdenPagoController;
 use Illuminate\Http\Request;
@@ -43,6 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ordenes/pagos', [OrdenPagoController::class, 'store']);
     Route::put('/ordenes/pagos/{pago}', [OrdenPagoController::class, 'update']);
     Route::post('/ordenes/{orden}/cancelar', [OrdenController::class, 'cancelar']);
+
+    Route::get('daily-cash', [DailyCashController::class, 'show']);          // ?date=YYYY-MM-DD
+    Route::post('daily-cash', [DailyCashController::class, 'storeOrUpdate']); // {date, opening_amount, note?}
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf'])->name('ordenes.pdf');
 Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia'])->name('ordenes.garantia');
