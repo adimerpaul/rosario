@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
                 echo "Archivo no encontrado: $file\n";
             }
         }
-        exit();
+
         $user = User::create([
             'name' => 'Roger arias',
             'username' => 'admin',
@@ -58,6 +58,14 @@ class DatabaseSeeder extends Seeder
                 'role' => 'Vendedor',
             ]);
         }
+        $cogs = [
+            ['name' => 'Precio Compra', 'value' => 950.00, 'description' => 'Precio de compra del oro'],
+            ['name' => 'Precio Venta', 'value' => 1200.00, 'description' => 'Precio de venta del oro'],
+        ];
+        foreach ($cogs as $cog) {
+            \App\Models\Cog::create($cog);
+        }
+        exit();
         $clients = [
             ['name' => 'Juan Apaza Andrade', 'ci' => '765678', 'cellphone' => '72466152'],
             ['name' => 'Oscar Mallcu Rios', 'ci' => '7376363', 'cellphone' => '72309911'],
@@ -92,12 +100,5 @@ class DatabaseSeeder extends Seeder
             'user_id' => $user->id,
             'cliente_id' => 1, // Asignar al primer cliente creado
         ]);
-        $cogs = [
-            ['name' => 'Precio Compra', 'value' => 950.00, 'description' => 'Precio de compra del oro'],
-            ['name' => 'Precio Venta', 'value' => 1200.00, 'description' => 'Precio de venta del oro'],
-        ];
-        foreach ($cogs as $cog) {
-            \App\Models\Cog::create($cog);
-        }
     }
 }

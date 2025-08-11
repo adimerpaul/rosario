@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('clientes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('ci')->unique();
+            $table->string('ci')->nullable();
             $table->string('celular')->nullable();
             $table->enum('status', ['Confiable', 'No Confiable','VIP'])->default('Confiable');
             $table->text('observation')->nullable();
