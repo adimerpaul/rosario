@@ -8,6 +8,83 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrdenController extends Controller{
+    public function garantia(Orden $orden)
+    {
+        $orden->load(['cliente','user']);
+
+        // Datos de cabecera (ajusta a tu realidad)
+        $empresa = [
+            'nombre'   => 'JOYERIA ROSARIO',
+            'sucursal' => 'ORURO',
+            'direccion'=> 'Calle Junín esq. La Plata, frente al mercado',
+            'cel'      => '704-12345',
+        ];
+
+        // Config de garantía (personaliza si quieres leer de BD/config)
+        $garantia = [
+            'codigo'                => $orden->numero,
+            'fecha'                 => now(), // o $orden->fecha_entrega
+            'cliente'               => $orden->cliente->name ?? 'N/A',
+            'tipo'                  => 'Joya',
+            'periodo'               => '1 año',
+            'detalle'               => $orden->detalle,
+            'mantenimiento_meses'   => 12, // o 6
+        ];
+
+        // (Opcional) precio del oro si lo quieres mostrar en cabecera
+        $precioOro = 0;
+        if (DB::getSchemaBuilder()->hasTable('cogs')) {
+            $cog = DB::table('cogs')->where('id', 2)->first();
+            $precioOro = $cog ? ($cog->value ?? $cog->valor ?? 0) : 0;
+        }
+
+        $pdf = Pdf::loadView('pdf.garantia', [
+            'empresa'   => $empresa,
+            'garantia'  => $garantia,
+            'precioOro' => $precioOro,
+            'hoy'       => now(),
+        ])->setPaper('A4', 'portrait');
+
+        return $pdf->stream('garantia_'.$orden->numero.'.pdf');
+        // return $pdf->download('garantia_'.$orden->numero.'.pdf');
+    }
+    function cancelar(Request $request,Orden $orden){
+        // opcional: motivo de cancelación
+//        $request->validate([
+//            'motivo' => 'nullable|string|max:255',
+////            'anular_pagos' => 'sometimes|boolean',
+//        ]);
+
+        if ($orden->estado === 'Cancelada') {
+            return response()->json(['message' => 'La orden ya está cancelada'], 409);
+        }
+        if ($orden->estado === 'Entregado') {
+            return response()->json(['message' => 'No se puede cancelar una orden entregada'], 422);
+        }
+
+        DB::transaction(function () use ($orden, $request) {
+            // marcar cancelada
+            $orden->estado = 'Cancelada';
+
+            // si quieres que saldo quede en 0 al cancelar, descomenta:
+            // $orden->saldo = 0;
+
+            // si quieres anular pagos activos al cancelar:
+            if ($request->boolean('anular_pagos')) {
+                $orden->pagos()->where('estado', 'Activo')->update(['estado' => 'Anulado']);
+                // y revertir adelanto/saldo:
+                $montoAnulado = $orden->pagos()->where('estado','Anulado')->sum('monto');
+                // recomputa adelanto con solo pagos activos
+                $nuevoAdelanto = $orden->pagos()->where('estado','Activo')->sum('monto');
+                $orden->adelanto = $nuevoAdelanto;
+                $orden->saldo = max(0, ($orden->costo_total ?? 0) - $nuevoAdelanto);
+            }
+
+            $orden->save();
+        });
+
+        return response()->json($orden->fresh(['cliente','user']));
+    }
     public function show(Orden $orden){
         return Orden::with(['cliente:id,name,ci,status,cellphone'])->findOrFail($orden->id);
     }

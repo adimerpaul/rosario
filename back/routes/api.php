@@ -42,5 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/ordenes/{orden}/pagos', [OrdenPagoController::class, 'index']);
     Route::post('/ordenes/pagos', [OrdenPagoController::class, 'store']);
     Route::put('/ordenes/pagos/{pago}', [OrdenPagoController::class, 'update']);
+    Route::post('/ordenes/{orden}/cancelar', [OrdenController::class, 'cancelar']);
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf'])->name('ordenes.pdf');
+Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia'])->name('ordenes.garantia');
