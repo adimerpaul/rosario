@@ -14,6 +14,8 @@ const routes = [
         meta: {requiresAuth: true},
       },
       {path: '/configuraciones', component: () => import('pages/configuraciones/Configuraciones.vue'), meta: {requiresAuth: true}},
+      // libro-diario
+      {path: '/libro-diario', component: () => import('pages/libro-diario/LibroDiario.vue'), meta: {requiresAuth: true}},
     ]
   },
   {
