@@ -14,8 +14,23 @@ const routes = [
         meta: {requiresAuth: true},
       },
       {path: '/configuraciones', component: () => import('pages/configuraciones/Configuraciones.vue'), meta: {requiresAuth: true}},
-      // libro-diario
       {path: '/libro-diario', component: () => import('pages/libro-diario/LibroDiario.vue'), meta: {requiresAuth: true}},
+      {
+        path: '/prestamos',
+        component: () => import('pages/prestamos/Prestamos.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/prestamos/crear',
+        component: () => import('pages/prestamos/PrestamoCrear.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/prestamos/editar/:id',
+        name: 'editarPrestamo',
+        component: () => import('pages/prestamos/PrestamoEditar.vue'),
+        meta: { requiresAuth: true }
+      },
     ]
   },
   {

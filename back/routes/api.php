@@ -6,6 +6,7 @@ use App\Http\Controllers\DailyCashController;
 use App\Http\Controllers\DailyCashesController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\OrdenPagoController;
+use App\Http\Controllers\PrestamoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +49,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('daily-cash', [DailyCashController::class, 'show']);          // ?date=YYYY-MM-DD
     Route::post('daily-cash', [DailyCashController::class, 'storeOrUpdate']); // {date, opening_amount, note?}
+
+
+    Route::get('prestamos', [PrestamoController::class, 'index']);
+    Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show']);
+    Route::post('prestamos', [PrestamoController::class, 'store']);
+    Route::put('prestamos/{prestamo}', [PrestamoController::class, 'update']);
+    Route::delete('prestamos/{prestamo}', [PrestamoController::class, 'destroy']);
+
+// pagos
+    Route::get('prestamos/{prestamo}/pagos', [PrestamoController::class, 'pagos']);
+    Route::post('prestamos/pagos', [PrestamoController::class, 'pagar']);
+    Route::put('prestamos/pagos/{pago}/anular', [PrestamoController::class, 'anularPago']);
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf'])->name('ordenes.pdf');
 Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia'])->name('ordenes.garantia');
