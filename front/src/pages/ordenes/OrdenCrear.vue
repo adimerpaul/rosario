@@ -23,6 +23,15 @@
                          :loading="loading" no-caps dense size="10px"/>
                 </div>
               </div>
+              <div class="flex flex-center">
+                <q-pagination
+                  v-model="page"
+                  :max="totalPages"
+                  :max-pages="6"
+                  boundary-numbers
+                  @update:model-value="getClientes"
+                />
+              </div>
               <q-markup-table flat bordered dense>
                 <thead>
                 <tr class="bg-primary text-white">
@@ -143,6 +152,8 @@ export default {
   name: 'OrdenCrearPage',
   data() {
     return {
+      page: 1, // página actual
+      totalPages: 1, // total de páginas
       orden: {
         numero: '',
         // fecha_creacion: new Date().toISOString().substr(0, 10),
@@ -215,11 +226,12 @@ export default {
       this.$axios.get('clients',{
         params: {
           search: this.clienteFiltro,
-          page: 1,
-          per_page: 20
+          page: this.page,
+          per_page: 10
         }
       }).then(res => {
         this.clientes = res.data.data;
+        this.totalPages = res.data.last_page
       }).catch(err => {
         this.$alert.error(err.response?.data?.message || 'Error al cargar los clientes');
       }).finally(() => {
