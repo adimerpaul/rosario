@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Orden;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrdenController extends Controller{
     public function show(Orden $orden){
@@ -77,5 +79,43 @@ class OrdenController extends Controller{
     {
         $orden->delete();
         return response()->json(['message' => 'Orden eliminada']);
+    }
+
+    public function pdf(Orden $orden)
+    {
+        // Cargar relaciones
+        $orden->load(['cliente', 'user']);
+
+        // Traer precio del oro (usa tu fuente real; aquí ejemplo desde cogs id=2)
+        $precioOro = 0;
+        try {
+            $cog = DB::table('cogs')->where('id', 2)->first();
+            $precioOro = $cog ? ($cog->value ?? $cog->valor ?? 0) : 0;
+        } catch (\Throwable $e) {
+            $precioOro = 0;
+        }
+
+        // Datos para el encabezado
+        $empresa = [
+            'nombre' => 'Joyeria Rosario',
+            'sucursal' => 'ORURO',
+            'direccion' => 'Calle Junín entre La Plata y Soria — Frente a mercado',
+            'cel' => '704-12345',
+            'nit' => '12345601',
+        ];
+
+        // Render del PDF
+        $pdf = Pdf::loadView('pdf.orden_trabajo', [
+            'orden' => $orden,
+            'empresa' => $empresa,
+            'precioOro' => $precioOro,
+            'hoy' => now(),
+        ])->setPaper('A4', 'portrait');
+
+        // Mostrar en el navegador
+        $fileName = 'orden_trabajo_'.$orden->numero.'.pdf';
+        return $pdf->stream($fileName);
+        // Si prefieres descarga:
+        // return $pdf->download($fileName);
     }
 }

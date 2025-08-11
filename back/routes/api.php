@@ -43,3 +43,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ordenes/pagos', [OrdenPagoController::class, 'store']);
     Route::put('/ordenes/pagos/{pago}', [OrdenPagoController::class, 'update']);
 });
+Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf'])->name('ordenes.pdf');
