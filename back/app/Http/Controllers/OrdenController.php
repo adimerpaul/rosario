@@ -86,7 +86,10 @@ class OrdenController extends Controller{
         return response()->json($orden->fresh(['cliente','user']));
     }
     public function show(Orden $orden){
-        return Orden::with(['cliente:id,name,ci,status,cellphone'])->findOrFail($orden->id);
+        return Orden::with([
+            'cliente:id,name,ci,status,cellphone',
+            'user:id,name',
+            ])->findOrFail($orden->id);
     }
     public function index(Request $request)
     {
@@ -161,12 +164,61 @@ class OrdenController extends Controller{
             return 'O0001-' . date('Y');
         }
     }
+    // OrdenController.php
+    public function pagarTodo(Request $request, Orden $orden)
+    {
+        $metodo = $request->input('metodo', 'EFECTIVO'); // <-- toma EFECTIVO o QR
+
+        $saldo = max(0, ($orden->costo_total ?? 0) - $orden->pagos()->where('estado','Activo')->sum('monto'));
+        if ($saldo <= 0) {
+            return response()->json(['message' => 'No hay saldo pendiente'], 422);
+        }
+
+        $orden->pagos()->create([
+            'monto' => $saldo,
+            'metodo' => $metodo,           // <-- usa el método del front
+            'estado' => 'Activo',
+            'fecha' => now(),
+            'user_id' => $request->user()->id ?? null
+        ]);
+
+        $pagosActivos = $orden->pagos()->where('estado','Activo')->sum('monto');
+        $orden->adelanto = $pagosActivos;
+        $orden->saldo = max(0, ($orden->costo_total ?? 0) - $pagosActivos);
+        $orden->save();
+
+        return $orden->fresh(['cliente','user']);
+    }
+
+
 
     public function update(Request $request, Orden $orden)
     {
-        $orden->update($request->all());
-        return $orden;
+        $data = $request->all();
+
+        // Nunca permitir cambiar cliente desde update
+        unset($data['cliente_id']);
+
+        // Chequear rol
+        $user = $request->user();
+        $isAdmin = in_array(strtolower($user->role ?? ''), ['admin','administrador','administrator']);
+
+        // Si NO es admin, no puede tocar estos campos
+        if (!$isAdmin) {
+            unset($data['costo_total'], $data['peso'], $data['estado']);
+        }
+
+        $orden->update($data);
+
+        // Recalcular montos por pagos activos
+        $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
+        $orden->adelanto = $pagado;
+        $orden->saldo = max(0, ($orden->costo_total ?? 0) - $pagado);
+        $orden->save();
+
+        return $orden->load(['cliente','user']);
     }
+
 
     public function destroy(Orden $orden)
     {

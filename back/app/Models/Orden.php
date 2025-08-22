@@ -40,4 +40,28 @@ class Orden extends Model{
     {
         return $this->hasMany(OrdenPago::class, 'orden_id');
     }
+    public function syncMontosYEstado(){
+        $pagado = (float) $this->pagos()->where('estado', 'Activo')->sum('monto');
+
+        $this->adelanto = $pagado;
+        $costo = (float) ($this->costo_total ?? 0);
+        $this->saldo = max(0, $costo - $pagado);
+
+        // No tocar estado si está Cancelada
+        if ($this->estado !== 'Cancelada') {
+            if ($this->saldo <= 0) {
+                $this->estado = 'Entregado';
+            } elseif ($this->estado === 'Entregado') {
+                $this->estado = 'Pendiente';
+            }
+        }
+    }
+    protected static function booted()
+    {
+        // Antes de guardar, recalcula montos en función de pagos y costo_total
+        static::saving(function (Orden $orden) {
+            // Si cambia costo_total o por cualquier update, mantenemos coherencia
+            $orden->syncMontosYEstado();
+        });
+    }
 }

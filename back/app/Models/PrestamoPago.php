@@ -11,7 +11,7 @@ class PrestamoPago extends Model
 
     protected $table = 'prestamo_pagos';
 
-    protected $fillable = ['fecha','user_id','prestamo_id','monto','estado'];
+    protected $fillable = ['fecha','user_id','prestamo_id','monto','estado', 'metodo'];
 
     protected $hidden = ['created_at','updated_at','deleted_at'];
 

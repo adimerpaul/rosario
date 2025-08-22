@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             $table->unsignedBigInteger('orden_id')->nullable();
+            $table->string('metodo', 50)->default('Efectivo');
             $table->foreign('orden_id')->references('id')->on('ordenes')->onDelete('cascade');
             $table->decimal('monto', 10, 2)->default(0.00);
             $table->enum('estado', ['Activo', 'Anulado'])->default('Activo');
