@@ -90,7 +90,7 @@ class OrdenController extends Controller{
     }
     public function index(Request $request)
     {
-        $query = Orden::with(['user:id,name', 'cliente:id,name'])
+        $query = Orden::with(['user:id,name', 'cliente:id,name,ci'])
             ->orderBy('fecha_creacion', 'desc');
 
         if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
@@ -105,7 +105,22 @@ class OrdenController extends Controller{
             $query->where('estado', $request->estado);
         }
 
-        return $query->paginate(100);
+        // NUEVO: búsqueda por número, nombre, CI (y detalle opcional)
+        if ($request->filled('search')) {
+            $s = trim($request->search);
+            $query->where(function ($q) use ($s) {
+                $q->where('numero', 'like', "%{$s}%")
+                    ->orWhere('detalle', 'like', "%{$s}%")
+                    ->orWhereHas('cliente', function ($qc) use ($s) {
+                        $qc->where('name', 'like', "%{$s}%")
+                            ->orWhere('ci', 'like', "%{$s}%")
+                            ->orWhere('cellphone', 'like', "%{$s}%");
+                    });
+            });
+        }
+
+        $perPage = $request->integer('per_page', 100);
+        return $query->paginate($perPage);
     }
 
     public function store(Request $request)
