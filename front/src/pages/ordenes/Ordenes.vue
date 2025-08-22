@@ -85,7 +85,7 @@
               <div
                 v-for="orden in ordenes"
                 :key="orden.id"
-                class="col-12 col-sm-6 col-md-4 col-lg-2"
+                class="col-12 col-md-4"
               >
                 <q-card bordered flat class="order-card">
                   <!-- franja de color por estado -->
