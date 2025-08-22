@@ -31,6 +31,24 @@ const routes = [
         component: () => import('pages/prestamos/PrestamoEditar.vue'),
         meta: { requiresAuth: true }
       },
+      // OrdenesRetrasados.vue
+      {
+        path: '/ordenes-retrasadas',
+        component: () => import('pages/ordenes/OrdenesRetrasados.vue'),
+        meta: { requiresAuth: true }
+      },
+      // reportes
+      {
+        path: '/reportes',
+        component: () => import('pages/reportes/Reportes.vue'),
+        meta: { requiresAuth: true }
+      },
+      // PrestamosRetrasados.vue
+      {
+        path: '/prestamos-retrasados',
+        component: () => import('pages/prestamos/PrestamosRetrasados.vue'),
+        meta: { requiresAuth: true }
+      }
     ]
   },
   {

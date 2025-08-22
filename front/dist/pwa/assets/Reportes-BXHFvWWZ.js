@@ -1,0 +1,1 @@
+import{Q as t}from"./QPage-Crx2SrYo.js";import{_ as o,c as r,o as s,w as a,Z as c}from"./index-DePMG0cy.js";const n={};function f(_,e){return s(),r(t,null,{default:a(()=>e[0]||(e[0]=[c(" Reportes ")])),_:1})}const d=o(n,[["render",f]]);export{d as default};

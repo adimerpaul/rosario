@@ -8,6 +8,41 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrdenController extends Controller{
+    public function atrasadas(Request $request)
+    {
+//        return "aa";
+        $hoy      = now()->toDateString();
+        $diasMin  = max(1, (int) $request->query('dias', 1));
+        $userId   = $request->query('user_id');
+        $search   = trim((string) $request->query('search', ''));
+        $perPage  = (int) $request->query('per_page', 24);
+
+        $q = \App\Models\Orden::with(['cliente','user'])
+            ->whereNotIn('estado', ['Entregado','Cancelada'])
+            ->whereNotNull('fecha_entrega')
+            ->whereDate('fecha_entrega', '<', $hoy)
+            ->whereRaw('DATEDIFF(?, fecha_entrega) >= ?', [$hoy, $diasMin])
+            ->select('*')
+            ->selectRaw('DATEDIFF(?, fecha_entrega) as dias_retraso', [$hoy])
+            ->orderByDesc('dias_retraso')
+            ->orderBy('fecha_entrega');
+
+        if ($userId) $q->where('user_id', $userId);
+
+        if ($search !== '') {
+            $q->where(function($w) use ($search) {
+                $w->where('numero', 'like', "%{$search}%")
+                    ->orWhere('detalle', 'like', "%{$search}%")
+                    ->orWhereHas('cliente', function($qc) use ($search) {
+                        $qc->where('name','like',"%{$search}%")
+                            ->orWhere('ci','like',"%{$search}%");
+                    });
+            });
+        }
+
+        return $q->paginate($perPage)->appends($request->query());
+    }
+
     public function garantia(Orden $orden)
     {
         $orden->load(['cliente','user']);
