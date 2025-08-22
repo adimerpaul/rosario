@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyCash;
-use App\Models\Orden;
 use Illuminate\Http\Request;
 
 class DailyCashController extends Controller{
@@ -17,8 +16,10 @@ class DailyCashController extends Controller{
             ['opening_amount' => 0, 'user_id' => optional($request->user())->id]
         );
 
-        // 2) Ingresos por Órdenes (adelanto en la creación del día)
-        $ordenes = Orden::with(['cliente','user'])
+        /* ===================== INGRESOS ===================== */
+
+        // 2) Órdenes (adelantos al crear la orden)
+        $ordenes = \App\Models\Orden::with(['cliente','user'])
             ->whereDate('fecha_creacion', $date)
             ->where('estado', '!=', 'Cancelada')
             ->orderBy('fecha_creacion')
@@ -33,53 +34,133 @@ class DailyCashController extends Controller{
                 'usuario'     => $o->user->name ?? 'N/A',
             ];
         })->values();
-
         $totalOrdenes = (float) $ordenItems->sum('monto');
 
-        // 3) Ingresos por Pagos de Órdenes (tabla orden_pagos) del día
-        //    - Considera sólo pagos ACTIVO
-        //    - (opcional) evita contar pagos de órdenes canceladas
-        $pagos = \App\Models\OrdenPago::with(['orden.cliente','user'])
-            ->whereDate('fecha', $date)                 // usa la fecha del pago
+        // 3) Pagos de Órdenes (ACTIVO)
+        $pagosOrdenes = \App\Models\OrdenPago::with(['orden.cliente','user'])
+            ->whereDate('fecha', $date)
             ->where('estado', 'Activo')
             ->whereHas('orden', fn($q) => $q->where('estado', '!=', 'Cancelada'))
             ->orderBy('created_at')
             ->get();
-//        error_log($pagos);
 
-        $pagoItems = $pagos->map(function ($p) {
+        $pagoOrdenItems = $pagosOrdenes->map(function ($p) {
             return [
                 'id'          => $p->id,
-                // si tu campo "fecha" es sólo YYYY-MM-DD, usamos created_at para la hora
                 'hora'        => optional($p->created_at)->format('H:i') ?: '—',
                 'descripcion' => "Pago orden {$p->orden->numero} — ".($p->orden->cliente->name ?? 'N/A'),
                 'monto'       => (float) $p->monto,
                 'usuario'     => $p->user->name ?? 'N/A',
+                'metodo'      => $p->metodo ?? null, // EFECTIVO/QR
             ];
         })->values();
+        $totalPagosOrdenes = (float) $pagoOrdenItems->sum('monto');
 
-        $totalPagos = (float) $pagoItems->sum('monto');
+        // 4) Pagos de Préstamos (ACTIVO)
+        $pagosPrestamos = \App\Models\PrestamoPago::with(['prestamo.cliente','user'])
+            ->whereDate('fecha', $date)
+            ->where('estado', 'Activo')
+            ->orderBy('created_at')
+            ->get();
 
-        // 4) Totales
-        $totalIngresos = (float) $daily->opening_amount + $totalOrdenes + $totalPagos;
+        $pagoPrestItems = $pagosPrestamos->map(function ($p) {
+            return [
+                'id'          => $p->id,
+                'hora'        => optional($p->created_at)->format('H:i') ?: '—',
+                'descripcion' => "Pago préstamo {$p->prestamo->numero} — ".($p->prestamo->cliente->name ?? 'N/A'),
+                'monto'       => (float) $p->monto,
+                'usuario'     => $p->user->name ?? 'N/A',
+                'metodo'      => $p->metodo ?? null,      // EFECTIVO/QR…
+                'tipo_pago'   => $p->tipo_pago ?? null,   // INTERES/SALDO (opcional)
+            ];
+        })->values();
+        $totalPagosPrest = (float) $pagoPrestItems->sum('monto');
+
+        /* ===================== EGRESOS ===================== */
+
+        // 5) Egresos por préstamos otorgados (salida de dinero el día de creación)
+        $prestamos = \App\Models\Prestamo::with(['cliente','user'])
+            ->whereDate('fecha_creacion', $date)
+            ->orderBy('fecha_creacion')
+            ->get();
+
+        $egresoItems = $prestamos->map(function ($pr) {
+            return [
+                'id'          => $pr->id,
+                'hora'        => \Carbon\Carbon::parse($pr->fecha_creacion)->format('H:i'),
+                'descripcion' => "Préstamo {$pr->numero} — ".($pr->cliente->name ?? 'N/A'),
+                'monto'       => (float) ($pr->valor_prestado ?? 0),
+                'usuario'     => $pr->user->name ?? 'N/A',
+                // Si no tienes columna de método en préstamos, caerá en 'EFECTIVO'
+                'metodo'      => $pr->metodo_entrega ?? $pr->metodo ?? 'EFECTIVO',
+            ];
+        })->values();
+        $totalEgresosPrest = (float) $egresoItems->sum('monto');
+
+        /* ===================== TOTALES ===================== */
+
+        // Totales generales
+        $ingresosSinCaja = $totalOrdenes + $totalPagosOrdenes + $totalPagosPrest;
+        $totalIngresos   = (float) $daily->opening_amount + $ingresosSinCaja;           // mantiene compatibilidad
+        $totalEgresos    = $totalEgresosPrest;
+        $totalCaja       = (float) $daily->opening_amount + $ingresosSinCaja - $totalEgresos;
+
+        // Totales por método (ingresos/egresos/neto)
+        $sumMetodo = function ($items, $metodo) {
+            return (float) collect($items)->filter(fn($x) => ($x['metodo'] ?? null) === $metodo)->sum('monto');
+        };
+
+        $ingresosMetodo = [
+            'EFECTIVO' => $sumMetodo($pagoOrdenItems, 'EFECTIVO') + $sumMetodo($pagoPrestItems, 'EFECTIVO'),
+            'QR'       => $sumMetodo($pagoOrdenItems, 'QR')       + $sumMetodo($pagoPrestItems, 'QR'),
+        ];
+        $egresosMetodo = [
+            'EFECTIVO' => $sumMetodo($egresoItems, 'EFECTIVO'),
+            'QR'       => $sumMetodo($egresoItems, 'QR'),
+        ];
+        $netoMetodo = [
+            'EFECTIVO' => $ingresosMetodo['EFECTIVO'] - $egresosMetodo['EFECTIVO'],
+            'QR'       => $ingresosMetodo['QR']       - $egresosMetodo['QR'],
+        ];
 
         return response()->json([
-            'date'          => $date,
-            'daily_cash'    => $daily,
-            'ingresos'      => [
+            'date'           => $date,
+            'daily_cash'     => $daily,
+
+            'ingresos'       => [
                 'ordenes' => [
                     'total' => round($totalOrdenes, 2),
                     'items' => $ordenItems,
                 ],
                 'pagos_ordenes' => [
-                    'total' => round($totalPagos, 2),
-                    'items' => $pagoItems,
+                    'total' => round($totalPagosOrdenes, 2),
+                    'items' => $pagoOrdenItems,
+                ],
+                'pagos_prestamos' => [
+                    'total' => round($totalPagosPrest, 2),
+                    'items' => $pagoPrestItems,
                 ],
             ],
-            'total_ingresos' => round($totalIngresos, 2),
+
+            'egresos'        => [
+                'prestamos' => [
+                    'total' => round($totalEgresosPrest, 2),
+                    'items' => $egresoItems,
+                ],
+            ],
+
+            'totales_metodo' => [
+                'ingresos' => array_map(fn($v) => round($v, 2), $ingresosMetodo),
+                'egresos'  => array_map(fn($v) => round($v, 2), $egresosMetodo),
+                'neto'     => array_map(fn($v) => round($v, 2), $netoMetodo),
+            ],
+
+            // Totales globales
+            'total_ingresos' => round($totalIngresos, 2), // = caja inicial + ingresos (NO descuenta egresos)
+            'total_egresos'  => round($totalEgresos, 2),
+            'total_caja'     => round($totalCaja, 2),     // = caja inicial + ingresos - egresos
         ]);
     }
-
 
     // Crea/actualiza caja inicial del día
     public function storeOrUpdate(Request $request)
