@@ -11,14 +11,12 @@ class PrestamoPago extends Model
 
     protected $table = 'prestamo_pagos';
 
-    protected $fillable = ['fecha','user_id','prestamo_id','monto','estado', 'metodo'];
+    protected $fillable = [
+        'fecha','user_id','prestamo_id','monto','estado',
+        'metodo','tipo_pago' // <- NUEVOS CAMPOS
+    ];
 
     protected $hidden = ['created_at','updated_at','deleted_at'];
-
-//    protected $casts = [
-//        'fecha' => 'date',
-//        'monto' => 'decimal:2'
-//    ];
 
     public function user(){ return $this->belongsTo(User::class); }
     public function prestamo(){ return $this->belongsTo(Prestamo::class, 'prestamo_id'); }

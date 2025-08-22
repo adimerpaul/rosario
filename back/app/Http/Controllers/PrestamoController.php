@@ -12,22 +12,35 @@ class PrestamoController extends Controller
 {
     public function index(Request $request)
     {
-        $fi = $request->query('fecha_inicio');
-        $ff = $request->query('fecha_fin');
-        $userId = $request->query('user_id');
-        $estado = $request->query('estado', 'Todos');
+        $fi      = $request->query('fecha_inicio');
+        $ff      = $request->query('fecha_fin');
+        $userId  = $request->query('user_id');
+        $estado  = $request->query('estado', 'Todos');
+        $search  = $request->query('search');
+        $perPage = (int) $request->query('per_page', 12);
 
         $q = Prestamo::with(['cliente','user'])->orderBy('id', 'desc');
 
-        if ($fi) $q->whereDate('fecha_creacion', '>=', $fi);
-        if ($ff) $q->whereDate('fecha_creacion', '<=', $ff);
+        if ($fi)     $q->whereDate('fecha_creacion', '>=', $fi);
+        if ($ff)     $q->whereDate('fecha_creacion', '<=', $ff);
         if ($userId) $q->where('user_id', $userId);
         if ($estado && $estado !== 'Todos') $q->where('estado', $estado);
 
-        // si quieres paginar:
-        // return $q->paginate(20);
-        return $q->get();
+        if ($search) {
+            $s = trim($search);
+            $q->where(function ($w) use ($s) {
+                $w->where('numero', 'like', "%{$s}%")
+                    ->orWhere('detalle', 'like', "%{$s}%")
+                    ->orWhereHas('cliente', function ($qc) use ($s) {
+                        $qc->where('name', 'like', "%{$s}%")
+                            ->orWhere('ci', 'like', "%{$s}%");
+                    });
+            });
+        }
+
+        return $q->paginate($perPage)->appends($request->query());
     }
+
 
     public function show(Prestamo $prestamo)
     {
@@ -42,16 +55,21 @@ class PrestamoController extends Controller
             'fecha_creacion' => 'nullable|date',
             'fecha_limite'   => 'nullable|date',
             'peso'           => 'required|numeric|min:0',
-            'valor_prestado' => 'required|numeric|min:0',
-            'interes'        => 'required|numeric|min:0',
+            'valor_prestado' => 'required|numeric|min:0.01',
+            'interes'        => 'required|numeric|gte:1|lte:3',  // % 1–3
+            'almacen'        => 'required|numeric|gte:1|lte:3',  // % 1–3
             'celular'        => 'nullable|string',
             'detalle'        => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($data) {
-            $precioOro = optional(Cog::find(1))->value ?? 0; // id=1 = precio compra
-            $valorTotal = ($data['peso'] ?? 0) * $precioOro;
-            $saldo = ($data['valor_prestado'] ?? 0) + ($data['interes'] ?? 0);
+            $precioOro   = optional(Cog::find(1))->value ?? 0; // compra
+            $valorTotal  = ($data['peso'] ?? 0) * $precioOro;
+
+            $vp = (float) $data['valor_prestado'];
+            $i  = (float) $data['interes']; // %
+            $a  = (float) $data['almacen']; // %
+            $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
 
             $prestamo = Prestamo::create([
                 'numero'         => null,
@@ -62,16 +80,16 @@ class PrestamoController extends Controller
                 'peso'           => $data['peso'],
                 'precio_oro'     => $precioOro,
                 'valor_total'    => $valorTotal,
-                'valor_prestado' => $data['valor_prestado'],
-                'interes'        => $data['interes'],
-                'saldo'          => $saldo,
+                'valor_prestado' => $vp,
+                'interes'        => $i,        // guardamos %
+                'almacen'        => $a,        // guardamos %
+                'saldo'          => $deuda,    // total teórico
                 'celular'        => $data['celular'] ?? null,
                 'detalle'        => $data['detalle'] ?? null,
                 'estado'         => 'Pendiente',
             ]);
 
-            // asignar número (ej: PR-000123-2025)
-            $prestamo->numero = 'PR-'.str_pad($prestamo->id, 6, '0', STR_PAD_LEFT).'-'.now()->format('Y');
+            $prestamo->numero = 'PR-' . str_pad($prestamo->id, 6, '0', STR_PAD_LEFT) . '-' . now()->format('Y');
             $prestamo->save();
 
             return $prestamo->load(['cliente','user']);
@@ -83,42 +101,42 @@ class PrestamoController extends Controller
         $data = $request->validate([
             'fecha_limite'   => 'nullable|date',
             'peso'           => 'required|numeric|min:0',
-            'valor_prestado' => 'required|numeric|min:0',
-            'interes'        => 'required|numeric|min:0',
+            'valor_prestado' => 'required|numeric|min:0.01',
+            'interes'        => 'required|numeric|gte:1|lte:3',   // %
+            'almacen'        => 'required|numeric|gte:1|lte:3',   // %
             'celular'        => 'nullable|string',
             'detalle'        => 'nullable|string',
             'estado'         => 'nullable|string'
         ]);
 
         return DB::transaction(function () use ($prestamo, $data) {
-            $precioOro = optional(Cog::find(1))->value ?? 0;
+            $precioOro  = optional(Cog::find(1))->value ?? 0;
             $valorTotal = ($data['peso'] ?? 0) * $precioOro;
 
-            // pagos activos
+            $vp = (float) $data['valor_prestado'];
+            $i  = (float) $data['interes'];   // %
+            $a  = (float) $data['almacen'];   // %
+
             $pagado = $prestamo->pagos()->where('estado','Activo')->sum('monto');
-            $saldo = ($data['valor_prestado'] + $data['interes']) - $pagado;
+            $deuda  = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
+            $saldo  = $deuda - $pagado;
 
             $prestamo->update([
                 'fecha_limite'   => $data['fecha_limite'] ?? $prestamo->fecha_limite,
                 'peso'           => $data['peso'],
                 'precio_oro'     => $precioOro,
                 'valor_total'    => $valorTotal,
-                'valor_prestado' => $data['valor_prestado'],
-                'interes'        => $data['interes'],
+                'valor_prestado' => $vp,
+                'interes'        => $i,  // %
+                'almacen'        => $a,  // %
                 'saldo'          => $saldo,
                 'celular'        => $data['celular'] ?? $prestamo->celular,
                 'detalle'        => $data['detalle'] ?? $prestamo->detalle,
-                'estado'         => $data['estado'] ?? $prestamo->estado,
+                'estado'         => $saldo <= 0 ? 'Pagado' : ($data['estado'] ?? $prestamo->estado),
             ]);
 
             return $prestamo->load(['cliente','user']);
         });
-    }
-
-    public function destroy(Prestamo $prestamo)
-    {
-        $prestamo->delete();
-        return response()->json(['message' => 'Préstamo eliminado']);
     }
 
     /* ======= PAGOS ======= */
@@ -134,26 +152,36 @@ class PrestamoController extends Controller
             'prestamo_id' => 'required|integer|exists:prestamos,id',
             'fecha'       => 'nullable|date',
             'monto'       => 'required|numeric|min:0.01',
-            'user_id'     => 'required|integer'
+//            'user_id'     => 'required|integer'
         ]);
+        $user = $request->user();
 
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data,$user,$request) {
             $prestamo = Prestamo::findOrFail($data['prestamo_id']);
 
-            $pago = \App\Models\PrestamoPago::create([
-                'fecha'       => $data['fecha'] ?? now()->toDateString(),
-                'user_id'     => $data['user_id'],
+            PrestamoPago::create([
+                'fecha'       => now()->toDateString(), // o $data['fecha'] si se desea
+                'user_id'     => $user->id,
+                'metodo'      => $request->input('metodo', 'Efectivo'),
+                'tipo_pago'   => $request->input('tipo_pago', 'SALDO'), // Abono | Pago Total
                 'prestamo_id' => $prestamo->id,
                 'monto'       => $data['monto'],
                 'estado'      => 'Activo',
             ]);
 
             $pagado = $prestamo->pagos()->where('estado','Activo')->sum('monto');
-            $prestamo->saldo = ($prestamo->valor_prestado + $prestamo->interes) - $pagado;
+
+            // recalcular base con % actuales
+            $vp = (float) $prestamo->valor_prestado;
+            $i  = (float) $prestamo->interes;  // %
+            $a  = (float) $prestamo->almacen;  // %
+            $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
+
+            $prestamo->saldo  = $deuda - $pagado;
             if ($prestamo->saldo <= 0) $prestamo->estado = 'Pagado';
             $prestamo->save();
 
-            return $pago->load('user');
+            return $prestamo->pagos()->with('user')->latest()->first();
         });
     }
 
@@ -165,7 +193,13 @@ class PrestamoController extends Controller
 
             $prestamo = $pago->prestamo()->first();
             $pagado = $prestamo->pagos()->where('estado','Activo')->sum('monto');
-            $prestamo->saldo = ($prestamo->valor_prestado + $prestamo->interes) - $pagado;
+
+            $vp = (float) $prestamo->valor_prestado;
+            $i  = (float) $prestamo->interes;  // %
+            $a  = (float) $prestamo->almacen;  // %
+            $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
+
+            $prestamo->saldo  = $deuda - $pagado;
             if ($prestamo->saldo > 0 && $prestamo->estado === 'Pagado') {
                 $prestamo->estado = 'Pendiente';
             }
