@@ -23,8 +23,19 @@
                          :loading="loading" no-caps dense size="10px"/>
                 </div>
               </div>
+              <div class="col-12 q-mt-sm">
+                <q-banner v-if="orden.cliente" class="bg-grey-2">
+                  Cliente seleccionado: <b>{{ orden.cliente.name }}</b> (CI: {{ orden.cliente.ci }})
+                  <!--                    cip de estado-->
+                  <q-chip :color="orden.cliente.status === 'Confiable' ? 'green' : orden.cliente.status === 'No Confiable' ? 'red' : 'orange'"
+                          text-color="white" dense size="10px">
+                    {{ orden.cliente.status }}
+                  </q-chip>
+                </q-banner>
+              </div>
               <div class="flex flex-center">
                 <q-pagination
+                  size="10px"
                   v-model="page"
                   :max="totalPages"
                   :max-pages="6"
@@ -227,7 +238,7 @@ export default {
         params: {
           search: this.clienteFiltro,
           page: this.page,
-          per_page: 10
+          per_page: 3
         }
       }).then(res => {
         this.clientes = res.data.data;
