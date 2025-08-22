@@ -119,12 +119,13 @@ class OrdenController extends Controller{
 //            'user_id' => 'required|exists:users,id',
         ]);
         $numero =$this->numeroGet();
-        error_log($numero);
+//        error_log($numero);
         $user = $request->user();
         $request->merge([
             'numero' => $numero,
             'fecha_creacion' => now(),
             'user_id' => $user->id,
+            'detalle' => 'Realizar: '.$request->input('detalle', '').' peso: '.$request->input('peso', '0').' gr, en oro de 18 Kilates.',
         ]);
 
         return Orden::create($request->all());

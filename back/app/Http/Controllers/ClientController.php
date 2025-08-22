@@ -12,6 +12,7 @@ class ClientController extends Controller{
 //        return Client::orderBy('id', 'desc')->get();
         return Client::where('name', 'like', '%' . $search . '%')
             ->orWhere('ci', 'like', '%' . $search . '%')
+            ->orWhere('cellphone', 'like', '%' . $search . '%')
             ->orderBy('id', 'desc')
             ->paginate($perPage);
     }
