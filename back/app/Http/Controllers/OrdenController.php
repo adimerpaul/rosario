@@ -131,9 +131,6 @@ class OrdenController extends Controller{
         $query = Orden::with(['user:id,name', 'cliente:id,name,ci'])
             ->orderBy('fecha_creacion', 'desc');
 
-        if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
-            $query->whereBetween('fecha_creacion', [$request->fecha_inicio, $request->fecha_fin]);
-        }
 
         if ($request->has('user_id') && $request->user_id !== null && $request->user_id !== 'null') {
             $query->where('user_id', $request->user_id);
@@ -155,6 +152,10 @@ class OrdenController extends Controller{
                             ->orWhere('cellphone', 'like', "%{$s}%");
                     });
             });
+        }else{
+            if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+                $query->whereBetween('fecha_creacion', [$request->fecha_inicio, $request->fecha_fin]);
+            }
         }
 
         $perPage = $request->integer('per_page', 100);
