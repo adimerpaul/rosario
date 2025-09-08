@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('valor_total', 12, 2)->default(0);    // peso * precio_oro (referencial)
             $table->decimal('valor_prestado', 12, 2)->default(0); // efectivo entregado
             $table->decimal('interes', 12, 2)->default(0);        // interés total (monto)
+            $table->decimal('almacen', 12, 2)->default(0);        // interés total (monto)
             $table->decimal('saldo', 12, 2)->default(0);          // (prestado+interes) - pagos
             $table->string('celular')->nullable();
             $table->text('detalle')->nullable();

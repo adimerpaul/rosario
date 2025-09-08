@@ -4,6 +4,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CogController;
 use App\Http\Controllers\DailyCashController;
 use App\Http\Controllers\DailyCashesController;
+use App\Http\Controllers\EgresoController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PrestamoController;
@@ -69,6 +70,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('ordenesRetrasadas', [OrdenController::class, 'atrasadas']);
     Route::get('prestamosRetrasados', [PrestamoController::class, 'retrasados']);
+
+    // Lista y crea egresos
+    Route::get('egresos', [EgresoController::class, 'index']);
+    Route::post('egresos', [EgresoController::class, 'store']);
+// Anular (admin)
+    Route::post('egresos/{egreso}/anular', [EgresoController::class, 'anular']);
 
 
 });

@@ -106,7 +106,7 @@ const linksList = [
   {title: 'Principal', icon: 'home', link: '/', can: 'Todos'},
   {title: 'Usuarios', icon: 'people', link: '/usuarios', can: 'Administrador'},
 //   clientes ordenes prestamos libroDIario ordenesRetrasadso y prestamosRetrasados
-  {title: 'Clientes', icon: 'people', link: '/clientes', can: 'Administrador'},
+  {title: 'Clientes', icon: 'people', link: '/clientes', can: ['Administrador', 'Vendedor']},
   {title: 'Ordenes Crear', icon: 'add_circle', link: '/ordenes/crear', can: ['Administrador', 'Vendedor']},
   {title: 'Ordenes', icon: 'receipt_long', link: '/ordenes', can: ['Administrador', 'Vendedor']},
   {title: 'Crear Prestamo', icon: 'add_circle', link: '/prestamos/crear', can: ['Administrador', 'Vendedor']},

@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void{
         $sqlFiles = [
             'create_all_tables.sql',
-            'clients_insert_script.sql',
+//            'clients_insert_script.sql',
 //            'loans_insert_script.sql',
 //            'amounts_insert_script.sql',
 //            'orders_insert_script.sql',
@@ -61,11 +61,13 @@ class DatabaseSeeder extends Seeder
         $cogs = [
             ['name' => 'Precio Compra', 'value' => 950.00, 'description' => 'Precio de compra del oro'],
             ['name' => 'Precio Venta', 'value' => 1200.00, 'description' => 'Precio de venta del oro'],
+            ['name' => 'Prestamos para comprar', 'value' => 900, 'description' => 'Interes por prestamos para comprar oro'],
+            ['name' => 'Tipo de cambio', 'value' => 6.96, 'description' => 'Tipo de cambio USD a BOB'],
         ];
         foreach ($cogs as $cog) {
             \App\Models\Cog::create($cog);
         }
-        exit();
+//        exit();
         $clients = [
             ['name' => 'Juan Apaza Andrade', 'ci' => '765678', 'cellphone' => '72466152'],
             ['name' => 'Oscar Mallcu Rios', 'ci' => '7376363', 'cellphone' => '72309911'],
