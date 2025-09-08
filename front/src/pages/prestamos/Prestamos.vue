@@ -89,43 +89,43 @@
           </div>
 
           <!-- Resumen -->
-          <div class="col-12 col-md-8 q-mt-sm">
-            <div class="row q-col-gutter-sm">
-              <div class="col-12 col-md-4">
-                <q-card bordered class="bg-blue-1">
-                  <q-card-section class="row items-center">
-                    <q-icon name="savings" color="blue" size="lg" class="q-mr-sm"/>
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold text-blue">Prestado</div>
-                      <div class="text-h6">{{ money(resumen.prestado) }}</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-              <div class="col-12 col-md-4">
-                <q-card bordered class="bg-orange-1">
-                  <q-card-section class="row items-center">
-                    <q-icon name="stacked_bar_chart" color="orange" size="lg" class="q-mr-sm"/>
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold text-orange">Cargos (Int+Alm)</div>
-                      <div class="text-h6">{{ money(resumen.cargos) }}</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-              <div class="col-12 col-md-4">
-                <q-card bordered class="bg-red-1">
-                  <q-card-section class="row items-center">
-                    <q-icon name="account_balance_wallet" color="red" size="lg" class="q-mr-sm"/>
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold text-red">Saldo</div>
-                      <div class="text-h6">{{ money(resumen.saldo) }}</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-            </div>
-          </div>
+<!--          <div class="col-12 col-md-8 q-mt-sm">-->
+<!--            <div class="row q-col-gutter-sm">-->
+<!--              <div class="col-12 col-md-4">-->
+<!--                <q-card bordered class="bg-blue-1">-->
+<!--                  <q-card-section class="row items-center">-->
+<!--                    <q-icon name="savings" color="blue" size="lg" class="q-mr-sm"/>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle1 text-weight-bold text-blue">Prestado</div>-->
+<!--                      <div class="text-h6">{{ money(resumen.prestado) }}</div>-->
+<!--                    </div>-->
+<!--                  </q-card-section>-->
+<!--                </q-card>-->
+<!--              </div>-->
+<!--              <div class="col-12 col-md-4">-->
+<!--                <q-card bordered class="bg-orange-1">-->
+<!--                  <q-card-section class="row items-center">-->
+<!--                    <q-icon name="stacked_bar_chart" color="orange" size="lg" class="q-mr-sm"/>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle1 text-weight-bold text-orange">Cargos (Int+Alm)</div>-->
+<!--                      <div class="text-h6">{{ money(resumen.cargos) }}</div>-->
+<!--                    </div>-->
+<!--                  </q-card-section>-->
+<!--                </q-card>-->
+<!--              </div>-->
+<!--              <div class="col-12 col-md-4">-->
+<!--                <q-card bordered class="bg-red-1">-->
+<!--                  <q-card-section class="row items-center">-->
+<!--                    <q-icon name="account_balance_wallet" color="red" size="lg" class="q-mr-sm"/>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle1 text-weight-bold text-red">Saldo</div>-->
+<!--                      <div class="text-h6">{{ money(resumen.saldo) }}</div>-->
+<!--                    </div>-->
+<!--                  </q-card-section>-->
+<!--                </q-card>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
 
           <!-- GRID DE CARDS -->
           <div class="col-12 q-mt-sm">

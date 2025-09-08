@@ -41,43 +41,43 @@
           </div>
 
           <!-- Resumen -->
-          <div class="col-12 col-md-8 q-mt-sm">
-            <div class="row q-col-gutter-sm">
-              <div class="col-12 col-md-4">
-                <q-card bordered class="bg-blue-1">
-                  <q-card-section class="row items-center">
-                    <q-icon name="payments" color="blue" size="lg" class="q-mr-sm"/>
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold text-blue">Total</div>
-                      <div class="text-h6">{{ resumen.total.toFixed(2) }}</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-              <div class="col-12 col-md-4">
-                <q-card bordered class="bg-green-1">
-                  <q-card-section class="row items-center">
-                    <q-icon name="trending_up" color="green" size="lg" class="q-mr-sm"/>
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold text-green">Adelanto</div>
-                      <div class="text-h6">{{ resumen.adelanto.toFixed(2) }}</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-              <div class="col-12 col-md-4">
-                <q-card bordered class="bg-red-1">
-                  <q-card-section class="row items-center">
-                    <q-icon name="account_balance_wallet" color="red" size="lg" class="q-mr-sm"/>
-                    <div>
-                      <div class="text-subtitle1 text-weight-bold text-red">Saldo</div>
-                      <div class="text-h6">{{ resumen.saldo.toFixed(2) }}</div>
-                    </div>
-                  </q-card-section>
-                </q-card>
-              </div>
-            </div>
-          </div>
+<!--          <div class="col-12 col-md-8 q-mt-sm">-->
+<!--            <div class="row q-col-gutter-sm">-->
+<!--              <div class="col-12 col-md-4">-->
+<!--                <q-card bordered class="bg-blue-1">-->
+<!--                  <q-card-section class="row items-center">-->
+<!--                    <q-icon name="payments" color="blue" size="lg" class="q-mr-sm"/>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle1 text-weight-bold text-blue">Total</div>-->
+<!--                      <div class="text-h6">{{ resumen.total.toFixed(2) }}</div>-->
+<!--                    </div>-->
+<!--                  </q-card-section>-->
+<!--                </q-card>-->
+<!--              </div>-->
+<!--              <div class="col-12 col-md-4">-->
+<!--                <q-card bordered class="bg-green-1">-->
+<!--                  <q-card-section class="row items-center">-->
+<!--                    <q-icon name="trending_up" color="green" size="lg" class="q-mr-sm"/>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle1 text-weight-bold text-green">Adelanto</div>-->
+<!--                      <div class="text-h6">{{ resumen.adelanto.toFixed(2) }}</div>-->
+<!--                    </div>-->
+<!--                  </q-card-section>-->
+<!--                </q-card>-->
+<!--              </div>-->
+<!--              <div class="col-12 col-md-4">-->
+<!--                <q-card bordered class="bg-red-1">-->
+<!--                  <q-card-section class="row items-center">-->
+<!--                    <q-icon name="account_balance_wallet" color="red" size="lg" class="q-mr-sm"/>-->
+<!--                    <div>-->
+<!--                      <div class="text-subtitle1 text-weight-bold text-red">Saldo</div>-->
+<!--                      <div class="text-h6">{{ resumen.saldo.toFixed(2) }}</div>-->
+<!--                    </div>-->
+<!--                  </q-card-section>-->
+<!--                </q-card>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
 
           <!-- GRID DE CARDS -->
           <div class="col-12 q-mt-sm">

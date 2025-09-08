@@ -7,7 +7,8 @@
         <q-btn flat icon="arrow_back" label="Volver" no-caps @click="$router.back()" />
         <q-btn flat icon="print" label="Imprimir Orden" no-caps @click="imprimirOrden" />
         <q-btn flat icon="assignment" label="Imprimir Garantía" no-caps @click="imprimirGarantia" />
-        <q-btn color="primary" icon="save" label="Guardar" no-caps :loading="saving" @click="save"/>
+        <q-btn color="primary" icon="save" label="Guardar" no-caps :loading="saving" @click="save"
+               v-if="$store.user.role=='Administrador'" />
       </q-card-section>
 
       <q-separator/>
@@ -70,6 +71,7 @@
               :options="estados"
               :readonly="!isAdmin"
               :option-disable="opt => !isAdmin && opt !== form.estado"
+              v-if="$store.user.role=='Administrador'"
             />
           </div>
 
@@ -310,6 +312,7 @@ export default {
         this.dlgPago = false
         await this.fetch()
         this.$q.notify({ type: 'positive', message: 'Pago registrado' })
+        this.$router.push('/ordenes')
       } catch (e) {
         this.$alert?.error?.(e.response?.data?.message || 'No se pudo registrar el pago')
       } finally {
