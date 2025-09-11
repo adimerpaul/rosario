@@ -143,51 +143,82 @@ class PrestamoController extends Controller
 
     public function update(Request $request, Prestamo $prestamo)
     {
+        // Validación base (permitimos fecha_creacion para pruebas)
         $data = $request->validate([
+            'fecha_creacion' => 'nullable|date',
             'fecha_limite'   => 'nullable|date',
-            'peso'           => 'required|numeric|min:0',   // kg (bruto)
-            'merma'          => 'required|numeric|min:0',   // kg  <-- AÑADIDO
-            'valor_prestado' => 'required|numeric|min:0.01',
-            'interes'        => 'required|numeric|gte:1|lte:3',   // %
-            'almacen'        => 'required|numeric|gte:1|lte:3',   // %
+            'peso'           => 'nullable|numeric|min:0',   // kg (bruto)
+            'merma'          => 'nullable|numeric|min:0',   // kg
+            'valor_prestado' => 'nullable|numeric|min:0.01',
+            'interes'        => 'nullable|numeric|gte:1|lte:3',   // %
+            'almacen'        => 'nullable|numeric|gte:1|lte:3',   // %
             'celular'        => 'nullable|string',
             'detalle'        => 'nullable|string',
             'estado'         => 'nullable|string'
         ]);
 
-        return DB::transaction(function () use ($prestamo, $data) {
+        $user = $request->user();
+        $isAdmin = in_array(strtolower($user->role ?? ''), ['admin','administrador','administrator']);
+
+        return DB::transaction(function () use ($prestamo, $data, $isAdmin) {
+            // Precio compra oro (cogs id=3) para valor_total referencial
             $precioOro = optional(Cog::find(3))->value ?? 0;
 
-            $pesoBruto = (float) $data['peso'];
-            $merma     = (float) $data['merma'];
-            $pesoNeto  = max(0, $pesoBruto - $merma);
+            // Tomamos actuales como base
+            $pesoBruto = array_key_exists('peso', $data)   ? (float)$data['peso']   : (float)($prestamo->peso ?? 0);
+            $merma     = array_key_exists('merma', $data)  ? (float)$data['merma']  : (float)($prestamo->merma ?? 0);
 
+            // Si NO es admin, NO puede tocar campos sensibles:
+            if (!$isAdmin) {
+                unset($data['peso'], $data['merma'], $data['valor_prestado'], $data['interes'], $data['almacen'], $data['estado'], $data['fecha_creacion']);
+                // Re-usa los existentes para cálculo
+                $pesoBruto = (float)($prestamo->peso ?? 0);
+                $merma     = (float)($prestamo->merma ?? 0);
+            }
+
+            $pesoNeto = max(0, $pesoBruto - $merma);
             $valorTotal = round($pesoNeto * (float)$precioOro, 2);
 
-            $vp = (float) $data['valor_prestado'];
-            $i  = (float) $data['interes'];   // %
-            $a  = (float) $data['almacen'];   // %
+            // Si vienen los valores, úsalos; si no, toma actuales
+            $vp = array_key_exists('valor_prestado', $data) ? (float)$data['valor_prestado'] : (float)$prestamo->valor_prestado;
+            $i  = array_key_exists('interes', $data)        ? (float)$data['interes']        : (float)$prestamo->interes;
+            $a  = array_key_exists('almacen', $data)        ? (float)$data['almacen']        : (float)$prestamo->almacen;
 
+            // Pagos activos (para coherencia en respuesta; el modelo recalcula saldo dinámico al leer)
             $pagado = $prestamo->pagos()->where('estado','Activo')->sum('monto');
             $deuda  = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
             $saldo  = $deuda - $pagado;
 
-            $prestamo->update([
+            // Armamos payload final de actualización
+            $update = [
                 'fecha_limite'   => $data['fecha_limite'] ?? $prestamo->fecha_limite,
-                'peso'           => $pesoBruto,
-                'merma'          => $merma,
-                'peso_neto'      => $pesoNeto,     // opcional si existe
                 'precio_oro'     => $precioOro,
                 'valor_total'    => $valorTotal,
-                'valor_prestado' => $vp,
-                'interes'        => $i,            // %
-                'almacen'        => $a,            // %
-                'saldo'          => $saldo,
                 'celular'        => $data['celular'] ?? $prestamo->celular,
                 'detalle'        => $data['detalle'] ?? $prestamo->detalle,
-                'estado'         => $saldo <= 0 ? 'Pagado' : ($data['estado'] ?? $prestamo->estado),
-            ]);
+            ];
 
+            if ($isAdmin) {
+                $update = array_merge($update, [
+                    'fecha_creacion' => $data['fecha_creacion'] ?? $prestamo->fecha_creacion,
+                    'peso'           => $pesoBruto,
+                    'merma'          => $merma,
+                    'peso_neto'      => $pesoNeto,
+                    'valor_prestado' => $vp,
+                    'interes'        => $i,
+                    'almacen'        => $a,
+                    // El estado sólo lo dejamos cambiar manualmente si viene y si es admin;
+                    // de lo contrario lo derivamos por saldo
+                    'estado'         => array_key_exists('estado', $data)
+                        ? $data['estado']
+                        : ($saldo <= 0 ? 'Pagado' : $prestamo->estado),
+                ]);
+            }
+
+            $prestamo->update($update);
+
+            // Para consistencia inmediata en la respuesta:
+            $prestamo->saldo = $saldo; // El accessor del modelo volverá a calcular en lecturas futuras
             return $prestamo->load(['cliente','user']);
         });
     }
