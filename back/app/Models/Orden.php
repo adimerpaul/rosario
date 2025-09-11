@@ -41,13 +41,12 @@ class Orden extends Model{
         return $this->hasMany(OrdenPago::class, 'orden_id');
     }
     public function syncMontosYEstado(){
-        $pagado = (float) $this->pagos()->where('estado', 'Activo')->sum('monto');
-
-        $this->adelanto = $pagado;
+        // NO recalcules 'adelanto' aquí
         $costo = (float) ($this->costo_total ?? 0);
-        $this->saldo = max(0, $costo - $pagado);
+        $adelanto = (float) ($this->adelanto ?? 0);
 
-        // No tocar estado si está Cancelada
+        $this->saldo = max(0, $costo - $adelanto);
+
         if ($this->estado !== 'Cancelada') {
             if ($this->saldo <= 0) {
                 $this->estado = 'Entregado';
