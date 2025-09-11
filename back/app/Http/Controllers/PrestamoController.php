@@ -116,7 +116,7 @@ class PrestamoController extends Controller
 
             $prestamo = Prestamo::create([
                 'numero'         => null,
-                'fecha_creacion' => $data['fecha_creacion'] ?? now()->toDateString(),
+                'fecha_creacion' => date('Y-m-d H:i:s'),
                 'fecha_limite'   => $data['fecha_limite'] ?? null,
                 'cliente_id'     => $data['cliente_id'],
                 'user_id'        => $data['user_id'],
