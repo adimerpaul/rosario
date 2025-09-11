@@ -55,8 +55,8 @@ class PrestamoController extends Controller
 
         $q = Prestamo::with(['cliente','user'])->orderBy('id', 'desc');
 
-        if ($fi)     $q->whereDate('fecha_creacion', '>=', $fi);
-        if ($ff)     $q->whereDate('fecha_creacion', '<=', $ff);
+//        if ($fi)     $q->whereDate('fecha_creacion', '>=', $fi);
+//        if ($ff)     $q->whereDate('fecha_creacion', '<=', $ff);
         if ($userId) $q->where('user_id', $userId);
         if ($estado && $estado !== 'Todos') $q->where('estado', $estado);
 
