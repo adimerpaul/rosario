@@ -4,24 +4,6 @@
       <q-card-section>
         <div class="row q-col-gutter-sm">
           <!-- Filtros -->
-<!--          <div class="col-12 col-md-3">-->
-<!--            <q-input-->
-<!--              type="date"-->
-<!--              label="Fecha Inicio"-->
-<!--              dense outlined-->
-<!--              v-model="filters.fecha_inicio"-->
-<!--              @update:model-value="resetAndFetch"-->
-<!--            />-->
-<!--          </div>-->
-<!--          <div class="col-12 col-md-3">-->
-<!--            <q-input-->
-<!--              type="date"-->
-<!--              label="Fecha Fin"-->
-<!--              dense outlined-->
-<!--              v-model="filters.fecha_fin"-->
-<!--              @update:model-value="resetAndFetch"-->
-<!--            />-->
-<!--          </div>-->
           <div class="col-12 col-md-3">
             <q-select
               v-model="filters.user_id"
@@ -88,45 +70,6 @@
             />
           </div>
 
-          <!-- Resumen -->
-<!--          <div class="col-12 col-md-8 q-mt-sm">-->
-<!--            <div class="row q-col-gutter-sm">-->
-<!--              <div class="col-12 col-md-4">-->
-<!--                <q-card bordered class="bg-blue-1">-->
-<!--                  <q-card-section class="row items-center">-->
-<!--                    <q-icon name="savings" color="blue" size="lg" class="q-mr-sm"/>-->
-<!--                    <div>-->
-<!--                      <div class="text-subtitle1 text-weight-bold text-blue">Prestado</div>-->
-<!--                      <div class="text-h6">{{ money(resumen.prestado) }}</div>-->
-<!--                    </div>-->
-<!--                  </q-card-section>-->
-<!--                </q-card>-->
-<!--              </div>-->
-<!--              <div class="col-12 col-md-4">-->
-<!--                <q-card bordered class="bg-orange-1">-->
-<!--                  <q-card-section class="row items-center">-->
-<!--                    <q-icon name="stacked_bar_chart" color="orange" size="lg" class="q-mr-sm"/>-->
-<!--                    <div>-->
-<!--                      <div class="text-subtitle1 text-weight-bold text-orange">Cargos (Int+Alm)</div>-->
-<!--                      <div class="text-h6">{{ money(resumen.cargos) }}</div>-->
-<!--                    </div>-->
-<!--                  </q-card-section>-->
-<!--                </q-card>-->
-<!--              </div>-->
-<!--              <div class="col-12 col-md-4">-->
-<!--                <q-card bordered class="bg-red-1">-->
-<!--                  <q-card-section class="row items-center">-->
-<!--                    <q-icon name="account_balance_wallet" color="red" size="lg" class="q-mr-sm"/>-->
-<!--                    <div>-->
-<!--                      <div class="text-subtitle1 text-weight-bold text-red">Saldo</div>-->
-<!--                      <div class="text-h6">{{ money(resumen.saldo) }}</div>-->
-<!--                    </div>-->
-<!--                  </q-card-section>-->
-<!--                </q-card>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--          </div>-->
-
           <!-- GRID DE CARDS -->
           <div class="col-12 q-mt-sm">
             <div class="row q-col-gutter-sm">
@@ -136,19 +79,32 @@
                 class="col-12 col-sm-6 col-md-4"
               >
                 <q-card bordered flat class="loan-card">
-                  <div class="status-strip" :style="{ backgroundColor: getEstadoColor(p.estado) }"></div>
+                  <div class="status-strip" :style="{ backgroundColor: estadoColor(p) }"></div>
 
                   <q-card-section class="q-pb-xs">
                     <div class="row items-center no-wrap">
-                      <q-avatar :icon="getEstadoIcon(p.estado)" :color="getEstadoColor(p.estado)" text-color="white" size="32px"/>
+                      <q-avatar :icon="estadoIcon(p)" :color="estadoColor(p)" text-color="white" size="32px"/>
                       <div class="q-ml-sm">
                         <div class="text-weight-bold">#{{ p.numero }}</div>
-                        <div class="text-caption text-grey-7">{{ String(p.fecha_creacion).substring(0,10) }}</div>
+                        <div class="text-caption text-grey-7">
+                          {{ fmtFecha(p.fecha_creacion) }}
+                          <span v-if="p.fecha_limite"> — vence: {{ fmtFecha(p.fecha_limite) }}</span>
+                        </div>
+                        <div class="q-mt-xs">
+                          <q-chip dense square :style="{backgroundColor: estadoColor(p)}" text-color="white">
+                            {{ estadoTexto(p) }}
+                          </q-chip>
+                          <q-chip dense outline color="primary" class="q-ml-xs">
+                            {{ dias(p) }} días
+                          </q-chip>
+                          <q-chip dense outline color="teal" class="q-ml-xs">
+                            {{ tasaMensual(p) }}%/mes
+                          </q-chip>
+                          <q-chip dense outline color="indigo" class="q-ml-xs">
+                            {{ money(tasaDiaria(p)*100) }}%/día
+                          </q-chip>
+                        </div>
                       </div>
-                      <q-space/>
-                      <q-chip dense square text-color="white" :style="{backgroundColor: getEstadoColor(p.estado)}">
-                        {{ p.estado }}
-                      </q-chip>
                     </div>
                   </q-card-section>
 
@@ -166,20 +122,23 @@
                         <div class="text-weight-medium">{{ money(p.valor_prestado) }}</div>
                       </div>
                       <div class="col-6">
-                        <div class="text-caption text-grey-7">Cargos</div>
-                        <div class="text-weight-medium">{{ money(cargosTotales(p)) }}</div>
+                        <div class="text-caption text-grey-7">Cargos estimados</div>
+                        <div class="text-weight-medium">{{ money(cargosEstimados(p)) }}</div>
                         <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>
                       </div>
                     </div>
 
                     <div class="row q-mt-sm">
                       <div class="col-6">
-                        <div class="text-caption text-grey-7">Peso (kg)</div>
-                        <div class="text-weight-medium">{{ Number(p.peso || 0).toFixed(3) }}</div>
+                        <div class="text-caption text-grey-7">Cargo diario</div>
+                        <div class="text-weight-medium">{{ money(cargoDiario(p)) }}</div>
                       </div>
                       <div class="col-6">
-                        <div class="text-caption text-grey-7">Saldo</div>
-                        <div class="text-weight-medium">{{ money(p.saldo) }}</div>
+                        <div class="text-caption text-grey-7">Saldo HOY</div>
+                        <div class="text-h6 text-weight-bold">
+                          {{ money(p.saldo) }}
+                          <q-badge v-if="esVencido(p)" color="negative" class="q-ml-xs">Vencido</q-badge>
+                        </div>
                       </div>
                     </div>
 
@@ -285,35 +244,60 @@ export default {
         .finally(() => { this.loading = false })
     },
     calcularResumen () {
-      // Nota: resume SOLO los préstamos de la página actual
+      // Resume SOLO la página actual (coincide con lo que ves)
       const sum = (arr, fn) => arr.reduce((s, x) => s + fn(x), 0)
       const vp  = x => Number(x.valor_prestado || 0)
-      const ci  = x => vp(x) * Number(x.interes || 0) / 100
-      const ca  = x => vp(x) * Number(x.almacen || 0) / 100
-
+      const ci  = x => this.cargosEstimados(x) // usamos la misma fórmula de estimación
       this.resumen.prestado = sum(this.prestamos, vp)
-      this.resumen.cargos   = sum(this.prestamos, x => ci(x) + ca(x))
+      this.resumen.cargos   = sum(this.prestamos, ci)
       this.resumen.saldo    = sum(this.prestamos, x => Number(x.saldo || 0))
     },
-    cargosTotales (p) {
-      const vp = Number(p.valor_prestado || 0)
-      return vp * Number(p.interes || 0) / 100 + vp * Number(p.almacen || 0) / 100
-    },
-    getEstadoColor (e) {
-      if (e === 'Pendiente') return '#fb8c00'
-      if (e === 'Pagado')    return '#21ba45'
-      if (e === 'Cancelado') return '#e53935'
-      if (e === 'Vencido')   return '#f4511e'
+
+    /* ========== UI helpers ========== */
+    fmtFecha (f) { return f ? moment(f).format('YYYY-MM-DD') : '—' },
+    money (v) { return Number(v || 0).toFixed(2) },
+
+    estadoColor (p) {
+      if (p.estado === 'Pagado') return '#21ba45'
+      if (p.estado === 'Cancelado') return '#e53935'
+      if (this.esVencido(p)) return '#f4511e'
+      if (p.estado === 'Pendiente') return '#fb8c00'
       return '#9e9e9e'
     },
-    getEstadoIcon (e) {
-      if (e === 'Pendiente') return 'hourglass_empty'
-      if (e === 'Pagado')    return 'check_circle'
-      if (e === 'Cancelado') return 'block'
-      if (e === 'Vencido')   return 'warning'
+    estadoIcon (p) {
+      if (p.estado === 'Pagado') return 'check_circle'
+      if (p.estado === 'Cancelado') return 'block'
+      if (this.esVencido(p)) return 'warning'
+      if (p.estado === 'Pendiente') return 'hourglass_empty'
       return 'payments'
     },
-    money (v) { return Number(v || 0).toFixed(2) }
+    estadoTexto (p) {
+      return this.esVencido(p) && p.estado === 'Pendiente' ? 'Vencido' : p.estado
+    },
+    esVencido (p) {
+      if (!p.fecha_limite) return false
+      const hoy = moment().startOf('day')
+      return hoy.isAfter(moment(p.fecha_limite, 'YYYY-MM-DD').startOf('day')) && p.estado !== 'Pagado' && p.estado !== 'Cancelado'
+    },
+
+    /* ========== Cálculos “bonitos” para el card ========== */
+    dias (p) {
+      const ini = p.fecha_creacion ? moment(p.fecha_creacion, 'YYYY-MM-DD') : moment()
+      return Math.max(0, moment().startOf('day').diff(ini.startOf('day'), 'days'))
+    },
+    tasaMensual (p) {
+      return Number(p.interes || 0) + Number(p.almacen || 0) // % mensual total
+    },
+    tasaDiaria (p) {
+      return this.tasaMensual(p) / 100 / 30 // simple/30
+    },
+    cargoDiario (p) {
+      const vp = Number(p.valor_prestado || 0)
+      return +(vp * this.tasaDiaria(p)).toFixed(2)
+    },
+    cargosEstimados (p) {
+      return +(this.cargoDiario(p) * this.dias(p)).toFixed(2)
+    }
   }
 }
 </script>
