@@ -14,25 +14,25 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      */
     public function run(): void{
-        $sqlFiles = [
-            'create_all_tables.sql',
-//            'clients_insert_script.sql',
-//            'loans_insert_script.sql',
-//            'amounts_insert_script.sql',
-//            'orders_insert_script.sql',
-//            'loan_payments_insert_script.sql',
-//            'loan_capital_payments_insert_script.sql',
-//            'daily_histories_insert_script.sql',
-        ];
-
-        foreach ($sqlFiles as $file) {
-            $path = database_path('sql/' . $file);
-            if (File::exists($path)) {
-                DB::unprepared(File::get($path));
-            } else {
-                echo "Archivo no encontrado: $file\n";
-            }
-        }
+//        $sqlFiles = [
+//            'create_all_tables.sql',
+////            'clients_insert_script.sql',
+////            'loans_insert_script.sql',
+////            'amounts_insert_script.sql',
+////            'orders_insert_script.sql',
+////            'loan_payments_insert_script.sql',
+////            'loan_capital_payments_insert_script.sql',
+////            'daily_histories_insert_script.sql',
+//        ];
+//
+//        foreach ($sqlFiles as $file) {
+//            $path = database_path('sql/' . $file);
+//            if (File::exists($path)) {
+//                DB::unprepared(File::get($path));
+//            } else {
+//                echo "Archivo no encontrado: $file\n";
+//            }
+//        }
 
         $user = User::create([
             'name' => 'Roger arias',

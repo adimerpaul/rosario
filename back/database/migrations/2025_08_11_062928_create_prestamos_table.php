@@ -17,7 +17,11 @@ return new class extends Migration
             $table->date('fecha_creacion')->default(now());       // día del préstamo
             $table->date('fecha_limite')->nullable();             // fecha de vencimiento
             $table->unsignedBigInteger('cliente_id');
+            $table->foreign('cliente_id')->references('id')->on('clientes');
             $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->decimal('merma', 10, 3)->default(0);
+            $table->decimal('peso_neto', 10, 3)->default(0);      // kg neto
 
             $table->decimal('peso', 10, 3)->default(0);           // kg
             $table->decimal('precio_oro', 12, 2)->default(0);     // de cogs id=1
