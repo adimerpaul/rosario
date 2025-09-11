@@ -4,24 +4,24 @@
       <q-card-section>
         <div class="row q-col-gutter-sm">
           <!-- Filtros -->
-          <div class="col-12 col-md-3">
-            <q-input
-              type="date"
-              label="Fecha Inicio"
-              dense outlined
-              v-model="filters.fecha_inicio"
-              @update:model-value="resetAndFetch"
-            />
-          </div>
-          <div class="col-12 col-md-3">
-            <q-input
-              type="date"
-              label="Fecha Fin"
-              dense outlined
-              v-model="filters.fecha_fin"
-              @update:model-value="resetAndFetch"
-            />
-          </div>
+<!--          <div class="col-12 col-md-3">-->
+<!--            <q-input-->
+<!--              type="date"-->
+<!--              label="Fecha Inicio"-->
+<!--              dense outlined-->
+<!--              v-model="filters.fecha_inicio"-->
+<!--              @update:model-value="resetAndFetch"-->
+<!--            />-->
+<!--          </div>-->
+<!--          <div class="col-12 col-md-3">-->
+<!--            <q-input-->
+<!--              type="date"-->
+<!--              label="Fecha Fin"-->
+<!--              dense outlined-->
+<!--              v-model="filters.fecha_fin"-->
+<!--              @update:model-value="resetAndFetch"-->
+<!--            />-->
+<!--          </div>-->
           <div class="col-12 col-md-3">
             <q-select
               v-model="filters.user_id"
