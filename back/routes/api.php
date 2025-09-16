@@ -77,6 +77,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // Anular (admin)
     Route::post('egresos/{egreso}/anular', [EgresoController::class, 'anular']);
 
+    Route::post('prestamos/{prestamo}/pagar-mensualidad', [PrestamoController::class, 'pagarMensualidad']);
+    Route::post('prestamos/{prestamo}/pagar-cargos', [PrestamoController::class, 'pagarCargos']);
+    Route::post('prestamos/{prestamo}/pagar-todo', [PrestamoController::class, 'pagarTodo']);
 
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf'])->name('ordenes.pdf');

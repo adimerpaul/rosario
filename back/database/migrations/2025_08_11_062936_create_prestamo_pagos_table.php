@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('prestamo_id');
             $table->decimal('monto', 12, 2);
             $table->string('metodo', 50)->default('Efectivo'); // Efectivo | Transferencia | Tarjeta | Otro
+            $table->string('tipo_pago', 50)->default(''); // Abono | Pago Total | Cancelación
             $table->string('estado')->default('Activo'); // Activo | Anulado
             $table->timestamps();
             $table->softDeletes();

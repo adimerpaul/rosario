@@ -7,9 +7,134 @@ use App\Models\PrestamoPago;
 use App\Models\Cog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class PrestamoController extends Controller
 {
+    private function calcBase(Prestamo $p): array
+    {
+        $capital     = (float) ($p->valor_prestado ?? 0);
+        $tasaMensual = (float) ($p->interes ?? 0) + (float) ($p->almacen ?? 0); // %/mes
+        $tasaDiaria  = $tasaMensual / 100 / 30;
+
+        $fechaBase = $p->fecha_creacion ? Carbon::parse($p->fecha_creacion) : today();
+        $dias      = max(0, $fechaBase->diffInDays(today()));
+
+        $cargoDiario = round($capital * $tasaDiaria, 2);
+        $cargos      = round($cargoDiario * $dias, 2);
+
+        $pagado = (float) $p->pagos()->where('estado','Activo')->sum('monto');
+        $saldo  = round($capital + $cargos - $pagado, 2);
+        if ($saldo < 0) $saldo = 0;
+
+        return compact('capital','tasaMensual','tasaDiaria','dias','cargoDiario','cargos','pagado','saldo');
+    }
+
+    private function crearPago(Prestamo $p, float $monto, string $tipo, string $metodo, int $userId): PrestamoPago
+    {
+        $pago = PrestamoPago::create([
+            'fecha'       => now()->toDateString(),
+            'user_id'     => $userId,
+            'metodo'      => $metodo ?: 'Efectivo',
+            'tipo_pago'   => $tipo,               // MENSUALIDAD | CARGOS | TOTAL
+            'prestamo_id' => $p->id,
+            'monto'       => $monto,
+            'estado'      => 'Activo',
+        ]);
+        return $pago;
+    }
+
+    private function refreshSaldoEstado(Prestamo $p): void
+    {
+        $base = $this->calcBase($p);
+        $p->saldo  = $base['saldo'];
+        if ($p->saldo <= 0) {
+            $p->estado = 'Pagado';
+        } elseif ($p->estado === 'Pagado') {
+            $p->estado = 'Pendiente';
+        }
+        $p->save();
+    }
+    public function pagarMensualidad(Request $request, Prestamo $prestamo)
+    {
+        $user   = $request->user();
+        $metodo = (string) $request->input('metodo', 'Efectivo');
+
+        return DB::transaction(function () use ($prestamo, $user, $metodo) {
+            $base  = $this->calcBase($prestamo);
+            $monto = min($base['saldo'], round($base['cargoDiario'] * 30, 2)); // paga solo 30 días
+
+            if ($monto <= 0) {
+                return response()->json(['message' => 'No hay cargos por pagar'], 422);
+            }
+
+            $this->crearPago($prestamo, $monto, 'MENSUALIDAD', $metodo, $user->id);
+
+            // Mover fecha límite +1 mes (si no existe, usa hoy)
+            $nuevaLimite = ($prestamo->fecha_limite ? Carbon::parse($prestamo->fecha_limite) : today())->addMonthNoOverflow();
+            $prestamo->fecha_limite = $nuevaLimite->toDateString();
+            $prestamo->save();
+
+            $this->refreshSaldoEstado($prestamo);
+
+            return $prestamo->fresh()->load(['cliente','user']);
+        });
+    }
+
+    public function pagarCargos(Request $request, Prestamo $prestamo)
+    {
+        $user   = $request->user();
+        $metodo = (string) $request->input('metodo', 'Efectivo');
+
+        return DB::transaction(function () use ($prestamo, $user, $metodo) {
+            $base = $this->calcBase($prestamo);
+
+            // "Cargos pendientes" = (capital + cargos - pagado) - capital = cargos - pagado
+            $cargosPend = max(0, round($base['cargos'] - $base['pagado'], 2));
+            $monto      = min($cargosPend, $base['saldo']);
+
+            if ($monto <= 0) {
+                return response()->json(['message' => 'No hay cargos acumulados por pagar'], 422);
+            }
+
+            $this->crearPago($prestamo, $monto, 'CARGOS', $metodo, $user->id);
+
+            // Ajusta fecha límite a HOY (como pediste)
+            $prestamo->fecha_limite = today()->toDateString();
+            $prestamo->save();
+
+            $this->refreshSaldoEstado($prestamo);
+
+            return $prestamo->fresh()->load(['cliente','user']);
+        });
+    }
+
+    public function pagarTodo(Request $request, Prestamo $prestamo)
+    {
+        $user   = $request->user();
+        $metodo = (string) $request->input('metodo', 'Efectivo');
+
+        return DB::transaction(function () use ($prestamo, $user, $metodo) {
+            $base = $this->calcBase($prestamo);
+            $monto = $base['saldo'];
+
+            if ($monto <= 0) {
+                return response()->json(['message' => 'El préstamo ya está pagado'], 422);
+            }
+
+            $this->crearPago($prestamo, $monto, 'TOTAL', $metodo, $user->id);
+
+            // Marcar como pagado explícitamente
+            $prestamo->estado = 'Pagado';
+            $prestamo->saldo  = 0;
+            // Opcional: fecha_limite = hoy o conservar
+            $prestamo->fecha_limite = today()->toDateString();
+            $prestamo->save();
+
+            return $prestamo->fresh()->load(['cliente','user']);
+        });
+    }
+
     public function retrasados(Request $request)
     {
         $hoy      = now()->toDateString();

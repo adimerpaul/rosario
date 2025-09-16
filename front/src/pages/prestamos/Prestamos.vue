@@ -151,7 +151,27 @@
                   <q-separator />
 
                   <q-card-actions align="between" class="q-pa-sm">
-                    <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/prestamos/editar/' + p.id)" />
+                    <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/prestamos/editar/' + p.id)" no-caps />
+
+                    <q-btn-dropdown dense no-caps color="primary" label="Más">
+                      <q-list>
+                        <q-item clickable v-ripple @click="openMensualidad(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="payment"/></q-item-section>
+                          <q-item-section>Pagar mensualidad</q-item-section>
+                        </q-item>
+
+                        <q-item clickable v-ripple @click="openCargos(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="attach_money"/></q-item-section>
+                          <q-item-section>Pagar cargos</q-item-section>
+                        </q-item>
+
+                        <q-item clickable v-ripple @click="openTotal(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="money_off"/></q-item-section>
+                          <q-item-section>Pagar todo</q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-btn-dropdown>
+
                   </q-card-actions>
                 </q-card>
               </div>
@@ -178,6 +198,124 @@
         </div>
       </q-card-section>
     </q-card>
+    <!-- DIALOG: Pagar Mensualidad -->
+    <q-dialog v-model="dlgMensualidad.open" persistent>
+      <q-card style="min-width:420px">
+        <q-card-section class="row items-center q-gutter-sm">
+          <q-icon name="payment" size="28px" color="primary"/>
+          <div class="text-h6">Pagar mensualidad (30 días)</div>
+        </q-card-section>
+        <q-separator/>
+
+        <q-card-section>
+          <div class="text-caption text-grey-7">Préstamo #{{ dlgMensualidad.p?.numero }}</div>
+          <div class="row q-col-gutter-md q-mt-xs">
+            <div class="col-6">
+              <div class="text-caption">Cargo diario</div>
+              <div class="text-body1">{{ money(cargoDiarioPreview) }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-caption">Saldo actual</div>
+              <div class="text-body1">{{ money(saldoPreview) }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-caption">Monto a pagar (30 días)</div>
+              <div class="text-h6">{{ money(montoMensualidadPreview) }}</div>
+            </div>
+            <div class="col-6">
+              <q-select dense outlined v-model="dlgMensualidad.metodo" :options="metodoOptions" label="Método de pago"/>
+            </div>
+            <div class="col-12 text-grey-7 text-caption">
+              * Al confirmar, la <b>fecha límite</b> se moverá <b>+1 mes</b>.
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator/>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" v-close-popup/>
+          <q-btn color="primary" :loading="loading" label="Confirmar" @click="confirmMensualidad"/>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- DIALOG: Pagar Cargos -->
+    <q-dialog v-model="dlgCargos.open" persistent>
+      <q-card style="min-width:420px">
+        <q-card-section class="row items-center q-gutter-sm">
+          <q-icon name="attach_money" size="28px" color="teal"/>
+          <div class="text-h6">Pagar cargos acumulados</div>
+        </q-card-section>
+        <q-separator/>
+
+        <q-card-section>
+          <div class="text-caption text-grey-7">Préstamo #{{ dlgCargos.p?.numero }}</div>
+          <div class="row q-col-gutter-md q-mt-xs">
+            <div class="col-6">
+              <div class="text-caption">Días transcurridos</div>
+              <div class="text-body1">{{ diasPreview }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-caption">Cargos acumulados</div>
+              <div class="text-body1">{{ money(cargosAcumuladosPreview) }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-caption">Saldo actual</div>
+              <div class="text-body1">{{ money(saldoPreview) }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-caption">Monto a pagar (sólo cargos)</div>
+              <div class="text-h6">{{ money(montoCargosPreview) }}</div>
+            </div>
+            <div class="col-12">
+              <q-select dense outlined v-model="dlgCargos.metodo" :options="metodoOptions" label="Método de pago"/>
+            </div>
+            <div class="col-12 text-grey-7 text-caption">
+              * Al confirmar, la <b>fecha límite</b> se ajustará a <b>hoy</b>.
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator/>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" v-close-popup/>
+          <q-btn color="teal" :loading="loading" label="Confirmar" @click="confirmCargos"/>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- DIALOG: Pagar Todo -->
+    <q-dialog v-model="dlgTotal.open" persistent>
+      <q-card style="min-width:420px">
+        <q-card-section class="row items-center q-gutter-sm">
+          <q-icon name="money_off" size="28px" color="negative"/>
+          <div class="text-h6">Pagar TODO</div>
+        </q-card-section>
+        <q-separator/>
+
+        <q-card-section>
+          <div class="text-caption text-grey-7">Préstamo #{{ dlgTotal.p?.numero }}</div>
+          <div class="row q-col-gutter-md q-mt-xs">
+            <div class="col-6">
+              <div class="text-caption">Saldo total a liquidar</div>
+              <div class="text-h6">{{ money(saldoPreview) }}</div>
+            </div>
+            <div class="col-6">
+              <q-select dense outlined v-model="dlgTotal.metodo" :options="metodoOptions" label="Método de pago"/>
+            </div>
+            <div class="col-12 text-grey-7 text-caption">
+              * El préstamo quedará en estado <b>Pagado</b>.
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator/>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" v-close-popup/>
+          <q-btn color="negative" :loading="loading" label="Confirmar" @click="confirmTotal"/>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -206,14 +344,105 @@ export default {
       from: 0,
       to: 0,
       resumen: { prestado: 0, cargos: 0, saldo: 0 },
-      loading: false
+      loading: false,
+      metodoOptions: ['Efectivo','Transferencia','Tarjeta','QR'],
+
+      dlgMensualidad: { open: false, p: null, metodo: 'Efectivo', preview: null },
+      dlgCargos:      { open: false, p: null, metodo: 'Efectivo', preview: null },
+      dlgTotal:       { open: false, p: null, metodo: 'Efectivo', preview: null },
     }
   },
   mounted () {
     this.getUsuarios()
     this.getPrestamos()
   },
+  computed: {
+    // cálculo local para mostrar PREVIEW (no es el pago final; el server recalcula)
+    cargoDiarioPreview () {
+      const p = this._dlgAny()?.p
+      if (!p) return 0
+      const tasaMensual = Number(p.interes || 0) + Number(p.almacen || 0)
+      const tasaDiaria  = tasaMensual / 100 / 30
+      return +(Number(p.valor_prestado || 0) * tasaDiaria).toFixed(2)
+    },
+    diasPreview () {
+      const p = this._dlgAny()?.p
+      if (!p) return 0
+      const ini = p.fecha_creacion ? moment(p.fecha_creacion, 'YYYY-MM-DD') : moment()
+      return Math.max(0, moment().startOf('day').diff(ini.startOf('day'), 'days'))
+    },
+    cargosAcumuladosPreview () {
+      return +(this.cargoDiarioPreview * this.diasPreview).toFixed(2)
+    },
+    saldoPreview () {
+      const p = this._dlgAny()?.p
+      if (!p) return 0
+      return Number(p.saldo || 0)
+    },
+    montoMensualidadPreview () {
+      return Math.min(this.saldoPreview, +(this.cargoDiarioPreview * 30).toFixed(2))
+    },
+    montoCargosPreview () {
+      // cargos - pagado ≈ saldo - capital
+      const p = this._dlgAny()?.p
+      if (!p) return 0
+      const capital = Number(p.valor_prestado || 0)
+      return Math.max(0, +(this.saldoPreview - capital).toFixed(2))
+    },
+  },
   methods: {
+    _dlgAny () {
+      if (this.dlgMensualidad.open) return this.dlgMensualidad
+      if (this.dlgCargos.open)      return this.dlgCargos
+      if (this.dlgTotal.open)       return this.dlgTotal
+      return null
+    },
+    openMensualidad (p) {
+      this.dlgMensualidad = { open: true, p, metodo: 'Efectivo', preview: null }
+    },
+    openCargos (p) {
+      this.dlgCargos = { open: true, p, metodo: 'Efectivo', preview: null }
+    },
+    openTotal (p) {
+      this.dlgTotal = { open: true, p, metodo: 'Efectivo', preview: null }
+    },
+
+    async confirmMensualidad () {
+      const p = this.dlgMensualidad.p
+      try {
+        this.loading = true
+        await this.$axios.post(`prestamos/${p.id}/pagar-mensualidad`, { metodo: this.dlgMensualidad.metodo })
+        this.$q.notify({ type:'positive', message:'Mensualidad pagada' })
+        this.dlgMensualidad.open = false
+        this.getPrestamos()
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al pagar mensualidad')
+      } finally { this.loading = false }
+    },
+    async confirmCargos () {
+      const p = this.dlgCargos.p
+      try {
+        this.loading = true
+        await this.$axios.post(`prestamos/${p.id}/pagar-cargos`, { metodo: this.dlgCargos.metodo })
+        this.$q.notify({ type:'positive', message:'Cargos pagados' })
+        this.dlgCargos.open = false
+        this.getPrestamos()
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al pagar cargos')
+      } finally { this.loading = false }
+    },
+    async confirmTotal () {
+      const p = this.dlgTotal.p
+      try {
+        this.loading = true
+        await this.$axios.post(`prestamos/${p.id}/pagar-todo`, { metodo: this.dlgTotal.metodo })
+        this.$q.notify({ type:'positive', message:'Deuda liquidada' })
+        this.dlgTotal.open = false
+        this.getPrestamos()
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al pagar todo')
+      } finally { this.loading = false }
+    },
     resetAndFetch () {
       this.page = 1
       this.getPrestamos()
