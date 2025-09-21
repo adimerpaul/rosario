@@ -13,7 +13,7 @@
         .brand{ color:#FF0000; }
         .xs{font-size:9px} .sm{font-size:10px} .md{font-size:11px} .lg{font-size:12px} .xl{font-size:16px}
         .bold{font-weight:700} .center{text-align:center} .right{text-align:right}
-        .mt2{margin-top:2px} .mt4{margin-top:4px} .mt6{margin-top:6px}
+        .mt2{margin-top:2px} .mt4{margin:4px} .mt6{margin-top:6px}
         .w100{width:100%}
 
         /* Marco general */
@@ -29,21 +29,21 @@
 
         .pill-badge{               /* Bs. en pastilla */
             display:inline-block; min-width:110px; text-align:center;
-            border:2px solid #FF0000; border-radius:12px; padding:4px 8px;
+            border:2px solid #FF0000; border-radius:12px; padding:2px 2px;
             font-size:10px; line-height:1.1;
         }
         .pill-nro{
-            display:inline-block; margin-top:4px; border:2px solid #FF0000;
-            border-radius:10px; padding:2px 8px; font-size:10px;
+            display:inline-block; margin-top:4px; border:1.5px solid #FF0000;
+            border-radius:10px; padding:1px 4px; font-size:10px;
         }
 
         /* Grillas de cajas (muy compacto) */
         table.grid{ width:100%; border-collapse:separate; border-spacing:5px; }
-        .cell{ border:2px solid #FF0000; border-radius:12px; padding:6px 8px; position:relative; }
+        .cell{ border:1.5px solid #FF0000; border-radius:12px; padding:3px 4px; position:relative; }
 
         /* Etiqueta flotante (El Señor, Trabajo…) */
         .label-float{
-            position:absolute; top:-8px; left:12px; background:#fff; padding:0 6px;
+            position:absolute; top:-8px; left:12px; background:#fff; padding:0 4px;
             font-size:10px; color:#FF0000; font-weight:700; border-radius:8px;
         }
 
@@ -87,121 +87,122 @@
         $entrega = $orden->fecha_entrega ? \Carbon\Carbon::parse($orden->fecha_entrega)->format('d-m-Y') : '—';
     @endphp
 
-    <div class="sheet">
-        <!-- Encabezado -->
-        <table class="head">
-            <tr>
-                <td style="width:70px">
-                    @if(file_exists(public_path('images/logo.png')))
+{{--    for por 2--}}
+    @for($i=0; $i<2; $i++)
+        <div class="sheet"style="padding:10px; margin-bottom:12px">
+            <!-- Encabezado -->
+            <table class="head">
+                <tr>
+                    <td style="width:70px;vertical-align: top;">
                         <img class="logo" src="{{ public_path('images/logo.png') }}">
-                    @endif
-                </td>
-                <td class="center">
-                    <div class="brand bold lg">{{ $empresa['nombre'] ?? 'JOYERIA ROSARIO' }}</div>
-                    <div class="xs">{{ $empresa['direccion'] ?? 'Calle Junín entre La Plata y Soria — Frente a mercado' }}</div>
-                    <div class="xs">Cel: {{ $empresa['cel'] ?? '704-12345' }} — {{ strtoupper($empresa['sucursal'] ?? 'ORURO') }}</div>
-                    <div class="brand title mt4">ORDEN DE TRABAJO</div>
-                    <div class="sub">
-                        DIR. ADOLFO MIER, POTOSÍ Y PAGADOR <br>
-                        (LADO PALACE HOTEL) <br>
-                        CEL. 73800584 TELF. 52-55713<br>
-                        Oruro - Bolivia<br>
-                    </div>
-                </td>
-                <td class="right" style="width:150px">
-                    <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br><span class="xs" style="color:#666">{{ $hoy->format('d/m/Y') }}</span></div>
-                    <div class="pill-nro">Nro: {{ $orden->numero }}</div>
-                    @if(file_exists(public_path('images/rings.png')))
-                        <div class="mt4"><img class="rings" src="{{ public_path('images/rings.png') }}"></div>
-                    @endif
-                </td>
-            </tr>
-        </table>
+                    </td>
+                    <td class="center">
+                        <div class="brand bold lg">{{ $empresa['nombre'] ?? 'JOYERIA ROSARIO' }}</div>
+                        @if(file_exists(public_path('images/rings.png')))
+                            <div class="mt4"><img class="rings" src="{{ public_path('images/rings.png') }}"></div>
+                        @endif
+                        <div class="xs">{{ $empresa['direccion'] ?? 'Calle Junín entre La Plata y Soria — Frente a mercado' }}</div>
+                        <div class="xs">Cel: {{ $empresa['cel'] ?? '704-12345' }} — {{ strtoupper($empresa['sucursal'] ?? 'ORURO') }}</div>
+                        <div class="brand title mt4">ORDEN DE TRABAJO</div>
+                        <div class="sub">
+                            DIR. ADOLFO MIER, POTOSÍ Y PAGADOR <br>
+                            (LADO PALACE HOTEL) <br>
+                            CEL. 73800584 TELF. 52-55713<br>
+                            Oruro - Bolivia<br>
+                        </div>
+                    </td>
+                    <td class="right" style="width:150px;vertical-align: top;">
+                        <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br><span class="xs" style="color:#666">{{ $hoy->format('d/m/Y') }}</span></div>
+                        <div class="pill-nro">Nro: {{ $orden->numero }}</div>
+                    </td>
+                </tr>
+            </table>
 
-        <!-- N° + Fecha (cajitas) y Cliente -->
-        <table class="grid mt6">
-            <tr>
-                <td class="cell" style="width:50%">
-                    <span class="label-float">N° y Fecha</span>
-                    <div class="md"><b>N°:</b> {{ $orden->numero }}</div>
-                    <div class="date-line">
-                        <span class="sm bold">Día</span> <span class="date-box">{{ $dia }}</span>
-                        <span class="sm bold">Mes</span> <span class="date-box">{{ $mes }}</span>
-                        <span class="sm bold">Año</span> <span class="date-box">{{ $ano }}</span>
-                    </div>
-                </td>
-                <td class="cell" style="width:50%">
-                    <span class="label-float">El Señor:</span>
-                    <div class="md" style="margin-top:2px">{{ mb_strtoupper($orden->cliente->name ?? 'N/A') }}</div>
-                </td>
-            </tr>
-        </table>
+            <!-- N° + Fecha (cajitas) y Cliente -->
+            <table class="grid mt6">
+                <tr>
+                    <td class="cell" style="width:50%">
+                        <span class="label-float">N° y Fecha</span>
+                        <div class="md"><b>N°:</b> {{ $orden->numero }}</div>
+                        <div class="date-line">
+                            <span class="sm bold">Día</span> <span class="date-box">{{ $dia }}</span>
+                            <span class="sm bold">Mes</span> <span class="date-box">{{ $mes }}</span>
+                            <span class="sm bold">Año</span> <span class="date-box">{{ $ano }}</span>
+                        </div>
+                    </td>
+                    <td class="cell" style="width:50%">
+                        <span class="label-float">El Señor:</span>
+                        <div class="md" style="margin-top:2px">{{ mb_strtoupper($orden->cliente->name ?? 'N/A') }}</div>
+                    </td>
+                </tr>
+            </table>
 
-        <!-- Trabajo de Joya -->
-        <div class="cell">
-            <span class="label-float">Trabajo de Joya:</span>
-            <div class="md" style="margin-top:2px">{{ $orden->detalle }}</div>
-        </div>
-
-        <!-- Por / A cuenta / Saldo -->
-{{--        <div class="resume mt6">--}}
-{{--            <div class="item">Por Bs. {{ number_format($orden->costo_total,2) }}</div>--}}
-{{--            <div class="item">A cuenta: {{ number_format($orden->adelanto,2) }}</div>--}}
-{{--            <div class="item">Saldo: {{ number_format($orden->saldo,2) }}</div>--}}
-{{--        </div>--}}
-
-        <!-- Montos + Estado -->
-        <table class="grid mt6">
-            <tr>
-                <td class="cell" style="width:50%">
-                    <table class="kv">
-                        <tr><td class="k sm">Peso fin. (gr)</td><td class="v sm">{{ number_format($orden->peso,3) }}</td></tr>
-{{--                        <tr><td class="k sm">Precio Oro</td><td class="v sm">{{ number_format($precioOro,2) }}</td></tr>--}}
-                        <tr><td class="k sm">Costo Total</td><td class="v sm">{{ number_format($orden->costo_total,2) }}</td></tr>
-                    </table>
-                </td>
-                <td class="cell" style="width:50%">
-                    <table class="kv">
-                        <tr><td class="k sm">A cuenta</td><td class="v sm">{{ number_format($orden->adelanto,2) }}</td></tr>
-                        <tr><td class="k sm">Saldo</td><td class="v sm">{{ number_format($orden->saldo,2) }}</td></tr>
-{{--                        <tr>--}}
-{{--                            <td class="k sm">Estado</td>--}}
-{{--                            <td class="v sm"><span class="chip {{ $chip }}">{{ $estado }}</span></td>--}}
-{{--                        </tr>--}}
-                    </table>
-                </td>
-            </tr>
-        </table>
-
-        <!-- Fecha de Entrega -->
-        <div class="cell mt6">
-            <span class="label-float">Fecha de Entrega:</span>
-            <span class="md bold" style="margin-left:4px">{{ $entrega }}</span>
-        </div>
-
-        <!-- Nota -->
-        <div class="cell mt6">
-            <span class="label-float">NOTA</span>
-            <div class="xs" style="margin-top:2px">
-                {{ $orden->nota ?: 'Ningún trabajo será entregado sin esta orden. Pasado los 90 días de aviso no se hace responsable.' }}
+            <!-- Trabajo de Joya -->
+            <div class="cell">
+                <span class="label-float">Trabajo de Joya:</span>
+                <div class="md" style="margin-top:2px">{{ $orden->detalle }}</div>
             </div>
-        </div>
 
-        <!-- Firmas compactas -->
-        <div class="dot"></div>
-        <table class="w100" style="border-collapse:collapse">
-            <tr>
-                <td class="sign">
-                    <div class="sign-line"></div>
-                    <div class="xs">Firma Cliente</div>
-                </td>
-                <td class="sign" style="text-align:right">
-                    <div class="sign-line"></div>
-                    <div class="xs" style="text-align: center">Firma Joyería</div>
-                </td>
-            </tr>
-        </table>
-    </div>
+            <div class="cell mt6">
+                <span class="label-float">Montos</span>
+                <table class="grid mt6">
+                    <tr>
+                        <td class="label-float">Costo Total</td><td class="v sm">{{ number_format($orden->costo_total,2) }}</td>
+                        <td class="label-float">A cuenta</td><td class="v sm">{{ number_format($orden->adelanto,2) }}</td>
+                        <td class="label-float">Saldo</td><td class="v sm">{{ number_format($orden->saldo,2) }}</td>
+                    </tr>
+                    {{--                <tr>--}}
+                    {{--                    <td class="cell" style="width:50%">--}}
+                    {{--                        <table class="kv">--}}
+                    {{--                            <tr><td class="k sm">Peso fin. (gr)</td><td class="v sm">{{ number_format($orden->peso,3) }}</td></tr>--}}
+                    {{--                            --}}{{--                        <tr><td class="k sm">Precio Oro</td><td class="v sm">{{ number_format($precioOro,2) }}</td></tr>--}}
+                    {{--                            <tr><td class="k sm">Costo Total</td><td class="v sm">{{ number_format($orden->costo_total,2) }}</td></tr>--}}
+                    {{--                        </table>--}}
+                    {{--                    </td>--}}
+                    {{--                    <td class="cell" style="width:50%">--}}
+                    {{--                        <table class="kv">--}}
+                    {{--                            <tr><td class="k sm">A cuenta</td><td class="v sm">{{ number_format($orden->adelanto,2) }}</td></tr>--}}
+                    {{--                            <tr><td class="k sm">Saldo</td><td class="v sm">{{ number_format($orden->saldo,2) }}</td></tr>--}}
+                    {{--                            --}}{{--                        <tr>--}}
+                    {{--                            --}}{{--                            <td class="k sm">Estado</td>--}}
+                    {{--                            --}}{{--                            <td class="v sm"><span class="chip {{ $chip }}">{{ $estado }}</span></td>--}}
+                    {{--                            --}}{{--                        </tr>--}}
+                    {{--                        </table>--}}
+                    {{--                    </td>--}}
+                    {{--                </tr>--}}
+                </table>
+            </div>
+            <!-- Montos + Estado -->
+            <!-- Fecha de Entrega -->
+            <div class="cell mt6">
+                <span class="label-float">Fecha de Entrega:</span>
+                <span class="md bold" style="margin-left:4px">{{ $entrega }}</span>
+            </div>
+
+            <!-- Nota -->
+            <div class="cell mt6">
+                <span class="label-float">NOTA</span>
+                <div class="xs" style="margin-top:2px">
+                    {{ $orden->nota ?: 'Ningun trabajo será entregado sin esta orden. Pasado los 30 dias la casa no se hace responsable' }}
+                </div>
+            </div>
+
+            <!-- Firmas compactas -->
+            <div class="dot"></div>
+            <table class="w100" style="border-collapse:collapse">
+                <tr>
+                    <td class="sign">
+                        <div class="sign-line"></div>
+                        <div class="xs">Firma Cliente</div>
+                    </td>
+                    <td class="sign" style="text-align:right">
+                        <div class="sign-line"></div>
+                        <div class="xs" style="text-align: center">Firma Joyería</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    @endfor
 </div>
 </body>
 </html>
