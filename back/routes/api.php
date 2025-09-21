@@ -82,5 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('prestamos/{prestamo}/pagar-todo', [PrestamoController::class, 'pagarTodo']);
 
 });
-Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf'])->name('ordenes.pdf');
-Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia'])->name('ordenes.garantia');
+Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf']);
+Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia']);
+
+//prestamod pdf
+
+Route::get('/prestamos/{prestamo}/pdf', [PrestamoController::class, 'pdf']);

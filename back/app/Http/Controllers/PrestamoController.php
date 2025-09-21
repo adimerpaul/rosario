@@ -5,12 +5,97 @@ namespace App\Http\Controllers;
 use App\Models\Prestamo;
 use App\Models\PrestamoPago;
 use App\Models\Cog;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
 class PrestamoController extends Controller
 {
+    public function pdf(Prestamo $prestamo)
+    {
+        // Empresa (ajusta a tu fuente real)
+        $empresa = [
+            'nombre'    => 'Joyería Rosario',
+            'direccion' => 'Calle Junín entre La Plata y Soria — Frente a mercado',
+            'ciudad'    => 'Oruro',
+            'pais'      => 'Bolivia',
+            'cel'       => '704-12345',
+        ];
+
+        // Cálculos base (reusa tu helper interno)
+        $base = $this->calcBase($prestamo);
+
+        // Fechas
+        $fc = $prestamo->fecha_creacion ? Carbon::parse($prestamo->fecha_creacion) : now();
+        // Plazo fijo 30 días (ajusta si quieres variable)
+        $plazoDias   = 30;
+        $vencimiento = $prestamo->fecha_limite
+            ? Carbon::parse($prestamo->fecha_limite)
+            : (clone $fc)->addDays($plazoDias);
+
+        // Moneda (elige tu etiqueta de visualización)
+        // En tu imagen usas "SUS" (dólares). Puedes parametrizar si manejas múltiples monedas.
+        $monedaCorta  = 'SUS';
+        $monedaLarga  = 'Dólares';
+
+        // Montos mostrados en el contrato
+        $valorBienes     = (float) ($prestamo->valor_total ?? 0);     // 8) Valor acordado de los bienes
+        $capitalSolic    = (float) ($prestamo->valor_prestado ?? 0);  // 9) Capital solicitado
+        $interesMensual  = (float) ($prestamo->interes ?? 0);         // % mensual
+        $almacenMensual  = (float) ($prestamo->almacen ?? 0);         // % mensual (conservación/almacén)
+        $cargoMensual    = round($capitalSolic * ($interesMensual + $almacenMensual) / 100, 2); // 12)
+
+        // Detalle de joyas / pesos (usa nombres como en la imagen)
+        $pesoTotalGr     = (float) ($prestamo->peso ?? 0);            // 13) en gramos (si tus kg, conviértelo)
+        $mermaGr         = (float) ($prestamo->merma ?? 0);           // 14)
+        $pesoOroGr       = max(0, $pesoTotalGr - $mermaGr);           // 15)
+
+        // Si en DB guardas kilos, descomenta esta conversión
+        // $pesoTotalGr = round(($prestamo->peso ?? 0) * 1000, 3);
+        // $mermaGr     = round(($prestamo->merma ?? 0) * 1000, 3);
+        // $pesoOroGr   = max(0, round($pesoTotalGr - $mermaGr, 3));
+//        $dolar =6.96;
+        $dolar = Cog::find(4)->value ?? 6.96;
+        $data = [
+            'empresa'        => $empresa,
+
+            // Cabecera
+            'numero'         => $prestamo->numero,
+            'lugar'          => $empresa['ciudad'] ?? 'Oruro',
+            'fecha_creacion' => $fc,
+            'plazoDias'      => $plazoDias,
+            'vencimiento'    => $vencimiento,
+            'monedaLarga'    => $monedaLarga,
+            'monedaCorta'    => $monedaCorta,
+
+            // Cliente
+            'cliente'        => $prestamo->cliente,    // ->name, ->ci si existe en tu modelo Client
+            'cel'            => $prestamo->celular,
+            // Montos
+            'valorBienes'    => $valorBienes/$dolar,
+            'capitalSolic'   => $capitalSolic/$dolar,
+            'interesMensual' => $interesMensual,
+            'almacenMensual' => $almacenMensual,
+            'cargoMensual'   => $cargoMensual/$dolar,
+
+            // Detalle / pesos
+            'detalle'        => $prestamo->detalle,
+            'pesoTotalGr'    => $pesoTotalGr,
+            'mermaGr'        => $mermaGr,
+            'pesoOroGr'      => $pesoOroGr,
+
+            // Para mostrar como en la imagen (interés total del periodo de 30 días)
+            'interesMonto30' => round($capitalSolic * $interesMensual / 100, 2),
+            'almacenMonto30' => round($capitalSolic * $almacenMensual / 100, 2),
+        ];
+
+        $pdf = PDF::loadView('pdf.prestamo', $data)
+            ->setPaper('letter', 'portrait'); // o A4
+
+        $file = 'prestamo-'.($prestamo->numero ?: $prestamo->id).'.pdf';
+        return $pdf->stream($file);
+    }
     private function calcBase(Prestamo $p): array
     {
         $capital     = (float) ($p->valor_prestado ?? 0);
