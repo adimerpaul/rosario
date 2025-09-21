@@ -88,3 +88,5 @@ Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia']);
 //prestamod pdf
 
 Route::get('/prestamos/{prestamo}/pdf', [PrestamoController::class, 'pdf']);
+Route::get('/prestamos/{prestamo}/cambio/pdf', [\App\Http\Controllers\PrestamoController::class, 'comprobanteCambioPrestamoPdf']);
+

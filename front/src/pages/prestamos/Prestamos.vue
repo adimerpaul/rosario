@@ -169,6 +169,14 @@
                           <q-item-section avatar><q-icon name="money_off"/></q-item-section>
                           <q-item-section>Pagar todo</q-item-section>
                         </q-item>
+                        <q-item clickable v-ripple @click="imprimir(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="print"/></q-item-section>
+                          <q-item-section>Imprimir Contrato</q-item-section>
+                        </q-item>
+                        <q-item clickable v-ripple @click="imprimirCambiodeMoneda(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="picture_as_pdf"/></q-item-section>
+                          <q-item-section>Imprimir Cambio de Moneda</q-item-section>
+                        </q-item>
                       </q-list>
                     </q-btn-dropdown>
 
@@ -406,7 +414,14 @@ export default {
     openTotal (p) {
       this.dlgTotal = { open: true, p, metodo: 'Efectivo', preview: null }
     },
-
+    imprimir(p) {
+      const url = this.$axios.defaults.baseURL + `/prestamos/${p.id}/pdf`
+      window.open(url, '_blank')
+    },
+    imprimirCambiodeMoneda(p) {
+      const url = this.$axios.defaults.baseURL + `/prestamos/${p.id}/cambio/pdf`
+      window.open(url, '_blank')
+    },
     async confirmMensualidad () {
       const p = this.dlgMensualidad.p
       try {

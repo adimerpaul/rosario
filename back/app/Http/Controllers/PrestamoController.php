@@ -12,6 +12,108 @@ use Illuminate\Support\Carbon;
 
 class PrestamoController extends Controller
 {
+
+    public function comprobanteCambioPrestamoPdf(Prestamo $prestamo)
+    {
+        // Identidad de la agencia (fijo)
+        $agencia   = 'JOYERÍA ROSARIO';
+        $direccion = 'CALLE JUNÍN ENTRE LA PLATA Y SORIA - FRENTE A MERCADO';
+
+        // Usuario (cajero) y cliente desde la relación del préstamo
+        $usuario = strtoupper($prestamo->user->username ?? $prestamo->user->name ?? 'USUARIO');
+        $cuint   = '—'; // si no usas este dato
+        $cliente = strtoupper($prestamo->cliente->name ?? '—');
+
+        // Fecha/hora (uso la fecha de creación del préstamo si existe)
+        $fechaAt = $prestamo->fecha_creacion ? Carbon::parse($prestamo->fecha_creacion) : now();
+
+        // Tipo de cambio desde COG id=4
+        $tc = optional(\App\Models\Cog::find(4))->value ?? 6.96;
+        if ($tc <= 0) { $tc = 6.96; }
+
+        // ===== Montos =====
+        // Suposición: valor_prestado está en Bs
+        $importeRecibidoBs   = (float) ($prestamo->valor_prestado ?? 0);      // Bs que recibes para cambiar
+        $importeEntregadoUsd = $tc > 0 ? round($importeRecibidoBs / $tc, 2) : 0.0; // $us entregados
+        $son = $this->montoUsdEnLetras($importeEntregadoUsd); // "CIENTO ... 94/100 DÓLARES"
+
+        // Doc correlativo / referencia (sin request)
+        $docSerie    = 'PR'; // o lo que uses como serie
+        $docNro      = str_pad((string)$prestamo->id, 8, '0', STR_PAD_LEFT);
+        $refPrestamo = $prestamo->numero ?? ('PR-'.$prestamo->id);
+
+        $data = [
+            'agencia'      => $agencia,
+            'direccion'    => $direccion,
+            'usuario'      => $usuario,
+            'cuint'        => $cuint,
+            'cliente'      => $cliente,
+            'fechaAt'      => $fechaAt,
+            'montoBs'      => $importeRecibidoBs,
+            'montoUsd'     => $importeEntregadoUsd,
+            'son'          => $son,
+            'concepto'     => 'Cambio Dólares (asociado a préstamo '.$refPrestamo.')',
+            'docSerie'     => $docSerie,
+            'docNro'       => $docNro,
+            'refPrestamo'  => $refPrestamo,
+            'tipoCambio'   => $tc,
+        ];
+
+        $pdf = Pdf::loadView('pdf.cambio', $data)->setPaper('letter','portrait');
+        return $pdf->stream('comprobante-cambio-'.$refPrestamo.'.pdf');
+    }
+
+
+    /** "CIENTO CATORCE 94/100 DÓLARES" */
+    private function montoUsdEnLetras(float $monto): string
+    {
+        $entero = (int) floor($monto + 0.00001);
+        $cent   = (int) round(($monto - $entero) * 100);
+        $letras = $this->numeroEnLetrasEs($entero);
+        $cent2  = str_pad((string)$cent, 2, '0', STR_PAD_LEFT);
+        return mb_strtoupper(trim("$letras $cent2/100 Dólares"));
+    }
+
+    /** español simple 0–999,999,999 */
+    private function numeroEnLetrasEs(int $n): string
+    {
+        if ($n === 0) return 'CERO';
+        $u=['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve','veinte'];
+        $d=['','diez','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+        $c=['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
+
+        $t = function($n) use($u,$d){
+            if($n<=20) return $u[$n];
+            $dec=intdiv($n,10); $uni=$n%10;
+            if($dec==2 && $uni>0) return 'veinti'.$u[$uni];
+            return $d[$dec].($uni?' y '.$u[$uni]:'');
+        };
+        $h = function($n) use($c,$t){
+            if($n==100) return 'cien';
+            $cen=intdiv($n,100); $rest=$n%100;
+            return ($cen?$c[$cen].($rest?' ':''):'').($rest?$t($rest):'');
+        };
+
+        $millones = intdiv($n,1000000);
+        $restoM   = $n%1000000;
+        $miles    = intdiv($restoM,1000);
+        $resto    = $restoM%1000;
+
+        $parts=[];
+        if($millones){
+            $parts[] = ($millones==1?'un millón': $h($millones).' millones');
+        }
+        if($miles){
+            $parts[] = ($miles==1?'mil': $h($miles).' mil');
+        }
+        if($resto){
+            $parts[] = $h($resto);
+        }
+        $txt = implode(' ', $parts);
+        // UNO -> UN cuando no es final (dejamos UNO si es número exacto 1)
+        $txt = preg_replace('/\buno\b(?=\s+(mil|millones))/u','un',$txt);
+        return mb_strtoupper($txt);
+    }
     public function pdf(Prestamo $prestamo)
     {
         // Empresa (ajusta a tu fuente real)
