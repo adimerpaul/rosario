@@ -15,6 +15,10 @@ class DailyCashController extends Controller
         // Param opcional para filtrar por usuario (username)
         $username = $request->input('usuario', null);
         $user = $username ? User::where('username', $username)->first() : null;
+        $usuario = $request->user();
+        if ($usuario->role !== 'Administrador') {
+            $user = $usuario;
+        }
 
         // 1) Caja del día (no se filtra por usuario)
         $daily = DailyCash::firstOrCreate(
@@ -28,9 +32,10 @@ class DailyCashController extends Controller
                 'date'           => $date,
                 'daily_cash'     => $daily,
                 'ingresos'       => [
-                    'ordenes' => ['total' => 0.0, 'items' => collect()],
-                    'pagos_ordenes' => ['total' => 0.0, 'items' => collect()],
+                    'ordenes'         => ['total' => 0.0, 'items' => collect()],
+                    'pagos_ordenes'   => ['total' => 0.0, 'items' => collect()],
                     'pagos_prestamos' => ['total' => 0.0, 'items' => collect()],
+                    'otros'           => ['total' => 0.0, 'items' => collect()],
                 ],
                 'egresos'        => [
                     'prestamos' => ['total' => 0.0, 'items' => collect()],
@@ -110,9 +115,32 @@ class DailyCashController extends Controller
         })->values();
         $totalPagosPrest = (float) $pagoPrestItems->sum('monto');
 
+        // 4.b) Ingresos: Otros (manuales)
+        $ingresosOtros = \App\Models\Ingreso::with(['user'])
+            ->whereDate('fecha', $date)
+            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->orderBy('created_at')
+            ->get();
+
+        $ingresoOtrosItems = $ingresosOtros->map(function($i){
+            return [
+                'id'          => $i->id,
+                'hora'        => optional($i->created_at)->format('H:i') ?: '—',
+                'descripcion' => $i->descripcion,
+                'monto'       => (float) $i->monto,
+                'usuario'     => $i->user->name ?? 'N/A',
+                'metodo'      => $i->metodo ?? 'EFECTIVO',
+                'estado'      => $i->estado,
+            ];
+        })->values();
+
+        $totalIngresosOtros = (float) $ingresoOtrosItems
+            ->filter(fn($x) => ($x['estado'] ?? 'Activo') === 'Activo')
+            ->sum('monto');
+
         /* ===================== EGRESOS ===================== */
 
-        // 5) Egresos por préstamos otorgados (salida de dinero el día de creación)
+        // 5) Egresos por préstamos otorgados
         $prestamos = \App\Models\Prestamo::with(['cliente','user'])
             ->whereDate('fecha_creacion', $date)
             ->when($user, fn($q) => $q->where('user_id', $user->id))
@@ -126,9 +154,8 @@ class DailyCashController extends Controller
                 'descripcion' => "Préstamo {$pr->numero} — ".($pr->cliente->name ?? 'N/A'),
                 'monto'       => (float) ($pr->valor_prestado ?? 0),
                 'usuario'     => $pr->user->name ?? 'N/A',
-                // Si no tienes columna de método en préstamos, caerá en 'EFECTIVO'
                 'metodo'      => $pr->metodo_entrega ?? $pr->metodo ?? 'EFECTIVO',
-                'estado'      => 'Activo', // préstamos otorgados del día siempre cuentan
+                'estado'      => 'Activo',
             ];
         })->values();
         $totalEgresosPrest = (float) $egresoItems->sum('monto');
@@ -152,7 +179,6 @@ class DailyCashController extends Controller
             ];
         })->values();
 
-        // Solo suman los Activos
         $totalEgresosOtros = (float) $egresoOtrosItems
             ->filter(fn($x) => ($x['estado'] ?? 'Activo') === 'Activo')
             ->sum('monto');
@@ -160,8 +186,8 @@ class DailyCashController extends Controller
         /* ===================== TOTALES ===================== */
 
         // Totales generales
-        $ingresosSinCaja = $totalOrdenes + $totalPagosOrdenes + $totalPagosPrest;
-        $totalIngresos   = (float) $daily->opening_amount + $ingresosSinCaja; // compat
+        $ingresosSinCaja = $totalOrdenes + $totalPagosOrdenes + $totalPagosPrest + $totalIngresosOtros;
+        $totalIngresos   = (float) $daily->opening_amount + $ingresosSinCaja;
         $totalEgresos    = $totalEgresosPrest + $totalEgresosOtros;
         $totalCaja       = (float) $daily->opening_amount + $ingresosSinCaja - $totalEgresos;
 
@@ -173,8 +199,14 @@ class DailyCashController extends Controller
         };
 
         $ingresosMetodo = [
-            'EFECTIVO' => $sumMetodo($pagoOrdenItems, 'EFECTIVO') + $sumMetodo($pagoPrestItems, 'EFECTIVO'),
-            'QR'       => $sumMetodo($pagoOrdenItems, 'QR')       + $sumMetodo($pagoPrestItems, 'QR'),
+            'EFECTIVO' =>
+                $sumMetodo($pagoOrdenItems, 'EFECTIVO') +
+                $sumMetodo($pagoPrestItems, 'EFECTIVO') +
+                $sumMetodo($ingresoOtrosItems->all(), 'EFECTIVO'),
+            'QR'       =>
+                $sumMetodo($pagoOrdenItems, 'QR') +
+                $sumMetodo($pagoPrestItems, 'QR') +
+                $sumMetodo($ingresoOtrosItems->all(), 'QR'),
         ];
         $egresosMetodo = [
             'EFECTIVO' => $sumMetodo($egresoItems, 'EFECTIVO') + $sumMetodo($egresoOtrosItems->all(), 'EFECTIVO'),
@@ -201,6 +233,10 @@ class DailyCashController extends Controller
                 'pagos_prestamos' => [
                     'total' => round($totalPagosPrest, 2),
                     'items' => $pagoPrestItems,
+                ],
+                'otros' => [
+                    'total' => round($totalIngresosOtros, 2),
+                    'items' => $ingresoOtrosItems,
                 ],
             ],
 

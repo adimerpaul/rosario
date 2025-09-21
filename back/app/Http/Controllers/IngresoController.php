@@ -2,24 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Egreso;
+use App\Models\Ingreso;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
-class EgresoController extends Controller
+class IngresoController extends Controller
 {
-    // Lista por fecha (para el Libro Diario)
+    // Lista por fecha (para Libro Diario)
     public function index(Request $request)
     {
         $date = $request->query('date'); // YYYY-MM-DD
-        $q = Egreso::with(['user:id,name'])
+        $q = Ingreso::with(['user:id,name'])
             ->when($date, fn($qq) => $qq->whereDate('fecha', $date))
             ->orderBy('created_at', 'asc');
 
         return response()->json($q->get());
     }
 
-    // Crear egreso
+    // Crear ingreso
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -32,27 +31,27 @@ class EgresoController extends Controller
 
         $data['user_id'] = optional($request->user())->id;
 
-        $egreso = Egreso::create($data);
-        return response()->json($egreso->load('user:id,name'), 201);
+        $ingreso = Ingreso::create($data);
+        return response()->json($ingreso->load('user:id,name'), 201);
     }
 
     // Anular (solo admin)
-    public function anular(Request $request, Egreso $egreso)
+    public function anular(Request $request, Ingreso $ingreso)
     {
         $user = $request->user();
         if (!$user || ($user->role ?? null) !== 'Administrador') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
-        if ($egreso->estado === 'Anulado') {
-            return response()->json(['message' => 'El egreso ya está anulado'], 422);
+        if ($ingreso->estado === 'Anulado') {
+            return response()->json(['message' => 'El ingreso ya está anulado'], 422);
         }
 
-        $egreso->update([
+        $ingreso->update([
             'estado'      => 'Anulado',
             'anulado_por' => $user->id,
             'anulado_at'  => now(),
         ]);
 
-        return response()->json($egreso->fresh()->load('user:id,name'));
+        return response()->json($ingreso->fresh()->load('user:id,name'));
     }
 }
