@@ -94,6 +94,14 @@
             <q-chip :style="{ backgroundColor: getEstadoColor(form.estado) }" text-color="white" class="q-mt-sm">
               {{ form.estado }}
             </q-chip>
+<!--            btn cambiar estado a entregadp-->
+            <q-btn
+              v-if="isAdmin && form.estado !== 'Entregado'"
+              flat dense icon="check_circle" color="green" label="Marcar como Entregado"
+              class="q-ml-sm"
+              no-caps
+              @click="form.estado='Entregado'; save()"
+            />
           </div>
         </div>
       </q-card-section>

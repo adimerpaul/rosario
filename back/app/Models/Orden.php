@@ -47,13 +47,13 @@ class Orden extends Model{
 
         $this->saldo = max(0, $costo - $adelanto);
 
-        if ($this->estado !== 'Cancelada') {
-            if ($this->saldo <= 0) {
-                $this->estado = 'Entregado';
-            } elseif ($this->estado === 'Entregado') {
-                $this->estado = 'Pendiente';
-            }
-        }
+//        if ($this->estado !== 'Cancelada') {
+//            if ($this->saldo <= 0) {
+//                $this->estado = 'Entregado';
+//            } elseif ($this->estado === 'Entregado') {
+//                $this->estado = 'Pendiente';
+//            }
+//        }
     }
     protected static function booted()
     {
