@@ -70,17 +70,17 @@
           >
             <q-item-section avatar>
               <q-icon :name="$route.path === link.link ? 'o_' + link.icon : link.icon"
-                      :class="$route.path === link.link ? 'text-black' : 'text-grey'" />
+                      :class="$route.path === link.link ? 'text-black' : 'text-white'" />
             </q-item-section>
             <q-item-section>
-              <q-item-label :class="$route.path === link.link ? 'text-black text-bold' : 'text-grey'">
+              <q-item-label :class="$route.path === link.link ? 'text-black text-bold' : 'text-white'">
                 {{ link.title }}
               </q-item-label>
             </q-item-section>
           </q-item>
         </template>
 
-        <q-item clickable class="text-grey" @click="logout" v-close-popup>
+        <q-item clickable class="text-white" @click="logout" v-close-popup>
           <q-item-section avatar>
             <q-icon name="logout" />
           </q-item-section>

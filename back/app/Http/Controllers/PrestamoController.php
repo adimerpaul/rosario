@@ -358,17 +358,12 @@ class PrestamoController extends Controller
 
     public function index(Request $request)
     {
-        $fi      = $request->query('fecha_inicio');
-        $ff      = $request->query('fecha_fin');
         $userId  = $request->query('user_id');
         $estado  = $request->query('estado', 'Todos');
         $search  = $request->query('search');
         $perPage = (int) $request->query('per_page', 12);
 
         $q = Prestamo::with(['cliente','user'])->orderBy('id', 'desc');
-
-//        if ($fi)     $q->whereDate('fecha_creacion', '>=', $fi);
-//        if ($ff)     $q->whereDate('fecha_creacion', '<=', $ff);
         if ($userId) $q->where('user_id', $userId);
         if ($estado && $estado !== 'Todos') $q->where('estado', $estado);
 

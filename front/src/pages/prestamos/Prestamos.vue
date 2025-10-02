@@ -123,7 +123,7 @@
                       </div>
                       <div class="col-6">
                         <div class="text-caption text-grey-7">Cargos estimados</div>
-                        <div class="text-weight-medium">{{ money(cargosEstimados(p)) }}</div>
+<!--                        <div class="text-weight-medium">{{ money(cargosEstimados(p)) }}</div>-->
                         <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>
                       </div>
                     </div>
@@ -480,22 +480,22 @@ export default {
           this.totalItems  = r.total || (r.data ? r.data.length : this.prestamos.length)
           this.from        = r.from || ((this.page - 1) * this.perPage + (this.totalItems ? 1 : 0))
           this.to          = r.to || Math.min(this.page * this.perPage, this.totalItems)
-          this.calcularResumen()
+          // this.calcularResumen()
         })
         .catch(e => {
           this.$alert?.error?.(e.response?.data?.message || 'Error al obtener préstamos')
         })
         .finally(() => { this.loading = false })
     },
-    calcularResumen () {
-      // Resume SOLO la página actual (coincide con lo que ves)
-      const sum = (arr, fn) => arr.reduce((s, x) => s + fn(x), 0)
-      const vp  = x => Number(x.valor_prestado || 0)
-      const ci  = x => this.cargosEstimados(x) // usamos la misma fórmula de estimación
-      this.resumen.prestado = sum(this.prestamos, vp)
-      this.resumen.cargos   = sum(this.prestamos, ci)
-      this.resumen.saldo    = sum(this.prestamos, x => Number(x.saldo || 0))
-    },
+    // calcularResumen () {
+    //   // Resume SOLO la página actual (coincide con lo que ves)
+    //   const sum = (arr, fn) => arr.reduce((s, x) => s + fn(x), 0)
+    //   const vp  = x => Number(x.valor_prestado || 0)
+    //   const ci  = x => this.cargosEstimados(x) // usamos la misma fórmula de estimación
+    //   this.resumen.prestado = sum(this.prestamos, vp)
+    //   this.resumen.cargos   = sum(this.prestamos, ci)
+    //   this.resumen.saldo    = sum(this.prestamos, x => Number(x.saldo || 0))
+    // },
 
     /* ========== UI helpers ========== */
     fmtFecha (f) { return f ? moment(f).format('YYYY-MM-DD') : '—' },
@@ -539,9 +539,9 @@ export default {
       const vp = Number(p.valor_prestado || 0)
       return +(vp * this.tasaDiaria(p)).toFixed(2)
     },
-    cargosEstimados (p) {
-      return +(this.cargoDiario(p) * this.dias(p)).toFixed(2)
-    }
+    // cargosEstimados (p) {
+    //   return +(this.cargoDiario(p) * this.dias(p)).toFixed(2)
+    // }
   }
 }
 </script>
