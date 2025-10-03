@@ -87,6 +87,7 @@ class Prestamo extends Model
         }
 //        error_log('fechaBase: ' . $fechaBase->toDateString());
         $dias = $fechaBase->diffInDays(today());
+        $dias ++;
 //        error_log('dias: ' . $dias);
         return round($dias, 0);
     }

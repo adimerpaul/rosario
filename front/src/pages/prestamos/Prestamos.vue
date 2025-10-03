@@ -101,7 +101,8 @@
                             {{ tasaMensual(p) }}%/mes
                           </q-chip>
                           <q-chip dense outline color="indigo" class="q-ml-xs">
-                            {{ money(tasaDiaria(p)*100) }}%/día
+<!--                            {{ money(tasaDiaria(p)*100) }}%/día-->
+                            {{ money(cargoDiario(p)) }} /día
                           </q-chip>
                         </div>
                       </div>
@@ -122,16 +123,19 @@
                         <div class="text-weight-medium">{{ money(p.valor_prestado) }}</div>
                       </div>
                       <div class="col-6">
-                        <div class="text-caption text-grey-7">Cargos estimados</div>
+                        <div class="text-caption text-grey-7">Cargo mensual</div>
 <!--                        <div class="text-weight-medium">{{ money(cargosEstimados(p)) }}</div>-->
+<!--                        <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>-->
+                        <div class="text-weight-medium">{{ p.valor_prestado * tasaMensual(p) / 100 | money }}</div>
                         <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>
                       </div>
                     </div>
 
                     <div class="row q-mt-sm">
                       <div class="col-6">
-                        <div class="text-caption text-grey-7">Cargo diario</div>
-                        <div class="text-weight-medium">{{ money(cargoDiario(p)) }}</div>
+                        <div class="text-caption text-grey-7">Intereses</div>
+<!--                        <div class="text-weight-medium">{{ money(cargoDiario(p)) }}</div>-->
+                        <div class="text-weight-medium">{{ p.saldo - p.valor_prestado | money }}</div>
                       </div>
                       <div class="col-6">
                         <div class="text-caption text-grey-7">Saldo HOY</div>
@@ -151,7 +155,10 @@
                   <q-separator />
 
                   <q-card-actions align="between" class="q-pa-sm">
-                    <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/prestamos/editar/' + p.id)" no-caps />
+
+                    <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/prestamos/editar/' + p.id)" no-caps
+                            v-if="$store.user.role === 'Administrador' || p.estado === 'Pendiente'"
+                    />
 
                     <q-btn-dropdown dense no-caps color="primary" label="Más">
                       <q-list>
@@ -308,11 +315,20 @@
         <q-card-section>
           <div class="text-caption text-grey-7">Préstamo #{{ dlgTotal.p?.numero }}</div>
           <div class="row q-col-gutter-md q-mt-xs">
-            <div class="col-6">
+            <div class="col-2">
+              <div class="text-caption">
+                <q-toggle v-if="dlgTotal.p?.dias_transcurridos< 7"
+                          v-model="dlgTotal.p.omitir_cargos"
+                          label="Incluir cargos"
+                          left-label
+                          dense/>
+              </div>
+            </div>
+            <div class="col-5">
               <div class="text-caption">Saldo total a liquidar</div>
               <div class="text-h6">{{ money(saldoPreview) }}</div>
             </div>
-            <div class="col-6">
+            <div class="col-5">
               <q-select dense outlined v-model="dlgTotal.metodo" :options="metodoOptions" label="Método de pago"/>
             </div>
             <div class="col-12 text-grey-7 text-caption">
@@ -389,6 +405,10 @@ export default {
     saldoPreview () {
       const p = this._dlgAny()?.p
       if (!p) return 0
+      if (p.omitir_cargos) {
+        const capital = Number(p.valor_prestado || 0)
+        return Math.min(capital, Number(p.saldo || 0))
+      }
       return Number(p.saldo || 0)
     },
     montoMensualidadPreview () {
@@ -416,6 +436,7 @@ export default {
       this.dlgCargos = { open: true, p, metodo: 'Efectivo', preview: null }
     },
     openTotal (p) {
+      p.omitir_cargos = false // reset
       this.dlgTotal = { open: true, p, metodo: 'Efectivo', preview: null }
     },
     imprimir(p) {
@@ -442,7 +463,10 @@ export default {
       const p = this.dlgCargos.p
       try {
         this.loading = true
-        await this.$axios.post(`prestamos/${p.id}/pagar-cargos`, { metodo: this.dlgCargos.metodo })
+        await this.$axios.post(`prestamos/${p.id}/pagar-cargos`, {
+          metodo: this.dlgCargos.metodo,
+          monto: this.montoCargosPreview
+        })
         this.$q.notify({ type:'positive', message:'Cargos pagados' })
         this.dlgCargos.open = false
         this.getPrestamos()
@@ -454,7 +478,10 @@ export default {
       const p = this.dlgTotal.p
       try {
         this.loading = true
-        await this.$axios.post(`prestamos/${p.id}/pagar-todo`, { metodo: this.dlgTotal.metodo })
+        await this.$axios.post(`prestamos/${p.id}/pagar-todo`, {
+          metodo: this.dlgTotal.metodo,
+          monto: this.saldoPreview
+        })
         this.$q.notify({ type:'positive', message:'Deuda liquidada' })
         this.dlgTotal.open = false
         this.getPrestamos()

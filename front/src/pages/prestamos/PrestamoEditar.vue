@@ -343,6 +343,7 @@ export default {
           almacen:         this.prestamo.almacen,
         }
         const { data } = await this.$axios.put(`prestamos/${this.prestamo.id}`, payload)
+        this.$router.push('/prestamos')
         if (data.fecha_creacion) data.fecha_creacion = String(data.fecha_creacion).substring(0,10)
         if (data.fecha_limite)   data.fecha_limite   = String(data.fecha_limite).substring(0,10)
         this.prestamo = data
@@ -367,10 +368,11 @@ export default {
           tipo_pago: this.nuevoPago.tipo_pago,
           user_id: this.$store.user.id
         })
-        this.nuevoPago.monto = null
-        await this.cargarPagos()
-        await this.getPrestamo()
-        this.$alert.success('Pago registrado')
+        this.$router.push('/prestamos')
+        // this.nuevoPago.monto = null
+        // await this.cargarPagos()
+        // await this.getPrestamo()
+        // this.$alert.success('Pago registrado')
       } catch (e) {
         this.$alert.error(e.response?.data?.message || 'Error al registrar pago')
       } finally { this.loading = false }

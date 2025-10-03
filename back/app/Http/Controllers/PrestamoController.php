@@ -272,13 +272,14 @@ class PrestamoController extends Controller
     {
         $user   = $request->user();
         $metodo = (string) $request->input('metodo', 'Efectivo');
+        $monto = (float) $request->input('monto', 0);
 
-        return DB::transaction(function () use ($prestamo, $user, $metodo) {
-            $base = $this->calcBase($prestamo);
+        return DB::transaction(function () use ($prestamo, $user, $metodo, $monto) {
+//            $base = $this->calcBase($prestamo);
 
             // "Cargos pendientes" = (capital + cargos - pagado) - capital = cargos - pagado
-            $cargosPend = max(0, round($base['cargos'] - $base['pagado'], 2));
-            $monto      = min($cargosPend, $base['saldo']);
+//            $cargosPend = max(0, round($base['cargos'] - $base['pagado'], 2));
+//            $monto      = min($cargosPend, $base['saldo']);
 
             if ($monto <= 0) {
                 return response()->json(['message' => 'No hay cargos acumulados por pagar'], 422);
@@ -300,15 +301,23 @@ class PrestamoController extends Controller
     {
         $user   = $request->user();
         $metodo = (string) $request->input('metodo', 'Efectivo');
+        $monto = $request->input('monto', 0);
 
-        return DB::transaction(function () use ($prestamo, $user, $metodo) {
+        return DB::transaction(function () use ($prestamo, $user, $metodo, $monto) {
             $base = $this->calcBase($prestamo);
-            $monto = $base['saldo'];
+//            $monto = $base['saldo'];
 
             if ($monto <= 0) {
-                return response()->json(['message' => 'El préstamo ya está pagado'], 422);
+                $prestamo->estado = 'Pagado';
+                $prestamo->saldo  = 0;
+                $prestamo->save();
+                return response()->json(['message' => 'El préstamo ya está pagado'], 200);
             }
-
+            $montoPrestamo = (float) $prestamo->saldo;
+            if ($monto > $montoPrestamo) {
+                $this->crearPago($prestamo, $monto - $montoPrestamo, 'CARGOS', $metodo, $user->id);
+                $monto = $montoPrestamo;
+            }
             $this->crearPago($prestamo, $monto, 'TOTAL', $metodo, $user->id);
 
             // Marcar como pagado explícitamente
@@ -559,16 +568,16 @@ class PrestamoController extends Controller
                 'estado'      => 'Activo',
             ]);
 
-            $pagado = $prestamo->pagos()->where('estado','Activo')->sum('monto');
-
-            $vp = (float) $prestamo->valor_prestado;
-            $i  = (float) $prestamo->interes;  // %
-            $a  = (float) $prestamo->almacen;  // %
-            $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
-
-            $prestamo->saldo  = $deuda - $pagado;
-            if ($prestamo->saldo <= 0) $prestamo->estado = 'Pagado';
-            $prestamo->save();
+//            $pagado = $prestamo->pagos()->where('estado','Activo')->sum('monto');
+//
+//            $vp = (float) $prestamo->valor_prestado;
+//            $i  = (float) $prestamo->interes;  // %
+//            $a  = (float) $prestamo->almacen;  // %
+//            $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
+//
+//            $prestamo->saldo  = $deuda - $pagado;
+//            if ($prestamo->saldo <= 0) $prestamo->estado = 'Pagado';
+//            $prestamo->save();
 
             return $prestamo->pagos()->with('user')->latest()->first();
         });

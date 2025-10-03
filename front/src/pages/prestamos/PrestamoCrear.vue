@@ -127,7 +127,7 @@
 
                     <div class="col-6 col-md-3">
                       <q-input
-                        label="Valor Total (ref.)" :model-value="money(prestamo.valor_total)"
+                        label="Monto maximo" :model-value="money(prestamo.valor_total)"
                         type="text" outlined dense readonly
                       />
                     </div>
@@ -162,18 +162,20 @@
                     </div>
 
                     <!-- MONTOS CALCULADOS -->
+<!--                    <div class="col-6 col-md-4">-->
+<!--                      <q-input label="Interés (Bs)" :model-value="money(interesMonto)" outlined dense readonly/>-->
+<!--                    </div>-->
+<!--                    <div class="col-6 col-md-4">-->
+<!--                      <q-input label="Almacén (Bs)" :model-value="money(almacenMonto)" outlined dense readonly/>-->
+<!--                    </div>-->
                     <div class="col-6 col-md-4">
-                      <q-input label="Interés (Bs)" :model-value="money(interesMonto)" outlined dense readonly/>
-                    </div>
-                    <div class="col-6 col-md-4">
-                      <q-input label="Almacén (Bs)" :model-value="money(almacenMonto)" outlined dense readonly/>
-                    </div>
-                    <div class="col-6 col-md-4">
-                      <q-input label="Total a pagar" :model-value="money(interesMonto+almacenMonto)" outlined dense readonly/>
+                      <q-input label="Cargo mensual" :model-value="money(interesMonto+almacenMonto)" outlined dense readonly/>
                     </div>
 
                     <div class="col-12 col-md-4">
-                      <q-input label="Saldo" :model-value="money(prestamo.saldo)" outlined dense readonly/>
+<!--                      <q-input label="Valor de venta" :model-value="money(prestamo.saldo)" outlined dense readonly/>-->
+<!--                      precioVenta * pesoNeto = {{ money(precioVenta.value * pesoNeto) }}-->
+                      <q-input label="Precio venta (Bs)" :model-value="money(precioVenta.value * pesoNeto)" outlined dense readonly/>
                     </div>
 
                     <div class="col-12">
@@ -220,7 +222,8 @@ export default {
       clienteFiltro: '',
       loading: false,
 
-      precioOro: { value: 0 }, // cogs/3 (precio compra)
+      precioOro: { value: 0 },
+      precioVenta: { value: 0 },
 
       prestamo: {
         fecha_limite: moment().add(1,'months').format('YYYY-MM-DD'),
@@ -256,8 +259,10 @@ export default {
 
   async mounted () {
     await this.getClientes()
-    const res = await this.$axios.get('cogs/3') // precio compra de oro
+    let res = await this.$axios.get('cogs/3') // precio compra de oro
     this.precioOro = res.data
+    res = await this.$axios.get('cogs/1') // precio compra de oro
+    this.precioVenta = res.data
     this.calcularTotales()
   },
 
