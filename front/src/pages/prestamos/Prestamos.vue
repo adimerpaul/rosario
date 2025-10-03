@@ -95,7 +95,7 @@
                             {{ estadoTexto(p) }}
                           </q-chip>
                           <q-chip dense outline color="primary" class="q-ml-xs">
-                            {{ dias(p) }} días
+                            {{ p.dias_transcurridos }} días
                           </q-chip>
                           <q-chip dense outline color="teal" class="q-ml-xs">
                             {{ tasaMensual(p) }}%/mes
@@ -155,12 +155,16 @@
 
                     <q-btn-dropdown dense no-caps color="primary" label="Más">
                       <q-list>
-                        <q-item clickable v-ripple @click="openMensualidad(p)" v-close-popup>
+                        <q-item clickable v-ripple @click="openMensualidad(p)" v-close-popup
+                                v-if="p.dias_transcurridos >= 30 && p.estado === 'Pendiente'"
+                        >
                           <q-item-section avatar><q-icon name="payment"/></q-item-section>
                           <q-item-section>Pagar mensualidad</q-item-section>
                         </q-item>
 
-                        <q-item clickable v-ripple @click="openCargos(p)" v-close-popup>
+                        <q-item clickable v-ripple @click="openCargos(p)" v-close-popup
+                                v-if="p.dias_transcurridos > 0 && p.estado === 'Pendiente'"
+                        >
                           <q-item-section avatar><q-icon name="attach_money"/></q-item-section>
                           <q-item-section>Pagar cargos</q-item-section>
                         </q-item>
@@ -525,10 +529,10 @@ export default {
     },
 
     /* ========== Cálculos “bonitos” para el card ========== */
-    dias (p) {
-      const ini = p.fecha_creacion ? moment(p.fecha_creacion, 'YYYY-MM-DD') : moment()
-      return Math.max(0, moment().startOf('day').diff(ini.startOf('day'), 'days'))
-    },
+    // dias (p) {
+    //   const ini = p.fecha_creacion ? moment(p.fecha_creacion, 'YYYY-MM-DD') : moment()
+    //   return Math.max(0, moment().startOf('day').diff(ini.startOf('day'), 'days'))
+    // },
     tasaMensual (p) {
       return Number(p.interes || 0) + Number(p.almacen || 0) // % mensual total
     },

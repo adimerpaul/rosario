@@ -31,6 +31,8 @@ class Prestamo extends Model
 
     protected $hidden = ['created_at','updated_at','deleted_at'];
 
+    protected $appends = ['dias_transcurridos','cargo_diario','cargos_acumulados'];
+
     public function cliente() { return $this->belongsTo(Client::class, 'cliente_id'); }
     public function user()    { return $this->belongsTo(User::class, 'user_id'); }
     public function pagos()   { return $this->hasMany(PrestamoPago::class, 'prestamo_id'); }
@@ -57,14 +59,19 @@ class Prestamo extends Model
         } else {
             $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
         }
+//        error_log('fechaBase: ' . $fechaBase->toDateString());
 
         $dias = max(0, $fechaBase->diffInDays(today()));
+//        error_log('dias: ' . $dias);
 
         // cargos
         $cargos = round($capital * $tasaDiaria * $dias, 2);
 
         // pagado
-        $pagado = (float) $this->pagos()->where('estado','Activo')->sum('monto');
+        $pagado = (float) $this->pagos()
+            ->where('estado','Activo')
+            ->whereIn('tipo_pago', ['TOTAL', 'SALDO'])
+            ->sum('monto');
 
         $saldo = round($capital + $cargos - $pagado, 2);
         return $saldo > 0 ? $saldo : 0.0;
@@ -78,7 +85,10 @@ class Prestamo extends Model
         } else {
             $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
         }
-        return max(0, $fechaBase->diffInDays(today()));
+//        error_log('fechaBase: ' . $fechaBase->toDateString());
+        $dias = $fechaBase->diffInDays(today());
+//        error_log('dias: ' . $dias);
+        return round($dias, 0);
     }
 
     public function getCargoDiarioAttribute()
