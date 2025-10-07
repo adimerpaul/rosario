@@ -31,7 +31,7 @@ class Prestamo extends Model
 
     protected $hidden = ['created_at','updated_at','deleted_at'];
 
-    protected $appends = ['dias_transcurridos','cargo_diario','cargos_acumulados'];
+    protected $appends = ['dias_transcurridos','cargo_diario','cargos_acumulados','total_deuda'];
 
     public function cliente() { return $this->belongsTo(Client::class, 'cliente_id'); }
     public function user()    { return $this->belongsTo(User::class, 'user_id'); }
@@ -75,6 +75,15 @@ class Prestamo extends Model
 
         $saldo = round($capital + $cargos - $pagado, 2);
         return $saldo > 0 ? $saldo : 0.0;
+    }
+
+    function getTotalDeudaAttribute(){
+//        pago sea total o saldo de los prastmos_pagos
+        $totalPagado = (float) $this->pagos()
+            ->where('estado','Activo')
+            ->whereIn('tipo_pago', ['TOTAL', 'SALDO'])
+            ->sum('monto');
+        return round(($this->valor_prestado ?? 0) - $totalPagado, 2);
     }
 
     public function getDiasTranscurridosAttribute()

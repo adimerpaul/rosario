@@ -119,8 +119,11 @@
 
                     <div class="row q-mt-sm">
                       <div class="col-6">
-                        <div class="text-caption text-grey-7">Prestado</div>
-                        <div class="text-weight-medium">{{ money(p.valor_prestado) }}</div>
+                        <div class="text-caption text-grey-7">Prestado - deuda</div>
+                        <div class="text-weight-medium">
+                          {{ money(p.valor_prestado) }}
+                          <span class="text-caption text-red">{{ money(p.total_deuda) }}</span>
+                        </div>
                       </div>
                       <div class="col-6">
                         <div class="text-caption text-grey-7">Cargo mensual</div>
