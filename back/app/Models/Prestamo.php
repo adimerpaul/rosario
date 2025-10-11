@@ -13,6 +13,7 @@ class Prestamo extends Model
         'numero',
         'fecha_creacion',
         'fecha_limite',
+        'fecha_cancelacion',
         'cliente_id',
         'user_id',
         'peso',
@@ -31,7 +32,7 @@ class Prestamo extends Model
 
     protected $hidden = ['created_at','updated_at','deleted_at'];
 
-    protected $appends = ['dias_transcurridos','cargo_diario','cargos_acumulados','total_deuda'];
+    protected $appends = ['dias_transcurridos','cargo_diario','cargos_acumulados','total_deuda','deuda_interes'];
 
     public function cliente() { return $this->belongsTo(Client::class, 'cliente_id'); }
     public function user()    { return $this->belongsTo(User::class, 'user_id'); }
@@ -86,18 +87,15 @@ class Prestamo extends Model
         return round(($this->valor_prestado ?? 0) - $totalPagado, 2);
     }
 
-    public function getDiasTranscurridosAttribute()
-    {
+    public function getDiasTranscurridosAttribute(){
         $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
         if ($tienePagos && $this->fecha_limite) {
             $fechaBase = Carbon::parse($this->fecha_limite);
         } else {
             $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
         }
-//        error_log('fechaBase: ' . $fechaBase->toDateString());
         $dias = $fechaBase->diffInDays(today());
         $dias ++;
-//        error_log('dias: ' . $dias);
         return round($dias, 0);
     }
 
@@ -112,5 +110,18 @@ class Prestamo extends Model
     public function getCargosAcumuladosAttribute()
     {
         return round($this->cargo_diario * $this->dias_transcurridos, 2);
+    }
+    public function getDeudaInteresAttribute()
+    {
+        $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
+        if ($tienePagos && $this->fecha_limite) {
+            $fechaBase = Carbon::parse($this->fecha_limite);
+        } else {
+            $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
+        }
+        $dias = $fechaBase->diffInDays(today());
+        $interesDiario = $this->total_deuda * (($this->interes + $this->almacen) / 100);
+        $interesDiario = $interesDiario / 30;
+        return round($interesDiario * $dias, 2);
     }
 }

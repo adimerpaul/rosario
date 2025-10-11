@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('prestamos', function (Blueprint $table) {
             $table->id();
             $table->string('numero')->nullable();                 // se completa después de crear
-            $table->dateTime('fecha_creacion')->default(now());       // día del préstamo
+            $table->date('fecha_creacion')->default(now());       // día del préstamo
             $table->date('fecha_limite')->nullable();             // fecha de vencimiento
+            $table->date('fecha_cancelacion')->nullable();        // día que se pagó totalmente
             $table->unsignedBigInteger('cliente_id');
             $table->foreign('cliente_id')->references('id')->on('clientes');
             $table->unsignedBigInteger('user_id');
