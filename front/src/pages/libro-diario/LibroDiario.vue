@@ -8,7 +8,7 @@
           <q-input type="date" v-model="fecha" label="Fecha" dense outlined @update:model-value="onChangeFecha" />
         </div>
 
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-2">
           <q-input v-model.number="openingAmount" type="number" min="0" step="0.01"
                    dense outlined label="Caja inicial (Bs.)" @keyup.enter="guardarCaja" />
         </div>
@@ -18,11 +18,17 @@
                  :loading="loadingSave" @click="guardarCaja" />
         </div>
 
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-2">
           <q-select v-model="usuario"
                     :options="usuarios.map(u => u.username)"
                     label="Usuario" dense outlined clearable
                     v-if="$store.user?.role === 'Administrador'"
+                    />
+        </div>
+        <div class="col-12 col-md-2">
+          <q-select v-model="ingresoForm.metodo"
+                    :options="['EFECTIVO','QR']"
+                    label="Método pago" dense outlined clearable
                     />
         </div>
 
@@ -76,12 +82,13 @@
               <tr class="bg-green-2">
                 <th class="text-left">Hora</th>
                 <th class="text-left">Descripción</th>
+                <th class="text-right">Monto (Bs.)</th>
                 <th class="text-left">Usuario</th>
                 <th class="text-left">Método</th>
                 <th class="text-left">Fuente</th>
 <!--                th estado-->
                 <th class="text-left">Estado</th>
-                <th class="text-right">Monto (Bs.)</th>
+
                 <th class="text-right"
                     v-if="$store.user?.role === 'Administrador'">Acciones</th>
               </tr>
@@ -91,6 +98,7 @@
               <tr>
                 <td class="text-left">—</td>
                 <td class="text-left">Caja inicial del día</td>
+                <td class="text-right">{{ currency(openingAmount) }}</td>
                 <td class="text-left">—</td>
                 <td class="text-left">—</td>
                 <td class="text-left">CAJA</td>
@@ -99,12 +107,12 @@
                     Fijo
                   </q-chip>
                 </td>
-                <td class="text-right">{{ currency(openingAmount) }}</td>
               </tr>
 
               <tr v-for="it in ingresosFlat" :key="`in-${it.key}`">
                 <td class="text-left">{{ it.hora }}</td>
                 <td class="text-left">{{ it.descripcion }}</td>
+                <td class="text-right">{{ currency(it.monto) }}</td>
                 <td class="text-left">{{ it.usuario }}</td>
                 <td class="text-left">{{ it.metodo || '—' }}</td>
                 <td class="text-left">{{ it.fuente }}</td>
@@ -113,7 +121,6 @@
                     {{ it.estado }}
                   </q-chip>
                 </td>
-                <td class="text-right">{{ currency(it.monto) }}</td>
                 <td class="text-right" v-if="$store.user?.role === 'Administrador'">
                   <q-btn v-if="it.fuente==='INGRESO' && it.estado==='Activo'"
                          dense flat color="negative" icon="block" label="Anular"
@@ -139,11 +146,11 @@
               <tr class="bg-red-2">
                 <th class="text-left">Hora</th>
                 <th class="text-left">Descripción</th>
+                <th class="text-right">Monto (Bs.)</th>
                 <th class="text-left">Usuario</th>
                 <th class="text-left">Método</th>
                 <th class="text-left">Fuente</th>
                 <th class="text-left">Estado</th>
-                <th class="text-right">Monto (Bs.)</th>
                 <th class="text-right"
                     v-if="$store.user?.role === 'Administrador'">Acciones</th>
               </tr>
@@ -152,6 +159,7 @@
               <tr v-for="it in egresosFlat" :key="`eg-${it.key}`">
                 <td class="text-left">{{ it.hora }}</td>
                 <td class="text-left">{{ it.descripcion }}</td>
+                <td class="text-right">{{ currency(it.monto) }}</td>
                 <td class="text-left">{{ it.usuario }}</td>
                 <td class="text-left">{{ it.metodo || 'EFECTIVO' }}</td>
                 <td class="text-left">{{ it.fuente }}</td>
@@ -160,7 +168,6 @@
                     {{ it.estado || 'Activo' }}
                   </q-chip>
                 </td>
-                <td class="text-right">{{ currency(it.monto) }}</td>
                 <td class="text-right" v-if="$store.user?.role === 'Administrador'">
                   <q-btn v-if="it.fuente==='EGRESO' && (it.estado || 'Activo')==='Activo'"
                          dense flat color="negative" icon="block" label="Anular"
@@ -266,19 +273,19 @@
             <thead>
             <tr>
               <th class="text-left">Hora</th>
+              <th class="text-right">Monto (Bs.)</th>
               <th class="text-left">Descripción</th>
               <th class="text-left">Usuario</th>
               <th class="text-left">Fuente</th>
-              <th class="text-right">Monto (Bs.)</th>
             </tr>
             </thead>
             <tbody>
             <tr v-for="it in detalleFiltrado" :key="`dt-${it.key}`">
               <td class="text-left">{{ it.hora }}</td>
+              <td class="text-right">{{ currency(it.monto) }}</td>
               <td class="text-left">{{ it.descripcion }}</td>
               <td class="text-left">{{ it.usuario }}</td>
               <td class="text-left">{{ it.fuente }}</td>
-              <td class="text-right">{{ currency(it.monto) }}</td>
             </tr>
             <tr v-if="!detalleFiltrado.length">
               <td colspan="5" class="text-center text-grey">Sin movimientos</td>
@@ -385,7 +392,11 @@ export default {
       this.loading = true
       try {
         const { data } = await this.$axios.get('daily-cash', {
-          params: { date: this.fecha, usuario: this.usuario }
+          params: {
+            date: this.fecha,
+            usuario: this.usuario,
+            metodo_pago: this.ingresoForm.metodo
+          }
         })
 
         this.openingAmount = Number(data.daily_cash?.opening_amount || 0)

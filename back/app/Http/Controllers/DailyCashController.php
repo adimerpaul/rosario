@@ -11,6 +11,7 @@ class DailyCashController extends Controller
     public function show(Request $request)
     {
         $date = $request->query('date', now()->toDateString());
+        $metodo_pago = $request->query('metodo_pago', null); // EFECTIVO/QR (opcional)
 
         // Param opcional para filtrar por usuario (username)
         $username = $request->input('usuario', null);
