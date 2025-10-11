@@ -594,17 +594,11 @@ class PrestamoController extends Controller
                 'monto'       => $data['monto'],
                 'estado'      => 'Activo',
             ]);
-
-//            $pagado = $prestamo->pagos()->where('estado','Activo')->sum('monto');
-//
-//            $vp = (float) $prestamo->valor_prestado;
-//            $i  = (float) $prestamo->interes;  // %
-//            $a  = (float) $prestamo->almacen;  // %
-//            $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
-//
-//            $prestamo->saldo  = $deuda - $pagado;
-//            if ($prestamo->saldo <= 0) $prestamo->estado = 'Pagado';
-//            $prestamo->save();
+            $tipo_pago = $request->input('tipo_pago', 'SALDO');
+            if($tipo_pago == 'ADICIONAR CAPITAL'){
+                $prestamo->valor_prestado = $prestamo->valor_prestado + $data['monto'];
+                $prestamo->save();
+            }
 
             return $prestamo->pagos()->with('user')->latest()->first();
         });

@@ -295,7 +295,10 @@
             </div>
             <div class="col-6">
               <div class="text-caption">Monto a pagar (sólo cargos)</div>
-              <div class="text-h6">{{ money(montoCargosPreview) }}</div>
+              <div class="text-h6">
+<!--                {{ money(montoCargosPreview) }}-->
+                {{ money(dlgCargos.p?.deuda_interes) }}
+              </div>
             </div>
             <div class="col-12">
               <q-select dense outlined v-model="dlgCargos.metodo" :options="metodoOptions" label="Método de pago"/>
@@ -476,7 +479,7 @@ export default {
         this.loading = true
         await this.$axios.post(`prestamos/${p.id}/pagar-cargos`, {
           metodo: this.dlgCargos.metodo,
-          monto: this.montoCargosPreview
+          monto: this.dlgCargos.p?.deuda_interes
         })
         this.$q.notify({ type:'positive', message:'Cargos pagados' })
         this.dlgCargos.open = false

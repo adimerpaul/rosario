@@ -243,7 +243,7 @@ export default {
       },
       pagos: [],
       metodosPago: ['EFECTIVO','QR'],
-      tiposPago: ['INTERES','SALDO'],
+      tiposPago: ['INTERES','SALDO','ADICIONAR CAPITAL'],
       nuevoPago: { monto: null, metodo: 'EFECTIVO', tipo_pago: 'INTERES' },
 
       // auxiliares
