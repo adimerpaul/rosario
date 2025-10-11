@@ -103,7 +103,7 @@
                           </q-chip>
                           <q-chip dense outline color="indigo" class="q-ml-xs">
 <!--                            {{ money(tasaDiaria(p)*100) }}%/día-->
-                            {{ money(cargoDiario(p)) }} /día
+                            {{ p.cargo_diario }} /día
                           </q-chip>
                         </div>
                       </div>
@@ -244,7 +244,7 @@
             </div>
             <div class="col-6">
               <div class="text-caption">Monto a pagar (30 días)</div>
-              <div class="text-h6">{{ money(montoMensualidadPreview) }}</div>
+              <div class="text-h6">{{ dlgMensualidad.p?.total_deuda * (parseFloat(dlgMensualidad.p?.interes || 0) + parseFloat(dlgMensualidad.p?.almacen || 0)) / 100 | money }}</div>
             </div>
             <div class="col-6">
               <q-select dense outlined v-model="dlgMensualidad.metodo" :options="metodoOptions" label="Método de pago"/>
@@ -277,11 +277,17 @@
           <div class="row q-col-gutter-md q-mt-xs">
             <div class="col-6">
               <div class="text-caption">Días transcurridos</div>
-              <div class="text-body1">{{ diasPreview }}</div>
+              <div class="text-body1">
+                  {{ dlgCargos.p?.dias_transcurridos }}
+              </div>
             </div>
             <div class="col-6">
               <div class="text-caption">Cargos acumulados</div>
-              <div class="text-body1">{{ money(cargosAcumuladosPreview) }}</div>
+              <div class="text-body1">
+<!--                {{ money(cargosAcumuladosPreview) }}-->
+<!--                deuda_interes-->
+                {{ money(dlgCargos.p?.deuda_interes) }}
+              </div>
             </div>
             <div class="col-6">
               <div class="text-caption">Saldo actual</div>
