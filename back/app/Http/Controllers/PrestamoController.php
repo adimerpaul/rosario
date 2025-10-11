@@ -200,7 +200,7 @@ class PrestamoController extends Controller
     }
     private function calcBase(Prestamo $p): array
     {
-        $capital     = (float) ($p->valor_prestado ?? 0);
+        $capital     = (float) ($p->deuda_interes ?? 0);
         $tasaMensual = (float) ($p->interes ?? 0) + (float) ($p->almacen ?? 0); // %/mes
         $tasaDiaria  = $tasaMensual / 100 / 30;
 
@@ -246,26 +246,47 @@ class PrestamoController extends Controller
     {
         $user   = $request->user();
         $metodo = (string) $request->input('metodo', 'Efectivo');
+        $total_deuda = $prestamo->total_deuda;
+//        error_log('total_deuda: ' . $total_deuda);
+        if($total_deuda <= 0){
+            return response()->json(['message' => 'No hay deuda de interés por pagar'], 422);
+        }
+        $interes = $prestamo->interes;
+//        error_log('interes: ' . $interes);
+        $almacen = $prestamo->almacen;
+//        error_log('almacen: ' . $almacen);
 
-        return DB::transaction(function () use ($prestamo, $user, $metodo) {
-            $base  = $this->calcBase($prestamo);
-            $monto = min($base['saldo'], round($base['cargoDiario'] * 30, 2)); // paga solo 30 días
+        $monto = round($total_deuda * ($interes + $almacen) / 100, 2);
+//        error_log('monto mensualidad: ' . $monto);
 
-            if ($monto <= 0) {
-                return response()->json(['message' => 'No hay cargos por pagar'], 422);
-            }
+        $this->crearPago($prestamo, $monto, 'MENSUALIDAD', $metodo, $user->id);
+        // Mover fecha límite +1 mes (si no existe, usa hoy)
+        $nuevaLimite = ($prestamo->fecha_limite ? Carbon::parse($prestamo->fecha_limite) : today())->addMonthNoOverflow();
+        $prestamo->fecha_limite = $nuevaLimite->toDateString();
+        $prestamo->save();
+        $this->refreshSaldoEstado($prestamo);
 
-            $this->crearPago($prestamo, $monto, 'MENSUALIDAD', $metodo, $user->id);
 
-            // Mover fecha límite +1 mes (si no existe, usa hoy)
-            $nuevaLimite = ($prestamo->fecha_limite ? Carbon::parse($prestamo->fecha_limite) : today())->addMonthNoOverflow();
-            $prestamo->fecha_limite = $nuevaLimite->toDateString();
-            $prestamo->save();
 
-            $this->refreshSaldoEstado($prestamo);
-
-            return $prestamo->fresh()->load(['cliente','user']);
-        });
+//        return DB::transaction(function () use ($prestamo, $user, $metodo) {
+//            $base  = $this->calcBase($prestamo);
+//            $monto = min($base['saldo'], round($base['cargoDiario'] * 30, 2)); // paga solo 30 días
+//
+//            if ($monto <= 0) {
+//                return response()->json(['message' => 'No hay cargos por pagar'], 422);
+//            }
+//
+//            $this->crearPago($prestamo, $monto, 'MENSUALIDAD', $metodo, $user->id);
+//
+//            // Mover fecha límite +1 mes (si no existe, usa hoy)
+//            $nuevaLimite = ($prestamo->fecha_limite ? Carbon::parse($prestamo->fecha_limite) : today())->addMonthNoOverflow();
+//            $prestamo->fecha_limite = $nuevaLimite->toDateString();
+//            $prestamo->save();
+//
+//            $this->refreshSaldoEstado($prestamo);
+//
+//            return $prestamo->fresh()->load(['cliente','user']);
+//        });
     }
 
     public function pagarCargos(Request $request, Prestamo $prestamo)
@@ -554,6 +575,11 @@ class PrestamoController extends Controller
             'fecha'       => 'nullable|date',
             'monto'       => 'required|numeric|min:0.01',
         ]);
+//        verificar que no tenga interes
+        $prestamos = Prestamo::find($data['prestamo_id']);
+        if ($prestamos->deuda_interes > 0 ) {
+            return response()->json(['message' => 'El préstamo tiene intereses pendientes, no se puede registrar el pago.'], 422);
+        }
         $user = $request->user();
 
         return DB::transaction(function () use ($data,$user,$request) {

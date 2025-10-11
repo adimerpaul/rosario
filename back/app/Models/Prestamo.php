@@ -44,38 +44,37 @@ class Prestamo extends Model
 
     public function getSaldoAttribute($stored)
     {
-        $capital = (float) ($this->valor_prestado ?? 0);
-        if ($capital <= 0) return 0.0;
+        return $this->total_deuda + $this->deuda_interes;
+//        $capital = (float) ($this->total_deuda ?? 0);
+//        if ($capital <= 0) return 0.0;
+//
+//        // tasa mensual total
+//        $tasaMensual = (float) ($this->interes ?? 0) + (float) ($this->almacen ?? 0);
+//        $tasaDiaria  = $tasaMensual / 100 / 30;
 
-        // tasa mensual total
-        $tasaMensual = (float) ($this->interes ?? 0) + (float) ($this->almacen ?? 0);
-        $tasaDiaria  = $tasaMensual / 100 / 30;
-
-        // 🔑 regla: si no hay pagos activos → contar desde fecha_creacion
-        //           si hay al menos 1 pago activo → contar desde fecha_limite
-        $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
-
-        if ($tienePagos && $this->fecha_limite) {
-            $fechaBase = Carbon::parse($this->fecha_limite);
-        } else {
-            $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
-        }
-//        error_log('fechaBase: ' . $fechaBase->toDateString());
-
-        $dias = max(0, $fechaBase->diffInDays(today()));
-//        error_log('dias: ' . $dias);
-
-        // cargos
-        $cargos = round($capital * $tasaDiaria * $dias, 2);
-
-        // pagado
-        $pagado = (float) $this->pagos()
-            ->where('estado','Activo')
-            ->whereIn('tipo_pago', ['TOTAL', 'SALDO'])
-            ->sum('monto');
-
-        $saldo = round($capital + $cargos - $pagado, 2);
-        return $saldo > 0 ? $saldo : 0.0;
+//        $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
+//
+//        if ($tienePagos && $this->fecha_limite) {
+//            $fechaBase = Carbon::parse($this->fecha_limite);
+//        } else {
+//            $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
+//        }
+////        error_log('fechaBase: ' . $fechaBase->toDateString());
+//
+//        $dias = max(0, $fechaBase->diffInDays(today()));
+////        error_log('dias: ' . $dias);
+//
+//        // cargos
+//        $cargos = round($capital * $tasaDiaria * $dias, 2);
+//
+//        // pagado
+//        $pagado = (float) $this->pagos()
+//            ->where('estado','Activo')
+//            ->whereIn('tipo_pago', ['TOTAL', 'SALDO'])
+//            ->sum('monto');
+//
+//        $saldo = round($capital + $cargos - $pagado, 2);
+//        return $saldo > 0 ? $saldo : 0.0;
     }
 
     function getTotalDeudaAttribute(){
@@ -101,10 +100,10 @@ class Prestamo extends Model
 
     public function getCargoDiarioAttribute()
     {
-        $capital     = (float) ($this->valor_prestado ?? 0);
+        $capital     = (float) ($this->total_deuda ?? 0);
         $tasaMensual = (float) ($this->interes ?? 0) + (float) ($this->almacen ?? 0);
-        $tasaDiaria  = $tasaMensual / 100 / 30;
-        return round($capital * $tasaDiaria, 2);
+        $tasaDiaria  = $capital * $tasaMensual / 100 / 30;
+        return round($tasaDiaria, 2);
     }
 
     public function getCargosAcumuladosAttribute()
