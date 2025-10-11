@@ -84,11 +84,12 @@
                   <q-card-section class="q-pb-xs">
                     <div class="row items-center no-wrap">
                       <q-avatar :icon="estadoIcon(p)" :color="estadoColor(p)" text-color="white" size="32px"/>
-                      <div class="q-ml-sm">
+                      <div class="">
                         <div class="text-weight-bold">#{{ p.numero }}</div>
                         <div class="text-caption text-grey-7">
                           {{ fmtFecha(p.fecha_creacion) }}
-                          <span v-if="p.fecha_limite"> — vence: {{ fmtFecha(p.fecha_limite) }}</span>
+                          <span v-if="p.fecha_limite"> — Mes Cance: {{ fmtFecha(p.fecha_limite) }}</span>
+                          <span v-if="p.fecha_limite"> — V: {{ fmtFecha(p.fecha_cancelacion) }}</span>
                         </div>
                         <div class="q-mt-xs">
                           <q-chip dense square :style="{backgroundColor: estadoColor(p)}" text-color="white">
@@ -129,7 +130,7 @@
                         <div class="text-caption text-grey-7">Cargo mensual</div>
 <!--                        <div class="text-weight-medium">{{ money(cargosEstimados(p)) }}</div>-->
 <!--                        <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>-->
-                        <div class="text-weight-medium">{{ p.valor_prestado * tasaMensual(p) / 100 | money }}</div>
+                        <div class="text-weight-medium">{{ p.total_deuda * (parseFloat(p.interes || 0) + parseFloat(p.almacen || 0)) / 100 | money }}</div>
                         <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>
                       </div>
                     </div>
@@ -138,7 +139,8 @@
                       <div class="col-6">
                         <div class="text-caption text-grey-7">Intereses</div>
 <!--                        <div class="text-weight-medium">{{ money(cargoDiario(p)) }}</div>-->
-                        <div class="text-weight-medium">{{ p.saldo - p.valor_prestado | money }}</div>
+<!--                        <div class="text-weight-medium">{{ p.saldo - p.valor_prestado | money }}aa</div>-->
+                        <div class="text-weight-medium">{{ p.deuda_interes }}</div>
                       </div>
                       <div class="col-6">
                         <div class="text-caption text-grey-7">Saldo HOY</div>

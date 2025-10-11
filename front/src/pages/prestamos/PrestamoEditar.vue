@@ -59,7 +59,7 @@
 
                     <div class="col-6 col-md-4">
                       <q-input
-                        label="Fecha Límite"
+                        label="Mes cancelado"
                         type="date"
                         v-model="prestamo.fecha_limite"
                         outlined dense
