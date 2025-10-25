@@ -43,7 +43,7 @@ class OrdenPagoController extends Controller{
             'metodo' => 'nullable|string|max:50',
         ]);
 
-        return DB::transaction(function () use ($orden, $data, $request) {
+//        return DB::transaction(function () use ($orden, $data, $request) {
             $pago = $orden->pagos()->create([
                 'fecha'  => now(),
                 'monto'  => $data['monto'],
@@ -51,17 +51,16 @@ class OrdenPagoController extends Controller{
                 'estado' => 'Activo',
                 'user_id'=> $request->user()->id ?? null
             ]);
-
             $pagado = $orden->pagos()->where('estado','Activo')->sum('monto');
-            $orden->adelanto = $pagado;
-            $orden->saldo = max(0, ($orden->costo_total ?? 0) - $pagado);
-            if ($orden->saldo <= 0 && $orden->estado !== 'Cancelada') {
-                $orden->estado = 'Entregado'; // opcional, según tu flujo
-            }
+            $orden->saldo = $orden->costo_total - $pagado - $orden->adelanto;
+            error_log("costo_total: " . $orden->costo_total.", pagado: " . $pagado . ", adelanto: " . $orden->adelanto . ", saldo: " . $orden->saldo);
+//            if ($orden->saldo <= 0 && $orden->estado !== 'Cancelada') {
+//                $orden->estado = 'Entregado'; // opcional, según tu flujo
+//            }
             $orden->save();
 
             return $pago->load('user');
-        });
+//        });
     }
 
     public function update(OrdenPago $pago){

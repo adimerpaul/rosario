@@ -108,8 +108,6 @@
                     </div>
                   </q-card-section>
 
-                  <q-separator spaced />
-
                   <q-card-section class="q-pt-none">
                     <div class="row items-center">
                       <q-icon name="person" size="18px" class="q-mr-xs"/>
@@ -123,7 +121,10 @@
                       </div>
                       <div class="col-4">
                         <div class="text-caption text-grey-7">Adelanto</div>
-                        <div class="text-weight-medium">{{ money(orden.adelanto) }}</div>
+                        <div class="text-weight-medium">
+                          {{ parseInt(orden.adelanto) + parseInt(orden.totalPagos) }}
+                        </div>
+<!--                        <pre>{{orden.totalPagos}}</pre>-->
                       </div>
                       <div class="col-4">
                         <div class="text-caption text-grey-7">Saldo</div>
@@ -142,6 +143,7 @@
                   <q-card-actions align="between" class="q-pa-sm">
                     <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/ordenes/editar/' + orden.id)" />
                     <div>
+                      <q-btn dense flat icon="payment" @click="pagarTodo(orden)" />
                       <q-btn dense flat icon="print" @click="imprimirOrden(orden.id)" />
                       <q-btn dense flat icon="assignment" @click="imprimirGarantia(orden.id)" />
                     </div>
@@ -229,6 +231,25 @@ export default {
   methods: {
     resetToFirst () { this.pagination.page = 1 },
 
+    pagarTodo(orden) {
+      const saldo = Number(orden.saldo || 0)
+      this.$q.dialog({
+        title: 'Confirmar Pago',
+        html: true,
+        message: `¿Confirma registrar el pago total de <b style="color: red">${this.money(saldo)}</b> Bs para la orden #${orden.numero}?`,
+        cancel: true,
+        persistent: true
+      }).onOk(() => {
+        this.$axios.post(`/ordenes/${orden.id}/pagar-todo`)
+          .then(() => {
+            this.$alert?.success('Pago registrado correctamente')
+            this.getOrdenes()
+          })
+          .catch(err => {
+            this.$alert?.error(err.response?.data?.message || 'Error al registrar el pago')
+          })
+      })
+    },
     imprimirOrden (id) {
       const url = `${this.$axios.defaults.baseURL}/ordenes/${id}/pdf`
       window.open(url, '_blank')

@@ -112,6 +112,10 @@
                     <div class="col-12 col-md-4">
                       <q-input label="Saldo" v-model.number="orden.saldo" type="number" outlined dense readonly/>
                     </div>
+                    <div class="col-12 col-md-3">
+<!--                      chech de 18 kilates-->
+                      <q-checkbox v-model="check18Kilates" label="18 Kilates" dense  @update:model-value="coloca18Kilates"/>
+                    </div>
                     <div class="col-12 col-md-6">
                       <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense>
                         <template v-slot:append>
@@ -164,12 +168,13 @@ export default {
   data() {
     return {
       page: 1, // página actual
-      totalPages: 1, // total de páginas
+      totalPages: 1,
+      check18Kilates: true,
       orden: {
         numero: '',
         // fecha_creacion: new Date().toISOString().substr(0, 10),
         fecha_entrega: moment().add(1, 'weeks').format('YYYY-MM-DD'),
-        detalle: '',
+        detalle: '18 Kilates',
         celular: '',
         costo_total: 0,
         adelanto: 0,
@@ -224,6 +229,16 @@ export default {
 
   },
   methods: {
+    coloca18Kilates() {
+      // this.detalles
+      if (this.check18Kilates) {
+        this.orden.detalle = this.orden.detalle
+          ? this.orden.detalle + ' | 18 Kilates'
+          : '18 Kilates';
+      } else {
+        this.orden.detalle = this.orden.detalle.replace(' | 18 Kilates', '').replace('18 Kilates', '').trim();
+      }
+    },
     iniciarReconocimiento(campo) {
       if (!this.reconocimiento) {
         this.$alert.warning('Reconocimiento de voz no soportado en este navegador');
@@ -253,10 +268,10 @@ export default {
       this.orden.saldo = (this.orden.costo_total || 0) - (this.orden.adelanto || 0);
     },
     validarCostoTotal(val) {
-      const maxPermitido = this.costoBase + 20;
+      // const maxPermitido = this.costoBase + 200000;
       const minPermitido = this.costoBase - 20;
 
-      if (val > maxPermitido || val < minPermitido) {
+      if ( val < minPermitido) {
         this.$alert.warning(
           `El costo total solo puede modificarse ±20 Bs del valor calculado (${this.costoBase.toFixed(2)} Bs)`
         );

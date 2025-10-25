@@ -179,7 +179,8 @@ class OrdenController extends Controller{
             'numero' => $numero,
             'fecha_creacion' => now(),
             'user_id' => $user->id,
-            'detalle' => 'Realizar: '.$request->input('detalle', '').' peso: '.$request->input('peso', '0').' gr, en oro de 18 Kilates.',
+            'detalle' => $request->input('detalle', ''),
+//            'detalle' => 'Realizar: '.$request->input('detalle', '').' peso: '.$request->input('peso', '0').' gr, en oro de 18 Kilates.',
         ]);
 
         return Orden::create($request->all());
@@ -205,10 +206,11 @@ class OrdenController extends Controller{
     {
         $metodo = $request->input('metodo', 'EFECTIVO'); // <-- toma EFECTIVO o QR
 
-        $saldo = max(0, ($orden->costo_total ?? 0) - $orden->pagos()->where('estado','Activo')->sum('monto'));
-        if ($saldo <= 0) {
-            return response()->json(['message' => 'No hay saldo pendiente'], 422);
-        }
+        $saldo =( ($orden->costo_total ?? 0) - $orden->pagos()->where('estado','Activo')->sum('monto')) - $orden->adelanto;
+//        if ($saldo <= 0) {
+//            return response()->json(['message' => 'No hay saldo pendiente'], 422);
+//        }
+//        $saldo = max(0, $saldo);
 
         $orden->pagos()->create([
             'monto' => $saldo,
@@ -218,11 +220,14 @@ class OrdenController extends Controller{
             'user_id' => $request->user()->id ?? null
         ]);
 
-        $pagosActivos = $orden->pagos()->where('estado','Activo')->sum('monto');
-        $orden->adelanto = $pagosActivos;
-        $orden->saldo = max(0, ($orden->costo_total ?? 0) - $pagosActivos);
+//        $pagosActivos = $orden->pagos()->where('estado','Activo')->sum('monto') + $orden->adelanto;
+//        $orden->adelanto = $orden->adelto + $saldo;
+        $orden->saldo = 0;
         $orden->save();
-
+        if($orden->saldo <= 0){
+            $orden->estado = 'Entregado';
+            $orden->save();
+        }
         return $orden->fresh(['cliente','user']);
     }
 

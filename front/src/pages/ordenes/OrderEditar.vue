@@ -320,7 +320,7 @@ export default {
         this.dlgPago = false
         await this.fetch()
         this.$q.notify({ type: 'positive', message: 'Pago registrado' })
-        this.$router.push('/ordenes')
+        // this.$router.push('/ordenes')
       } catch (e) {
         this.$alert?.error?.(e.response?.data?.message || 'No se pudo registrar el pago')
       } finally {

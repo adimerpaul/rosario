@@ -40,27 +40,33 @@ class Orden extends Model{
     {
         return $this->hasMany(OrdenPago::class, 'orden_id');
     }
-    public function syncMontosYEstado(){
-        // NO recalcules 'adelanto' aquí
-        $costo = (float) ($this->costo_total ?? 0);
-        $adelanto = (float) ($this->adelanto ?? 0);
+    protected $appends = ['totalPagos',];
 
-        $this->saldo = max(0, $costo - $adelanto);
-
-//        if ($this->estado !== 'Cancelada') {
-//            if ($this->saldo <= 0) {
-//                $this->estado = 'Entregado';
-//            } elseif ($this->estado === 'Entregado') {
-//                $this->estado = 'Pendiente';
-//            }
-//        }
-    }
-    protected static function booted()
+    public function getTotalPagosAttribute()
     {
-        // Antes de guardar, recalcula montos en función de pagos y costo_total
-        static::saving(function (Orden $orden) {
-            // Si cambia costo_total o por cualquier update, mantenemos coherencia
-            $orden->syncMontosYEstado();
-        });
+        return $this->pagos()->where('estado', 'Activo')->sum('monto');
     }
+//    public function syncMontosYEstado(){
+//        // NO recalcules 'adelanto' aquí
+//        $costo = (float) ($this->costo_total ?? 0);
+//        $adelanto = (float) ($this->adelanto ?? 0);
+//
+//        $this->saldo = max(0, $costo - $adelanto);
+//
+////        if ($this->estado !== 'Cancelada') {
+////            if ($this->saldo <= 0) {
+////                $this->estado = 'Entregado';
+////            } elseif ($this->estado === 'Entregado') {
+////                $this->estado = 'Pendiente';
+////            }
+////        }
+//    }
+//    protected static function booted()
+//    {
+//        // Antes de guardar, recalcula montos en función de pagos y costo_total
+//        static::saving(function (Orden $orden) {
+//            // Si cambia costo_total o por cualquier update, mantenemos coherencia
+//            $orden->syncMontosYEstado();
+//        });
+//    }
 }
