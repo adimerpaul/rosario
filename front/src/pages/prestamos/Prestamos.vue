@@ -154,6 +154,7 @@
                     <div class="row items-center q-mt-sm text-caption text-grey">
                       <q-icon name="account_circle" size="16px" class="q-mr-xs"/>
                       {{ p.user?.name || '—' }}
+                      {{p.detalle}}
                     </div>
                   </q-card-section>
 
@@ -162,7 +163,7 @@
                   <q-card-actions align="between" class="q-pa-sm">
 
                     <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/prestamos/editar/' + p.id)" no-caps
-                            v-if="$store.user.role === 'Administrador' || p.estado === 'Pendiente'"
+                            v-if="($store.user.role === 'Administrador' || p.estado === 'Pendiente') && p.estado !== 'Fundido'"
                     />
 
                     <q-btn-dropdown dense no-caps color="primary" label="Más">
@@ -181,7 +182,7 @@
                           <q-item-section>Pagar cargos</q-item-section>
                         </q-item>
 
-                        <q-item clickable v-ripple @click="openTotal(p)" v-close-popup>
+                        <q-item clickable v-ripple @click="openTotal(p)" v-close-popup v-if="p.estado !== 'Fundido'">
                           <q-item-section avatar><q-icon name="money_off"/></q-item-section>
                           <q-item-section>Pagar todo</q-item-section>
                         </q-item>
@@ -192,6 +193,11 @@
                         <q-item clickable v-ripple @click="imprimirCambiodeMoneda(p)" v-close-popup>
                           <q-item-section avatar><q-icon name="picture_as_pdf"/></q-item-section>
                           <q-item-section>Imprimir Cambio de Moneda</q-item-section>
+                        </q-item>
+<!--                        btn fundir-->
+                        <q-item clickable v-ripple @click="fundirPrestamo(p)" v-close-popup v-if="p.estado !== 'Fundido'">
+                          <q-item-section avatar><q-icon name="merge_type"/></q-item-section>
+                          <q-item-section>Fundir Préstamo</q-item-section>
                         </q-item>
                       </q-list>
                     </q-btn-dropdown>
@@ -457,6 +463,29 @@ export default {
       const url = this.$axios.defaults.baseURL + `/prestamos/${p.id}/pdf`
       window.open(url, '_blank')
     },
+    fundirPrestamo(p) {
+      // this.loading = true
+      // this.$axios.post(`prestamos/${p.id}/fundir`).then(() => {
+      //   this.$q.notify({ type:'positive', message:'Préstamo fundido exitosamente' })
+      //   this.getPrestamos()
+      // }).catch(e => {
+      //   this.$alert?.error?.(e.response?.data?.message || 'Error al fundir préstamo')
+      // }).finally(() => { this.loading = false })
+      this.$q.dialog({
+        title: 'Fundir Préstamo',
+        message: `¿Estás seguro de fundir el préstamo #${p.numero}? Esta acción no se puede deshacer.`,
+        cancel: true,
+        persistent: true
+      }).onOk(() => {
+        this.loading = true
+        this.$axios.post(`prestamos/${p.id}/fundir`).then(() => {
+          this.$q.notify({ type:'positive', message:'Préstamo fundido exitosamente' })
+          this.getPrestamos()
+        }).catch(e => {
+          this.$alert?.error?.(e.response?.data?.message || 'Error al fundir préstamo')
+        }).finally(() => { this.loading = false })
+      })
+    },
     imprimirCambiodeMoneda(p) {
       const url = this.$axios.defaults.baseURL + `/prestamos/${p.id}/cambio/pdf`
       window.open(url, '_blank')
@@ -547,17 +576,17 @@ export default {
     money (v) { return Number(v || 0).toFixed(2) },
 
     estadoColor (p) {
-      if (p.estado === 'Pagado') return '#21ba45'
+      if (p.estado === 'Activo') return '#21ba45'
       if (p.estado === 'Cancelado') return '#e53935'
       if (this.esVencido(p)) return '#f4511e'
-      if (p.estado === 'Pendiente') return '#fb8c00'
+      if (p.estado === 'Entregado') return '#fb8c00'
       return '#9e9e9e'
     },
     estadoIcon (p) {
-      if (p.estado === 'Pagado') return 'check_circle'
+      if (p.estado === 'Activo') return 'check_circle'
       if (p.estado === 'Cancelado') return 'block'
       if (this.esVencido(p)) return 'warning'
-      if (p.estado === 'Pendiente') return 'hourglass_empty'
+      if (p.estado === 'Entregado') return 'hourglass_empty'
       return 'payments'
     },
     estadoTexto (p) {

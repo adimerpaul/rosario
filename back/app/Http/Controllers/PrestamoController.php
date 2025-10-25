@@ -12,6 +12,13 @@ use Illuminate\Support\Carbon;
 
 class PrestamoController extends Controller
 {
+//    function fundir
+//Route::post('prestamos/{prestamo}/fundir', [PrestamoController::class, 'fundir']);
+    function fundir(Request $request, Prestamo $prestamo)
+    {
+        $prestamo->estado = 'Fundido';
+        $prestamo->save();
+    }
     function totalInvertido(){
         $valorPestado = Prestamo::whereIn('estado', ['Pendiente'])->sum('valor_prestado');
         $valorAmortizado = PrestamoPago::whereIn('estado', ['Activo'])
@@ -243,8 +250,8 @@ class PrestamoController extends Controller
         $base = $this->calcBase($p);
         $p->saldo  = $base['saldo'];
         if ($p->saldo <= 0) {
-            $p->estado = 'Pagado';
-        } elseif ($p->estado === 'Pagado') {
+            $p->estado = 'Entregado';
+        } elseif ($p->estado === 'Entregado') {
             $p->estado = 'Pendiente';
         }
         $p->save();
@@ -336,7 +343,7 @@ class PrestamoController extends Controller
 //            $monto = $base['saldo'];
 
             if ($monto <= 0) {
-                $prestamo->estado = 'Pagado';
+                $prestamo->estado = 'Entregado';
                 $prestamo->saldo  = 0;
                 $prestamo->save();
                 return response()->json(['message' => 'El préstamo ya está pagado'], 200);
@@ -349,7 +356,7 @@ class PrestamoController extends Controller
             $this->crearPago($prestamo, $monto, 'TOTAL', $metodo, $user->id);
 
             // Marcar como pagado explícitamente
-            $prestamo->estado = 'Pagado';
+            $prestamo->estado = 'Entregado';
             $prestamo->saldo  = 0;
             // Opcional: fecha_limite = hoy o conservar
             $prestamo->fecha_limite = today()->toDateString();
@@ -368,7 +375,7 @@ class PrestamoController extends Controller
         $perPage  = (int) $request->query('per_page', 24);
 
         $q = Prestamo::with(['cliente','user'])
-            ->whereNotIn('estado', ['Pagado','Cancelado'])
+            ->whereNotIn('estado', ['Entregado','Cancelado'])
             ->whereNotNull('fecha_limite')
             ->whereDate('fecha_limite', '<', $hoy)
             ->whereRaw('DATEDIFF(?, fecha_limite) >= ?', [$hoy, $diasMin])
@@ -458,6 +465,8 @@ class PrestamoController extends Controller
             $a  = (float) $data['almacen']; // %
             $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
 
+            $tipoDeCambio = Cog::find(4);
+
             $prestamo = Prestamo::create([
                 'numero'         => null,
                 'fecha_creacion' => date('Y-m-d H:i:s'),
@@ -475,7 +484,7 @@ class PrestamoController extends Controller
                 'almacen'        => $a,          // %
                 'saldo'          => $deuda,      // total teórico
                 'celular'        => $data['celular'] ?? null,
-                'detalle'        => $data['detalle'] ?? null,
+                'detalle'        => ($data['detalle'] ?? null).(' [TC: '.($tipoDeCambio ? $tipoDeCambio->value : 'N/A').']'),
                 'estado'         => 'Activo',
             ]);
 
@@ -556,7 +565,7 @@ class PrestamoController extends Controller
                     // de lo contrario lo derivamos por saldo
                     'estado'         => array_key_exists('estado', $data)
                         ? $data['estado']
-                        : ($saldo <= 0 ? 'Pagado' : $prestamo->estado),
+                        : ($saldo <= 0 ? 'Entregado' : $prestamo->estado),
                 ]);
             }
 
@@ -626,7 +635,7 @@ class PrestamoController extends Controller
             $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
 
             $prestamo->saldo  = $deuda - $pagado;
-            if ($prestamo->saldo > 0 && $prestamo->estado === 'Pagado') {
+            if ($prestamo->saldo > 0 && $prestamo->estado === 'Entregado') {
                 $prestamo->estado = 'Pendiente';
             }
             $prestamo->save();

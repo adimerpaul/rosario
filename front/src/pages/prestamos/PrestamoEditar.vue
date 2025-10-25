@@ -193,7 +193,10 @@
                       </q-chip>
                     </td>
                     <td>
-                      <q-btn v-if="p.estado==='Activo'" class="q-mr-xs" icon="delete" color="negative" dense
+<!--                      solo puede anular el admin-->
+                      <q-btn
+                        v-if="p.estado==='Activo' && isAdmin"
+                        class="q-mr-xs" icon="delete" color="negative" dense
                              @click="anularPago(p.id)" size="xs" label="Anular" no-caps />
                     </td>
                   </tr>

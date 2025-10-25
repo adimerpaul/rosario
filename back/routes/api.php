@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('ingresos/{ingreso}/anular', [IngresoController::class, 'anular']);
 //    totalInvertido
     Route::get('totalInvertido', [PrestamoController::class, 'totalInvertido']);
+    Route::post('prestamos/{prestamo}/fundir', [PrestamoController::class, 'fundir']);
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf']);
 Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia']);
