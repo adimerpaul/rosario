@@ -9,13 +9,13 @@
         </div>
 
         <div class="col-12 col-md-2">
-          <q-input v-model.number="openingAmount" type="number" min="0" step="0.01"
-                   dense outlined label="Caja inicial (Bs.)" @keyup.enter="guardarCaja" />
+<!--          <q-input v-model.number="openingAmount" type="number" min="0" step="0.01"-->
+<!--                   dense outlined label="Caja inicial (Bs.)" @keyup.enter="guardarCaja" />-->
         </div>
 
         <div class="col-12 col-md-2">
-          <q-btn size="12px" dense color="primary" icon="save" label="Guardar caja" no-caps
-                 :loading="loadingSave" @click="guardarCaja" />
+<!--          <q-btn size="12px" dense color="primary" icon="save" label="Guardar caja" no-caps-->
+<!--                 :loading="loadingSave" @click="guardarCaja" />-->
         </div>
 
         <div class="col-12 col-md-2">
@@ -122,7 +122,7 @@
                   </q-chip>
                 </td>
                 <td class="text-right" v-if="$store.user?.role === 'Administrador'">
-                  <q-btn v-if="it.fuente==='INGRESO' && it.estado==='Activo'"
+                  <q-btn v-if="(it.fuente==='INGRESO' && it.estado==='Activo')"
                          dense flat color="negative" icon="block" label="Anular"
                          @click="anularIngreso(it.id)" no-caps size="10px" />
                 </td>

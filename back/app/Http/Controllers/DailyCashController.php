@@ -70,6 +70,7 @@ class DailyCashController extends Controller
                 'descripcion' => "Orden {$o->numero} — ".($o->cliente->name ?? 'N/A'),
                 'monto'       => (float) ($o->adelanto ?? 0),
                 'usuario'     => $o->user->name ?? 'N/A',
+                'fecha_creacion' => $o->fecha_creacion,
             ];
         })->values();
         $totalOrdenes = (float) $ordenItems->sum('monto');
@@ -90,7 +91,8 @@ class DailyCashController extends Controller
                 'descripcion' => "Pago orden {$p->orden->numero} — ".($p->orden->cliente->name ?? 'N/A'),
                 'monto'       => (float) $p->monto,
                 'usuario'     => $p->user->name ?? 'N/A',
-                'metodo'      => $p->metodo ?? null, // EFECTIVO/QR
+                'metodo'      => $p->metodo ?? null,
+                'fecha' => $p->fecha,
             ];
         })->values();
         $totalPagosOrdenes = (float) $pagoOrdenItems->sum('monto');
@@ -157,6 +159,7 @@ class DailyCashController extends Controller
                 'usuario'     => $pr->user->name ?? 'N/A',
                 'metodo'      => $pr->metodo_entrega ?? $pr->metodo ?? 'EFECTIVO',
                 'estado'      => 'Activo',
+                'fecha_creacion' => $pr->fecha_creacion,
             ];
         })->values();
         $totalEgresosPrest = (float) $egresoItems->sum('monto');
