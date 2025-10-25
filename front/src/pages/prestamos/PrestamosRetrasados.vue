@@ -53,8 +53,10 @@
               <q-card-section class="row items-center">
                 <q-icon name="schedule" color="orange" size="lg" class="q-mr-sm"/>
                 <div>
-                  <div class="text-subtitle2 text-orange-9 text-weight-bold">Total retrasados</div>
-                  <div class="text-h6">{{ resumen.total }}</div>
+<!--                  <div class="text-subtitle2 text-orange-9 text-weight-bold">Total retrasados</div>-->
+<!--                  <div class="text-h6">{{ resumen.total }}</div>-->
+                  <div class="text-subtitle2 text-orange-9 text-weight-bold">Total invertido</div>
+                  <div class="text-h6">{{ totalInvertido }}</div>
                 </div>
               </q-card-section>
             </q-card>
@@ -194,6 +196,7 @@ export default {
         dias: 1
       },
       page: 1,
+      totalInvertido: 0,
       perPage: 24,
       totalPages: 1,
       resumen: { total: 0, saldo: 0, promDias: 0 },
@@ -203,8 +206,17 @@ export default {
   mounted () {
     this.getUsuarios()
     this.fetchData()
+    this.totalInvertidoGet()
   },
   methods: {
+    async totalInvertidoGet () {
+      try {
+        const { data } = await this.$axios.get('totalInvertido')
+        this.totalInvertido = data || 0
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al obtener el total invertido')
+      }
+    },
     async getUsuarios () {
       try {
         const { data } = await this.$axios.get('users')

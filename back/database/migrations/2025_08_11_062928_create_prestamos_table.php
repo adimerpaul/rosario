@@ -33,7 +33,7 @@ return new class extends Migration
             $table->decimal('saldo', 12, 2)->default(0);          // (prestado+interes) - pagos
             $table->string('celular')->nullable();
             $table->text('detalle')->nullable();
-            $table->string('estado')->default('Pendiente');       // Pendiente | Pagado | Cancelado | Vencido
+            $table->string('estado')->default('Activo');       // Pendiente | Pagado | Cancelado | Vencido
             $table->timestamps();
             $table->softDeletes();
         });

@@ -12,7 +12,14 @@ use Illuminate\Support\Carbon;
 
 class PrestamoController extends Controller
 {
-
+    function totalInvertido(){
+        $valorPestado = Prestamo::whereIn('estado', ['Pendiente'])->sum('valor_prestado');
+        $valorAmortizado = PrestamoPago::whereIn('estado', ['Activo'])
+            ->whereIn('tipo_pago', ['SALDO','CARGOS','TOTAL'])
+            ->sum('monto');
+//        'SALDO','CARGOS','TOTAL'
+        return $valorPestado - $valorAmortizado;
+    }
     public function comprobanteCambioPrestamoPdf(Prestamo $prestamo)
     {
         // Identidad de la agencia (fijo)
@@ -469,7 +476,7 @@ class PrestamoController extends Controller
                 'saldo'          => $deuda,      // total teórico
                 'celular'        => $data['celular'] ?? null,
                 'detalle'        => $data['detalle'] ?? null,
-                'estado'         => 'Pendiente',
+                'estado'         => 'Activo',
             ]);
 
             $prestamo->numero = 'PR-' . str_pad($prestamo->id, 6, '0', STR_PAD_LEFT) . '-' . now()->format('Y');

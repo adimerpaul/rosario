@@ -94,15 +94,38 @@
                 <q-form @submit.prevent="guardarPrestamo">
                   <div class="row q-col-gutter-sm">
 
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                       <q-input label="Fecha Límite" type="date" v-model="prestamo.fecha_limite" outlined dense readonly />
                     </div>
 
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                       <q-input label="Celular" v-model="prestamo.celular" outlined dense/>
                     </div>
 
-                    <div class="col-6 col-md-3">
+
+                    <div class="col-6 col-md-2">
+                      <q-input
+                        label="Monto maximo" :model-value="money(prestamo.valor_total)"
+                        type="text" outlined dense readonly
+                      />
+                    </div>
+                    <div class="col-6 col-md-2">
+                      <q-input
+                        label="Peso en oro (kg)" :model-value="pesoNetoStr"
+                        outlined dense readonly
+                      />
+                    </div>
+                    <div class="col-6 col-md-2">
+                      <q-input label="Cargo mensual" :model-value="money(interesMonto+almacenMonto)" outlined dense readonly/>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                      <!--                      <q-input label="Valor de venta" :model-value="money(prestamo.saldo)" outlined dense readonly/>-->
+                      <!--                      precioVenta * pesoNeto = {{ money(precioVenta.value * pesoNeto) }}-->
+                      <q-input label="Precio venta (Bs)" :model-value="money(precioVenta.value * pesoNeto)" outlined dense readonly/>
+                    </div>
+
+                    <div class="col-6 col-md-2">
                       <q-input
                         label="Peso bruto (kg)" type="number" outlined dense
                         v-model.number="prestamo.peso" min="0" step="0.001"
@@ -110,29 +133,14 @@
                       />
                     </div>
 
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                       <q-input
                         label="Merma/Piedra (kg)" type="number" outlined dense
                         v-model.number="prestamo.merma" min="0" step="0.001"
                         @update:model-value="calcularTotales"
                       />
                     </div>
-
-                    <div class="col-6 col-md-3">
-                      <q-input
-                        label="Peso en oro (kg)" :model-value="pesoNetoStr"
-                        outlined dense readonly
-                      />
-                    </div>
-
-                    <div class="col-6 col-md-3">
-                      <q-input
-                        label="Monto maximo" :model-value="money(prestamo.valor_total)"
-                        type="text" outlined dense readonly
-                      />
-                    </div>
-
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                       <q-input
                         label="Prestado (Bs)" v-model.number="prestamo.valor_prestado"
                         type="number" outlined dense
@@ -140,8 +148,11 @@
                       />
                     </div>
 
+
+
+
                     <!-- PORCENTAJES -->
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                       <q-select
                         label="Interés (%)" outlined dense
                         v-model.number="prestamo.interes"
@@ -151,11 +162,11 @@
                       />
                     </div>
 
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                       <q-select
                         label="Almacén (%)" outlined dense
                         v-model.number="prestamo.almacen"
-                        :options="[2,3]"
+                        :options="[1,1.5,2,3]"
                         @update:model-value="calcularSaldo"
                         :readonly="!isAdmin"
                       />
@@ -168,15 +179,6 @@
 <!--                    <div class="col-6 col-md-4">-->
 <!--                      <q-input label="Almacén (Bs)" :model-value="money(almacenMonto)" outlined dense readonly/>-->
 <!--                    </div>-->
-                    <div class="col-6 col-md-4">
-                      <q-input label="Cargo mensual" :model-value="money(interesMonto+almacenMonto)" outlined dense readonly/>
-                    </div>
-
-                    <div class="col-12 col-md-4">
-<!--                      <q-input label="Valor de venta" :model-value="money(prestamo.saldo)" outlined dense readonly/>-->
-<!--                      precioVenta * pesoNeto = {{ money(precioVenta.value * pesoNeto) }}-->
-                      <q-input label="Precio venta (Bs)" :model-value="money(precioVenta.value * pesoNeto)" outlined dense readonly/>
-                    </div>
 
                     <div class="col-12">
                       <q-input label="Detalle" v-model="prestamo.detalle" type="textarea" outlined dense />
@@ -315,7 +317,10 @@ export default {
       const vp = Number(this.prestamo.valor_prestado || 0)
 
       // 1) Fijar % de almacén si NO es admin (regla: >=1000 => 2%, si no 3%)
-      this.prestamo.almacen = vp >= 1000 ? 2 : 3
+      // this.prestamo.almacen = vp >= 1000 ? 2 : 3 pero si es admin puede cambiar
+      if (!this.isAdmin) {
+        this.prestamo.almacen = vp >= 1000 ? 2 : 3
+      }
 
       // 2) Recalcular montos con los % vigentes
       const iPerc = Number(this.prestamo.interes || 0)  // %
