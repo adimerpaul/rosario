@@ -141,7 +141,7 @@ class OrdenController extends Controller{
         }
 
         // NUEVO: búsqueda por número, nombre, CI (y detalle opcional)
-        if ($request->filled('search')) {
+//        if ($request->filled('search')) {
             $s = trim($request->search);
             $query->where(function ($q) use ($s) {
                 $q->where('numero', 'like', "%{$s}%")
@@ -152,11 +152,11 @@ class OrdenController extends Controller{
                             ->orWhere('cellphone', 'like', "%{$s}%");
                     });
             });
-        }else{
-            if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
-                $query->whereBetween('fecha_creacion', [$request->fecha_inicio, $request->fecha_fin]);
-            }
-        }
+//        }else{
+//            if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
+//                $query->whereBetween('fecha_creacion', [$request->fecha_inicio, $request->fecha_fin]);
+//            }
+//        }
 
         $perPage = $request->integer('per_page', 100);
         return $query->paginate($perPage);

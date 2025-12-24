@@ -112,9 +112,19 @@
                     <div class="col-12 col-md-4">
                       <q-input label="Saldo" v-model.number="orden.saldo" type="number" outlined dense readonly/>
                     </div>
-                    <div class="col-12 col-md-3">
+                    <div class="col-12 col-md-2">
 <!--                      chech de 18 kilates-->
                       <q-checkbox v-model="check18Kilates" label="18 Kilates" dense  @update:model-value="coloca18Kilates"/>
+                    </div>
+<!--                    tipo_pago-->
+                    <div class="col-12 col-md-3">
+                      <q-select
+                        v-model="orden.tipo_pago"
+                        :options="['Efectivo', 'Tarjeta', 'Transferencia', 'QR']"
+                        label="Tipo de Pago"
+                        outlined
+                        dense
+                      />
                     </div>
                     <div class="col-12 col-md-6">
                       <q-input label="Detalle" v-model="orden.detalle" type="textarea" outlined dense>
@@ -172,6 +182,7 @@ export default {
       check18Kilates: true,
       orden: {
         numero: '',
+        tipo_pago: 'Efectivo',
         // fecha_creacion: new Date().toISOString().substr(0, 10),
         fecha_entrega: moment().add(1, 'weeks').format('YYYY-MM-DD'),
         detalle: '18 Kilates',

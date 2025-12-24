@@ -112,7 +112,13 @@
                         </div>
                     </td>
                     <td class="right" style="width:150px;vertical-align: top;">
-                        <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br><span class="xs" style="color:#666">{{ $hoy->format('d/m/Y') }}</span></div>
+{{--                        colocar aca la fecha--}}
+{{--                        <div>--}}
+{{--                            <span class="sm bold">Fecha:</span><br>--}}
+{{--                            <span class="md">{{ $hoy->format('d/m/Y') }}</span>--}}
+{{--                        </div>--}}
+                        <span class="xs">Fecha: {{ $hoy->format('d/m/Y') }}</span>
+                        <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br></div>
                         <div class="pill-nro">Nro: {{ $orden->numero }}</div>
                     </td>
                 </tr>
@@ -122,13 +128,13 @@
             <table class="grid mt6">
                 <tr>
                     <td class="cell" style="width:50%">
-                        <span class="label-float">N° y Fecha</span>
+                        <span class="label-float">N°</span>
                         <div class="md"><b>N°:</b> {{ $orden->numero }}</div>
-                        <div class="date-line">
-                            <span class="sm bold">Día</span> <span class="date-box">{{ $dia }}</span>
-                            <span class="sm bold">Mes</span> <span class="date-box">{{ $mes }}</span>
-                            <span class="sm bold">Año</span> <span class="date-box">{{ $ano }}</span>
-                        </div>
+{{--                        <div class="date-line">--}}
+{{--                            <span class="sm bold">Día</span> <span class="date-box">{{ $dia }}</span>--}}
+{{--                            <span class="sm bold">Mes</span> <span class="date-box">{{ $mes }}</span>--}}
+{{--                            <span class="sm bold">Año</span> <span class="date-box">{{ $ano }}</span>--}}
+{{--                        </div>--}}
                     </td>
                     <td class="cell" style="width:50%">
                         <span class="label-float">El Señor:</span>
@@ -201,6 +207,9 @@
                     </td>
                 </tr>
             </table>
+            <div class="xs center mt6">
+                Pasado los 30 días, se procederá a la reutilizacion del material , la casa no se hace responsable
+            </div>
         </div>
     @endfor
 </div>

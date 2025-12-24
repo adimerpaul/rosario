@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('saldo', 10, 2)->default(0.00);
             $table->string('estado')->default('Pendiente'); // Pendiente, Entregado, Cancelada
             $table->decimal('peso', 8, 2)->default(0.00); // peso en kg
+            $table->string('tipo_pago')->nullable(); // Efectivo, Tarjeta, Transferencia, Mixto
             $table->text('nota')->nullable()->default('');
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');

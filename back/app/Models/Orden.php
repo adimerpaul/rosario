@@ -15,6 +15,7 @@ class Orden extends Model{
         'detalle',
         'celular',
         'costo_total',
+        'tipo_pago',
         'adelanto',
         'saldo',
         'estado',

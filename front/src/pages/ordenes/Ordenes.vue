@@ -4,12 +4,12 @@
       <q-card-section>
         <div class="row q-col-gutter-sm">
           <!-- Filtros -->
-          <div class="col-12 col-md-3">
-            <q-input label="Fecha Inicio" type="date" dense outlined v-model="filters.fecha_inicio" />
-          </div>
-          <div class="col-12 col-md-3">
-            <q-input label="Fecha Fin" type="date" dense outlined v-model="filters.fecha_fin" />
-          </div>
+<!--          <div class="col-12 col-md-3">-->
+<!--            <q-input label="Fecha Inicio" type="date" dense outlined v-model="filters.fecha_inicio" />-->
+<!--          </div>-->
+<!--          <div class="col-12 col-md-3">-->
+<!--            <q-input label="Fecha Fin" type="date" dense outlined v-model="filters.fecha_fin" />-->
+<!--          </div>-->
           <div class="col-12 col-md-3">
             <q-select v-model="filters.user_id" :options="usuarios" option-label="name" option-value="id"
                       label="Usuario" dense outlined emit-value map-options/>
@@ -31,6 +31,34 @@
               <template #append><q-icon name="search" /></template>
             </q-input>
           </div>
+          <div class="col-6 col-md-2">
+            <q-card class="items-center bg-info">
+              <q-card-section class="row q-pa-none">
+                <q-icon name="payments" color="white" size="lg" class="q-mr-sm"/>
+                <div>
+                  <div class="text-subtitle1 text-weight-bold text-white">Total QR</div>
+                  <div class="text-h6 text-white">
+                    {{ totalQr }} Bs
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+          <div class="col-6 col-md-2">
+            <q-card class="items-center bg-secondary">
+              <q-card-section class="row q-pa-none">
+                <q-icon name="account_balance_wallet" color="white" size="lg" class="q-mr-sm"/>
+                <div>
+                  <div class="text-subtitle1 text-weight-bold text-white">Total Efectivo</div>
+                  <div class="text-h6 text-white">
+                    {{ totalEfectivo }} Bs
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+<!--          carde de total d qr-->
+          <div class="col-12"></div>
 
           <div class="col-12 col-md-2 q-mt-sm">
             <q-btn color="primary" label="Actualizar" icon="refresh" @click="getOrdenes"
@@ -123,6 +151,10 @@
                         <div class="text-caption text-grey-7">Adelanto</div>
                         <div class="text-weight-medium">
                           {{ parseInt(orden.adelanto) + parseInt(orden.totalPagos) }}
+                          <span class="muted text-red">
+                            {{orden.tipo_pago }}
+                          </span>
+<!--                          <pre>{{orden.tipo_pago}}</pre>-->
                         </div>
 <!--                        <pre>{{orden.totalPagos}}</pre>-->
                       </div>
@@ -222,6 +254,26 @@ export default {
         lastPage: 1
       },
       perPageOptions: [12, 24, 48, 96, 100]
+    }
+  },
+  computed : {
+    totalQr() {
+      let total = 0;
+      this.ordenes.forEach(orden => {
+        if (orden.tipo_pago === 'QR') {
+          total += Number(orden.adelanto || 0);
+        }
+      });
+      return total.toFixed(2);
+    },
+    totalEfectivo() {
+      let total = 0;
+      this.ordenes.forEach(orden => {
+        if (orden.tipo_pago === 'Efectivo') {
+          total += Number(orden.adelanto || 0);
+        }
+      });
+      return total.toFixed(2);
     }
   },
   mounted () {
