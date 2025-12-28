@@ -127,6 +127,15 @@
                         <div class="text-caption text-grey-7">
                           {{ orden.fecha_creacion?.substring(0,10) }} <br>
                           <span class="muted">Creado: {{ formatDateTime(orden.fecha_creacion) }}</span>
+<!--                          <pre>{{// orden}}</pre>-->
+<!--                          fecha_entrega-->
+                          <div>
+                            Entrega:
+                            <span v-if="orden.fecha_entrega">
+                              {{ formatDateTime(orden.fecha_entrega) }}
+                            </span>
+                            <span v-else class="muted">—</span>
+                          </div>
                         </div>
                       </div>
                       <q-space/>

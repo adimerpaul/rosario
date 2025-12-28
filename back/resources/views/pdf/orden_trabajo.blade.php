@@ -11,7 +11,7 @@
 
         /* Paleta/utilidades */
         .brand{ color:#FF0000; }
-        .xs{font-size:9px} .sm{font-size:10px} .md{font-size:11px} .lg{font-size:12px} .xl{font-size:16px}
+        .xs{font-size:9px} .sm{font-size:12px} .md{font-size:11px} .lg{font-size:12px} .xl{font-size:16px}
         .bold{font-weight:700} .center{text-align:center} .right{text-align:right}
         .mt2{margin-top:2px} .mt4{margin:4px} .mt6{margin-top:6px}
         .w100{width:100%}
@@ -44,7 +44,7 @@
         /* Etiqueta flotante (El Señor, Trabajo…) */
         .label-float{
             position:absolute; top:-8px; left:12px; background:#fff; padding:0 4px;
-            font-size:10px; color:#FF0000; font-weight:700; border-radius:8px;
+            font-size:8px; color:#FF0000; font-weight:700; border-radius:8px;
         }
 
         /* Fecha en cajitas (Día Mes Año) */
@@ -97,12 +97,9 @@
                         <img class="logo" src="{{ public_path('images/logo.png') }}">
                     </td>
                     <td class="center">
-                        <div class="brand bold lg">{{ $empresa['nombre'] ?? 'JOYERIA ROSARIO' }}</div>
-                        @if(file_exists(public_path('images/rings.png')))
-                            <div class="mt4"><img class="rings" src="{{ public_path('images/rings.png') }}"></div>
-                        @endif
-                        <div class="xs">{{ $empresa['direccion'] ?? 'Calle Junín entre La Plata y Soria — Frente a mercado' }}</div>
-                        <div class="xs">Cel: {{ $empresa['cel'] ?? '704-12345' }} — {{ strtoupper($empresa['sucursal'] ?? 'ORURO') }}</div>
+{{--                        <div class="brand bold lg">{{ $empresa['nombre'] ?? 'JOYERIA ROSARIO' }}</div>--}}
+{{--                        <div class="xs">{{ $empresa['direccion'] ?? 'Calle Junín entre La Plata y Soria — Frente a mercado' }}</div>--}}
+{{--                        <div class="xs">Cel: {{ $empresa['cel'] ?? '704-12345' }} — {{ strtoupper($empresa['sucursal'] ?? 'ORURO') }}</div>--}}
                         <div class="brand title mt4">ORDEN DE TRABAJO</div>
                         <div class="sub">
                             DIR. ADOLFO MIER, POTOSÍ Y PAGADOR <br>
@@ -117,9 +114,20 @@
 {{--                            <span class="sm bold">Fecha:</span><br>--}}
 {{--                            <span class="md">{{ $hoy->format('d/m/Y') }}</span>--}}
 {{--                        </div>--}}
-                        <span class="xs">Fecha: {{ $hoy->format('d/m/Y') }}</span>
-                        <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br></div>
-                        <div class="pill-nro">Nro: {{ $orden->numero }}</div>
+                        <table>
+                            <tr>
+                                <td>
+                                    @if(file_exists(public_path('images/rings.png')))
+                                        <div class="mt4"><img class="rings" src="{{ public_path('images/rings.png') }}"></div>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="xs">Fecha: {{ $hoy->format('d/m/Y') }}</span>
+                                    <div class="pill-badge">Nro: {{ $orden->numero }}</div>
+                                    <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br></div>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
@@ -127,18 +135,23 @@
             <!-- N° + Fecha (cajitas) y Cliente -->
             <table class="grid mt6">
                 <tr>
-                    <td class="cell" style="width:50%">
-                        <span class="label-float">N°</span>
-                        <div class="md"><b>N°:</b> {{ $orden->numero }}</div>
+{{--                    <td class="cell" style="width:50%">--}}
+{{--                        <span class="label-float">N°</span>--}}
+{{--                        <div class="md"><b>N°:</b> {{ $orden->numero }}</div>--}}
 {{--                        <div class="date-line">--}}
 {{--                            <span class="sm bold">Día</span> <span class="date-box">{{ $dia }}</span>--}}
 {{--                            <span class="sm bold">Mes</span> <span class="date-box">{{ $mes }}</span>--}}
 {{--                            <span class="sm bold">Año</span> <span class="date-box">{{ $ano }}</span>--}}
 {{--                        </div>--}}
-                    </td>
+{{--                    </td>--}}
                     <td class="cell" style="width:50%">
                         <span class="label-float">El Señor:</span>
                         <div class="md" style="margin-top:2px">{{ mb_strtoupper($orden->cliente->name ?? 'N/A') }}</div>
+                    </td>
+{{--                    <td> telefono</td>--}}
+                    <td class="cell" style="width:50%">
+                        <span class="label-float">Teléfono:</span>
+                        <div class="md" style="margin-top:2px">{{ $orden->cliente->cellphone ?? 'N/A' }}</div>
                     </td>
                 </tr>
             </table>

@@ -10,6 +10,7 @@ use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PrestamoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DashboardController;
 
 //Route::get('/user', function (Request $request) {
 //    return $request->user();
@@ -86,6 +87,10 @@ Route::middleware('auth:sanctum')->group(function () {
 //    totalInvertido
     Route::get('totalInvertido', [PrestamoController::class, 'totalInvertido']);
     Route::post('prestamos/{prestamo}/fundir', [PrestamoController::class, 'fundir']);
+    Route::get('dashboard', [DashboardController::class, 'show']);
+    Route::get('dashboard/reportes', [DashboardController::class, 'reportes']);
+
+
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf']);
 Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia']);
