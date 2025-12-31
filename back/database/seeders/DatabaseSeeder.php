@@ -51,12 +51,12 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Prueba', 'username' => 'prueba'],
         ];
         foreach ($usuarios as $usuario) {
-            User::create([
-                'name' => $usuario['name'],
-                'username' => $usuario['username'],
-                'password' => bcrypt('123456'),
-                'role' => 'Vendedor',
-            ]);
+//            User::create([
+//                'name' => $usuario['name'],
+//                'username' => $usuario['username'],
+//                'password' => bcrypt('123456'),
+//                'role' => 'Vendedor',
+//            ]);
         }
         $cogs = [
             ['name' => 'Precio Compra', 'value' => 950.00, 'description' => 'Precio de compra del oro'],
@@ -81,26 +81,26 @@ class DatabaseSeeder extends Seeder
             ['name' => "Francisco Franco Chavez", "ci" => "99999999", "cellphone" => "77436125"],
         ];
         foreach ($clients as $client) {
-            \App\Models\Client::create([
-                'name' => $client['name'],
-                'ci' => $client['ci'],
-                'cellphone' => $client['cellphone'],
-                'status' => 'Confiable',
-            ]);
+//            \App\Models\Client::create([
+//                'name' => $client['name'],
+//                'ci' => $client['ci'],
+//                'cellphone' => $client['cellphone'],
+//                'status' => 'Confiable',
+//            ]);
         }
-        Orden::create([
-            'numero' => 'O0001-2024',
-            'fecha_creacion' => now(),
-            'detalle' => 'Orden de prueba',
-            'celular' => '72466152',
-            'costo_total' => 100.00,
-            'adelanto' => 50.00,
-            'saldo' => 50.00,
-            'estado' => 'Pendiente',
-            'peso' => 0.5,
-            'nota' => 'Nota de prueba',
-            'user_id' => $user->id,
-            'cliente_id' => 1, // Asignar al primer cliente creado
-        ]);
+//        Orden::create([
+//            'numero' => 'O0001-2024',
+//            'fecha_creacion' => now(),
+//            'detalle' => 'Orden de prueba',
+//            'celular' => '72466152',
+//            'costo_total' => 100.00,
+//            'adelanto' => 50.00,
+//            'saldo' => 50.00,
+//            'estado' => 'Pendiente',
+//            'peso' => 0.5,
+//            'nota' => 'Nota de prueba',
+//            'user_id' => $user->id,
+//            'cliente_id' => 1, // Asignar al primer cliente creado
+//        ]);
     }
 }

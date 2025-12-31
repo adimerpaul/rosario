@@ -20,7 +20,8 @@ class PrestamoController extends Controller
         $prestamo->save();
     }
     function totalInvertido(){
-        $valorPestado = Prestamo::whereIn('estado', ['Pendiente'])->sum('valor_prestado');
+        $valorPestado = Prestamo::whereIn('estado', ['Pendiente','Activo'])->sum('valor_prestado');
+        error_log(json_encode($valorPestado));
         $valorAmortizado = PrestamoPago::whereIn('estado', ['Activo'])
             ->whereIn('tipo_pago', ['SALDO','CARGOS','TOTAL'])
             ->sum('monto');

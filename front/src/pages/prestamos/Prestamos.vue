@@ -116,6 +116,7 @@
                     <div class="row items-center">
                       <q-icon name="person" size="18px" class="q-mr-xs"/>
                       <div class="text-body2 ellipsis-2-lines">{{ p.cliente?.name || 'N/A' }}</div>
+                      <div><span class="text-bold">Detalle: </span>{{p.detalle}}</div>
                     </div>
 
                     <div class="row q-mt-sm">
@@ -169,14 +170,14 @@
                     <q-btn-dropdown dense no-caps color="primary" label="Más">
                       <q-list>
                         <q-item clickable v-ripple @click="openMensualidad(p)" v-close-popup
-                                v-if="p.dias_transcurridos >= 30 && p.estado === 'Pendiente'"
+                                v-if="p.dias_transcurridos >= 30 "
                         >
                           <q-item-section avatar><q-icon name="payment"/></q-item-section>
                           <q-item-section>Pagar mensualidad</q-item-section>
                         </q-item>
 
                         <q-item clickable v-ripple @click="openCargos(p)" v-close-popup
-                                v-if="p.dias_transcurridos > 0 && p.estado === 'Pendiente'"
+                                v-if="p.dias_transcurridos > 0"
                         >
                           <q-item-section avatar><q-icon name="attach_money"/></q-item-section>
                           <q-item-section>Pagar cargos</q-item-section>

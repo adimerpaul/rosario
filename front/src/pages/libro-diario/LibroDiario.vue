@@ -33,12 +33,12 @@
         </div>
 
         <div class="col-12 col-md-2 flex items-center justify-end">
-          <q-btn size="12px" dense color="grey" flat icon="refresh" label="Actualizar" no-caps
+          <q-btn style="width: 150px" size="12px" dense color="grey"  icon="refresh" label="Actualizar" no-caps
                  :loading="loading" @click="fetchDiario" />
-          <q-separator vertical class="q-mx-sm" />
-          <q-btn size="12px" dense color="positive" icon="add_circle" label="Registrar ingreso" no-caps
-                 class="q-mr-sm" @click="openIngresoDialog" />
-          <q-btn size="12px" dense color="negative" icon="remove_circle" label="Registrar egreso" no-caps
+          <q-separator vertical class="" />
+          <q-btn style="width: 150px" size="12px" dense color="positive" icon="add_circle" label="Registrar ingreso" no-caps
+                 class="" @click="openIngresoDialog" />
+          <q-btn style="width: 150px" size="12px" dense color="negative" icon="remove_circle" label="Registrar egreso" no-caps
                  @click="openEgresoDialog" />
         </div>
       </q-card-section>
@@ -48,16 +48,16 @@
       <!-- Totales arriba (compacto) -->
       <q-card-section class="row q-col-gutter-sm">
         <div class="col-12 col-md-3">
-          <div class="text-caption text-grey-7">TOTAL INGRESOS (incluye caja)</div>
-          <div class="text-h6">{{ currency(totalIngresos) }}</div>
-        </div>
-        <div class="col-12 col-md-3">
-          <div class="text-caption text-grey-7">TOTAL EGRESOS</div>
-          <div class="text-h6">{{ currency(totalEgresos) }}</div>
-        </div>
-        <div class="col-12 col-md-3">
           <div class="text-caption text-grey-7">TOTAL CAJA (neto)</div>
           <div class="text-h6">{{ currency(totalCaja) }}</div>
+        </div>
+        <div class="col-12 col-md-3 bg-green text-white">
+          <div class="text-caption text-white">TOTAL INGRESOS (incluye caja)</div>
+          <div class="text-h6">{{ currency(totalIngresos) }}</div>
+        </div>
+        <div class="col-12 col-md-3 bg-red text-white">
+          <div class="text-caption text-white">TOTAL EGRESOS</div>
+          <div class="text-h6">{{ currency(totalEgresos) }}</div>
         </div>
         <div class="col-12 col-md-3 flex items-center justify-end">
           <q-btn dense outline no-caps icon="visibility" label="Ver detalle"
@@ -196,13 +196,13 @@
         <q-separator/>
         <q-card-section class="q-gutter-sm">
 <!--          <q-input type="date" v-model="ingresoForm.fecha" label="Fecha" dense outlined />-->
+          <q-input v-model.number="ingresoForm.monto" type="number" min="0" step="0.01" label="Monto (Bs.)" dense outlined />
           <q-input v-model="ingresoForm.descripcion" label="Descripción" dense outlined />
 <!--          <q-select v-model="ingresoForm.metodo" :options="['EFECTIVO','QR']" label="Método" dense outlined />-->
 <!--          en radio-->
           <q-radio v-model="ingresoForm.metodo" val="EFECTIVO" label="EFECTIVO" />
           <q-radio v-model="ingresoForm.metodo" val="QR" label="QR" />
-          <q-input v-model.number="ingresoForm.monto" type="number" min="0" step="0.01" label="Monto (Bs.)" dense outlined />
-          <q-input v-model="ingresoForm.nota" type="textarea" autogrow label="Nota (opcional)" dense outlined />
+<!--          <q-input v-model="ingresoForm.nota" type="textarea" autogrow label="Nota (opcional)" dense outlined />-->
         </q-card-section>
         <q-separator/>
         <q-card-actions align="right">
@@ -219,12 +219,12 @@
         <q-separator/>
         <q-card-section class="q-gutter-sm">
 <!--          <q-input type="date" v-model="egresoForm.fecha" label="Fecha" dense outlined />-->
+          <q-input v-model.number="egresoForm.monto" type="number" min="0" step="0.01" label="Monto (Bs.)" dense outlined />
           <q-input v-model="egresoForm.descripcion" label="Descripción" dense outlined />
 <!--          <q-select v-model="egresoForm.metodo" :options="['EFECTIVO','QR']" label="Método" dense outlined />-->
           <q-radio v-model="egresoForm.metodo" val="EFECTIVO" label="EFECTIVO" />
           <q-radio v-model="egresoForm.metodo" val="QR" label="QR" />
-          <q-input v-model.number="egresoForm.monto" type="number" min="0" step="0.01" label="Monto (Bs.)" dense outlined />
-          <q-input v-model="egresoForm.nota" type="textarea" autogrow label="Nota (opcional)" dense outlined />
+<!--          <q-input v-model="egresoForm.nota" type="textarea" autogrow label="Nota (opcional)" dense outlined />-->
         </q-card-section>
         <q-separator/>
         <q-card-actions align="right">

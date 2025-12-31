@@ -206,7 +206,7 @@ export default {
   mounted () {
     this.getUsuarios()
     this.fetchData()
-    this.totalInvertidoGet()
+    // this.totalInvertidoGet()
   },
   methods: {
     async totalInvertidoGet () {
@@ -224,6 +224,7 @@ export default {
       } catch (e) {}
     },
     async fetchData () {
+      this.totalInvertidoGet()
       this.loading = true
       try {
         const { data } = await this.$axios.get('prestamosRetrasados', {

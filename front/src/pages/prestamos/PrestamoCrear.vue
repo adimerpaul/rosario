@@ -95,7 +95,7 @@
                   <div class="row q-col-gutter-sm">
 
                     <div class="col-6 col-md-2">
-                      <q-input label="Fecha Límite" type="date" v-model="prestamo.fecha_limite" outlined dense readonly />
+                      <q-input label="Fecha Límite" type="date" v-model="prestamo.fecha_limite" outlined dense />
                     </div>
 
                     <div class="col-6 col-md-2">

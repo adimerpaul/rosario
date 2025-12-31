@@ -124,9 +124,9 @@
                       <q-avatar :icon="getEstadoIcon(orden.estado)" :color="getEstadoColor(orden.estado)" text-color="white" size="32px"/>
                       <div class="q-ml-sm">
                         <div class="text-weight-bold">#{{ orden.numero }}</div>
-                        <div class="text-caption text-grey-7">
-                          {{ orden.fecha_creacion?.substring(0,10) }} <br>
-                          <span class="muted">Creado: {{ formatDateTime(orden.fecha_creacion) }}</span>
+                        <div class="text-caption ">
+<!--                          {{ orden.fecha_creacion?.substring(0,10) }}-->
+                          <span class="">Creado: {{ formatDateTime(orden.fecha_creacion) }}</span>
 <!--                          <pre>{{// orden}}</pre>-->
 <!--                          fecha_entrega-->
                           <div>
@@ -150,6 +150,8 @@
                       <q-icon name="person" size="18px" class="q-mr-xs"/>
                       <div class="text-body2 ellipsis-2-lines">{{ orden.cliente?.name || 'N/A' }}</div>
                     </div>
+                    <div>
+                      <span class="text-bold">Detalle: </span>{{orden.detalle}}</div>
 
                     <div class="row q-mt-sm">
                       <div class="col-4">
