@@ -5,13 +5,13 @@
     <title>Orden de Trabajo</title>
     <style>
         /* Página y tipografía (compacto) */
-        @page { margin: 6mm; }               /* margen chico */
+        @page { margin: 15mm; }               /* margen chico */
         body { font-family: DejaVu Sans, sans-serif; color:#111; }
         .wrap { width: 100%; }
 
         /* Paleta/utilidades */
         .brand{ color:#FF0000; }
-        .xs{font-size:9px} .sm{font-size:12px} .md{font-size:11px} .lg{font-size:12px} .xl{font-size:16px}
+        .xs{font-size:13px} .sm{font-size:12px} .md{font-size:11px} .lg{font-size:12px} .xl{font-size:16px}
         .bold{font-weight:700} .center{text-align:center} .right{text-align:right}
         .mt2{margin-top:2px} .mt4{margin:4px} .mt6{margin-top:6px}
         .w100{width:100%}
@@ -25,7 +25,7 @@
         .logo{ width:58px; height:auto }
         .rings{ width:60px; height:auto }
         .title{ font-weight:800; font-size:17px; letter-spacing:.2px; }
-        .sub{ font-size:9.5px; color:#555; margin-top:-2px }
+        .sub{ font-size:9.5px; color:#000; margin-top:-2px }
 
         .pill-badge{               /* Bs. en pastilla */
             display:inline-block; min-width:110px; text-align:center;
@@ -74,7 +74,7 @@
         /* Línea/firmas compactas */
         .dot{ border-top:1px dashed #bbb; margin:6px 0 }
         .sign{ width:48%; text-align:center }
-        .sign-line{ border-top:1px solid #333; width:75%; height:1px; margin:18px auto 2px }
+        .sign-line{ border-top:1px solid #000; width:75%; height:1px; margin:18px auto 2px }
     </style>
 </head>
 <body>
@@ -89,12 +89,20 @@
 
 {{--    for por 2--}}
     @for($i=0; $i<2; $i++)
-        <div class="sheet"style="padding:10px; margin-bottom:12px">
+        <div class="sheet" style="padding:10px; margin-bottom:12px">
             <!-- Encabezado -->
             <table class="head">
                 <tr>
-                    <td style="width:70px;vertical-align: top;">
-                        <img class="logo" src="{{ public_path('images/logo.png') }}">
+                    <td style="width:180px;vertical-align: top;text-align: center">
+{{--                        <div style="display:flex; justify-content: center; align-items: center; height: 70px;">--}}
+                            <img class="logo" src="{{ public_path('images/logo.png') }}" style="left: 100px">
+                        <span style="font-size: 9px; color: #000; margin-top: 4px; display: block; margin-left: -10px;">
+                        Calidad y garantia <br>
+                        Oro 18 Klts <br>
+                        Plata 925 decimos <br>
+                        </span>
+
+{{--                        </div>--}}
                     </td>
                     <td class="center">
 {{--                        <div class="brand bold lg">{{ $empresa['nombre'] ?? 'JOYERIA ROSARIO' }}</div>--}}
@@ -106,6 +114,11 @@
                             (LADO PALACE HOTEL) <br>
                             CEL. 73800584 TELF. 52-55713<br>
                             Oruro - Bolivia<br>
+                            <span class="xs">Fecha: {{ $hoy->format('d/m/Y') }}</span>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
                         </div>
                     </td>
                     <td class="right" style="width:150px;vertical-align: top;">
@@ -122,7 +135,6 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="xs">Fecha: {{ $hoy->format('d/m/Y') }}</span>
                                     <div class="pill-badge">Nro: {{ $orden->numero }}</div>
                                     <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br></div>
                                 </td>
@@ -159,7 +171,12 @@
             <!-- Trabajo de Joya -->
             <div class="cell">
                 <span class="label-float">Trabajo de Joya:</span>
-                <div class="md" style="margin-top:2px">{{ $orden->detalle }}</div>
+                <div class="md" style="margin-top:2px;font-size: 14px">
+
+                    {{ $orden->detalle }} /
+                    Peso: {{ $orden->peso }} gr.
+                    Oro: {{ $orden->kilates18 }}
+                </div>
             </div>
 
             <div class="cell mt6">
@@ -208,21 +225,21 @@
 
             <!-- Firmas compactas -->
             <div class="dot"></div>
-            <table class="w100" style="border-collapse:collapse">
-                <tr>
-                    <td class="sign">
-                        <div class="sign-line"></div>
-                        <div class="xs">Firma Cliente</div>
-                    </td>
-                    <td class="sign" style="text-align:right">
-                        <div class="sign-line"></div>
-                        <div class="xs" style="text-align: center">Firma Joyería</div>
-                    </td>
-                </tr>
-            </table>
-            <div class="xs center mt6">
-                Pasado los 30 días, se procederá a la reutilizacion del material , la casa no se hace responsable
-            </div>
+{{--            <table class="w100" style="border-collapse:collapse">--}}
+{{--                <tr>--}}
+{{--                    <td class="sign">--}}
+{{--                        <div class="sign-line"></div>--}}
+{{--                        <div class="xs">Firma Cliente</div>--}}
+{{--                    </td>--}}
+{{--                    <td class="sign" style="text-align:right">--}}
+{{--                        <div class="sign-line"></div>--}}
+{{--                        <div class="xs" style="text-align: center">Firma Joyería</div>--}}
+{{--                    </td>--}}
+{{--                </tr>--}}
+{{--            </table>--}}
+{{--            <div class="xs center mt6">--}}
+{{--                Pasado los 30 días, se procederá a la reutilizacion del material , la casa no se hace responsable--}}
+{{--            </div>--}}
         </div>
     @endfor
 </div>

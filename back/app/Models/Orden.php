@@ -22,6 +22,7 @@ class Orden extends Model{
         'peso',
         'nota',
         'user_id',
+        'kilates18',
         'cliente_id'
     ];
     protected $hidden = [

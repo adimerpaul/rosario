@@ -20,7 +20,7 @@ class PrestamoController extends Controller
         $prestamo->save();
     }
     function totalInvertido(){
-        $valorPestado = Prestamo::whereIn('estado', ['Pendiente','Activo'])->sum('valor_prestado');
+        $valorPestado = Prestamo::whereIn('estado', ['Pendiente','Activo','Entregado'])->sum('valor_prestado');
         error_log(json_encode($valorPestado));
         $valorAmortizado = PrestamoPago::whereIn('estado', ['Activo'])
             ->whereIn('tipo_pago', ['SALDO','CARGOS','TOTAL'])
@@ -32,7 +32,7 @@ class PrestamoController extends Controller
     {
         // Identidad de la agencia (fijo)
         $agencia   = 'JOYERÍA ROSARIO';
-        $direccion = 'CALLE JUNÍN ENTRE LA PLATA Y SORIA - FRENTE A MERCADO';
+        $direccion = 'Adolfo Mier entre Potosi y pagador (Lado palace Hotel)';
 
         // Usuario (cajero) y cliente desde la relación del préstamo
         $usuario = strtoupper($prestamo->user->username ?? $prestamo->user->name ?? 'USUARIO');
@@ -58,6 +58,7 @@ class PrestamoController extends Controller
         $refPrestamo = $prestamo->numero ?? ('PR-'.$prestamo->id);
 
         $data = [
+            'prestamo'    => $prestamo,
             'agencia'      => $agencia,
             'direccion'    => $direccion,
             'usuario'      => $usuario,
@@ -73,6 +74,7 @@ class PrestamoController extends Controller
             'refPrestamo'  => $refPrestamo,
             'tipoCambio'   => $tc,
         ];
+//        return $data;
 
         $pdf = Pdf::loadView('pdf.cambio', $data)->setPaper('letter','portrait');
         return $pdf->stream('comprobante-cambio-'.$refPrestamo.'.pdf');

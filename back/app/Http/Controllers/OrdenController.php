@@ -285,9 +285,9 @@ class OrdenController extends Controller{
         $empresa = [
             'nombre' => 'Joyeria Rosario',
             'sucursal' => 'ORURO',
-            'direccion' => 'Calle Junín entre La Plata y Soria — Frente a mercado',
-            'cel' => '704-12345',
-            'nit' => '12345601',
+            'direccion' => 'Adolfo mier entre potosi y pagador (Lado palace Hotel)',
+            'cel' => '7380504',
+            'nit' => '',
         ];
 
         // Render del PDF
@@ -296,7 +296,7 @@ class OrdenController extends Controller{
             'empresa' => $empresa,
             'precioOro' => $precioOro,
             'hoy' => now(),
-        ])->setPaper('A4', 'portrait');
+        ])->setPaper('letter', 'portrait');
 
         // Mostrar en el navegador
         $fileName = 'orden_trabajo_'.$orden->numero.'.pdf';

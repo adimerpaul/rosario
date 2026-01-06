@@ -103,27 +103,6 @@
                     </div>
 
 
-                    <div class="col-6 col-md-2">
-                      <q-input
-                        label="Monto maximo" :model-value="money(prestamo.valor_total)"
-                        type="text" outlined dense readonly
-                      />
-                    </div>
-                    <div class="col-6 col-md-2">
-                      <q-input
-                        label="Peso en oro (kg)" :model-value="pesoNetoStr"
-                        outlined dense readonly
-                      />
-                    </div>
-                    <div class="col-6 col-md-2">
-                      <q-input label="Cargo mensual" :model-value="money(interesMonto+almacenMonto)" outlined dense readonly/>
-                    </div>
-
-                    <div class="col-6 col-md-2">
-                      <!--                      <q-input label="Valor de venta" :model-value="money(prestamo.saldo)" outlined dense readonly/>-->
-                      <!--                      precioVenta * pesoNeto = {{ money(precioVenta.value * pesoNeto) }}-->
-                      <q-input label="Precio venta (Bs)" :model-value="money(precioVenta.value * pesoNeto)" outlined dense readonly/>
-                    </div>
 
                     <div class="col-6 col-md-2">
                       <q-input
@@ -147,11 +126,27 @@
                         @update:model-value="calcularSaldo"
                       />
                     </div>
+                    <div class="col-6 col-md-2 ">
+                      <!--                      <q-input-->
+                      <!--                        label="Monto maximo" :model-value="money(prestamo.valor_total)"-->
+                      <!--                        type="text" outlined dense readonly-->
+                      <!--                      />-->
+                      <div class="q-pa-xs text-white bg-red">
+                        Monto máximo: <br>
+                        {{ money(prestamo.valor_total) }}
+                      </div>
+                    </div>
 
 
-
-
-                    <!-- PORCENTAJES -->
+                    <div class="col-6 col-md-2">
+                      <q-input
+                        label="Peso en oro (kg)" :model-value="pesoNetoStr"
+                        outlined dense readonly
+                      />
+                    </div>
+                    <div class="col-6 col-md-2">
+                      <q-input label="Cargo mensual" :model-value="money(interesMonto+almacenMonto)" outlined dense readonly/>
+                    </div>
                     <div class="col-6 col-md-2">
                       <q-select
                         label="Interés (%)" outlined dense
@@ -170,6 +165,12 @@
                         @update:model-value="calcularSaldo"
                         :readonly="!isAdmin"
                       />
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                      <!--                      <q-input label="Valor de venta" :model-value="money(prestamo.saldo)" outlined dense readonly/>-->
+                      <!--                      precioVenta * pesoNeto = {{ money(precioVenta.value * pesoNeto) }}-->
+                      <q-input label="Precio venta (Bs)" :model-value="money(precioVenta.value * pesoNeto)" outlined dense readonly/>
                     </div>
 
                     <!-- MONTOS CALCULADOS -->

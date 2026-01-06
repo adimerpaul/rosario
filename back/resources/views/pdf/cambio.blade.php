@@ -23,13 +23,13 @@
 
 <table class="grid">
     <tr>
-        <td class="box" style="width:65%">
+        <td class="box" >
             <div class="label">Agencia</div>
             <div>{!! nl2br(e($agencia)) !!}</div>
         </td>
         <td class="box" style="width:35%">
-            <div class="label">C.U.I.NT</div>
-            <div>{{ $cuint }}</div>
+            <div class="label">Fecha </div>
+            <div>{{ $fechaAt->translatedFormat('d \\de F \\de Y') }}</div>
         </td>
     </tr>
     <tr>
@@ -43,11 +43,11 @@
         </td>
     </tr>
     <tr>
-        <td class="box">
-            <div class="label">Fecha</div>
-            <div>{{ $fechaAt->translatedFormat('d \\de F \\de Y - H:i:s') }}</div>
-        </td>
-        <td class="box">
+{{--        <td class="box">--}}
+{{--            <div class="label">Fecha</div>--}}
+{{--            <div>{{ $fechaAt->translatedFormat('d \\de F \\de Y - H:i:s') }}</div>--}}
+{{--        </td>--}}
+        <td class="box" colspan="2">
             <div class="label">Cliente</div>
             <div class="strong">{{ $cliente }}</div>
         </td>
@@ -62,22 +62,112 @@
 </div>
 
 <table class="grid">
+{{--    <tr>--}}
+{{--        <td class="box" style="width:50%">--}}
+{{--            <div class="label">Importe Recibido</div>--}}
+{{--            <div class="strong">{{ number_format($montoBs, 2) }} Bs</div>--}}
+{{--        </td>--}}
+{{--        <td class="box" style="width:50%">--}}
+{{--            <div class="label">Importe Entregado</div>--}}
+{{--            <div class="strong">{{ number_format($montoUsd, 2) }} $us</div>--}}
+{{--        </td>--}}
+{{--    </tr>--}}
+{{--    Peso total	Merma	Peso en Oro--}}
+{{--    Monto prestado Dolares	Igual al moto sacado dibidio entre 6.96--}}
+{{--    Monto Bolivianos 		1000Bs--}}
     <tr>
-        <td class="box" style="width:50%">
-            <div class="label">Importe Recibido</div>
-            <div class="strong">{{ number_format($montoBs, 2) }} Bs</div>
+        <td class="box" >
+{{--            {--}}
+{{--            prestamo: {--}}
+{{--            id: 8,--}}
+{{--            numero: "PR-000008-2026",--}}
+{{--            fecha_creacion: "2026-01-05",--}}
+{{--            fecha_limite: "2026-01-05",--}}
+{{--            fecha_cancelacion: "2026-02-05",--}}
+{{--            cliente_id: 3,--}}
+{{--            user_id: 1,--}}
+{{--            merma: "0.000",--}}
+{{--            peso_neto: "3.000",--}}
+{{--            peso: "3.000",--}}
+{{--            precio_oro: "900.00",--}}
+{{--            valor_total: "2700.00",--}}
+{{--            valor_prestado: "3000.00",--}}
+{{--            interes: "3.00",--}}
+{{--            almacen: "3.00",--}}
+{{--            saldo: 3000,--}}
+{{--            celular: "60495286",--}}
+{{--            detalle: " [TC: 6.96]",--}}
+{{--            estado: "Activo",--}}
+{{--            dias_transcurridos: 1,--}}
+{{--            cargo_diario: 6,--}}
+{{--            cargos_acumulados: 6,--}}
+{{--            total_deuda: 3000,--}}
+{{--            deuda_interes: 0,--}}
+{{--            user: {--}}
+{{--            id: 1,--}}
+{{--            name: "Roger arias",--}}
+{{--            username: "admin",--}}
+{{--            role: "Administrador",--}}
+{{--            avatar: "default.png",--}}
+{{--            email: null,--}}
+{{--            email_verified_at: null--}}
+{{--            },--}}
+{{--            cliente: {--}}
+{{--            id: 3,--}}
+{{--            name: "ROBERTO HINOJOSA ORGAZ",--}}
+{{--            ci: "3089963",--}}
+{{--            celular: null,--}}
+{{--            status: "Confiable",--}}
+{{--            observation: null,--}}
+{{--            cellphone: "60495286",--}}
+{{--            address: null--}}
+{{--            }--}}
+{{--            },--}}
+{{--            agencia: "JOYERÍA ROSARIO",--}}
+{{--            direccion: "Adolfo Mier entre Potosi y pagador (Lado palace Hotel)",--}}
+{{--            usuario: "ADMIN",--}}
+{{--            cuint: "—",--}}
+{{--            cliente: "ROBERTO HINOJOSA ORGAZ",--}}
+{{--            fechaAt: "2026-01-05T04:00:00.000000Z",--}}
+{{--            montoBs: 3000,--}}
+{{--            montoUsd: 431.03,--}}
+{{--            son: "CUATROCIENTOS TREINTA Y UNO 03/100 DÓLARES",--}}
+{{--            concepto: "Cambio Dólares (asociado a préstamo PR-000008-2026)",--}}
+{{--            docSerie: "PR",--}}
+{{--            docNro: "00000008",--}}
+{{--            refPrestamo: "PR-000008-2026",--}}
+{{--            tipoCambio: "6.96"--}}
+{{--            }--}}
+            <div class="label">Peso Total (g)</div>
+            <div class="strong">{{ number_format($prestamo->peso, 2) }} g</div>
         </td>
-        <td class="box" style="width:50%">
-            <div class="label">Importe Entregado</div>
-            <div class="strong">{{ number_format($montoUsd, 2) }} $us</div>
+        <td class="box" >
+            <div class="label">Merma (g)</div>
+            <div class="strong">{{ number_format($prestamo->merma, 2) }} g</div>
+        </td>
+        <td class="box" >
+            <div class="label">Peso en Oro (g)</div>
+            <div class="strong">{{ number_format($prestamo->peso_neto, 2) }} g</div>
         </td>
     </tr>
+    <tr>
+        <td class="box" >
+            <div class="label">Monto Prestado ($us)</div>
+{{--            tipoCambio--}}
+            <div class="strong">{{ number_format($prestamo->valor_prestado/$tipoCambio, 2) }} $us</div>
+        </td>
+        <td class="box" colspan="2">
+            <div class="label">Monto Bolivianos (Bs)</div>
+            <div class="strong">{{ number_format($montoBs, 2) }} Bs</div>
+        </td>
+    </tr>
+
 </table>
 
-<div class="box">
-    <div class="label">Son</div>
-    <div class="strong">{{ $son }}</div>
-</div>
+{{--<div class="box">--}}
+{{--    <div class="label">Son</div>--}}
+{{--    <div class="strong">{{ $son }}</div>--}}
+{{--</div>--}}
 
 <table class="grid">
     <tr>

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('numero')->nullable();
             $table->dateTime('fecha_creacion');
+            $table->string('kilates18')->nullable();
             $table->date('fecha_entrega')->nullable();
             $table->text('detalle')->nullable()->default('');
             $table->string('celular')->nullable();

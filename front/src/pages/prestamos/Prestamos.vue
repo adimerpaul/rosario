@@ -164,7 +164,7 @@
                   <q-card-actions align="between" class="q-pa-sm">
 
                     <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/prestamos/editar/' + p.id)" no-caps
-                            v-if="($store.user.role === 'Administrador' || p.estado === 'Pendiente') && p.estado !== 'Fundido'"
+                            v-if="p.estado == 'Activo'"
                     />
 
                     <q-btn-dropdown dense no-caps color="primary" label="Más">
@@ -377,7 +377,7 @@ export default {
     return {
       prestamos: [],
       usuarios: [],
-      estados: ['Todos','Pendiente','Pagado','Cancelado','Vencido'],
+      estados: ['Todos','Pendiente','Pagado','Cancelado','Vencido','Activo'],
       filters: {
         fecha_inicio: moment().startOf('week').format('YYYY-MM-DD'),
         fecha_fin: moment().endOf('week').format('YYYY-MM-DD'),

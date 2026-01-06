@@ -114,7 +114,10 @@
                     </div>
                     <div class="col-12 col-md-2">
 <!--                      chech de 18 kilates-->
-                      <q-checkbox v-model="check18Kilates" label="18 Kilates" dense  @update:model-value="coloca18Kilates"/>
+<!--                      @update:model-value="coloca18Kilates"-->
+                      <q-checkbox v-model="check18Kilates" label="18 Kilates" dense
+                                  :true-value="'18 Kilates'" :false-value="''"
+                      />
                     </div>
 <!--                    tipo_pago-->
                     <div class="col-12 col-md-3">
@@ -179,13 +182,13 @@ export default {
     return {
       page: 1, // página actual
       totalPages: 1,
-      check18Kilates: true,
+      check18Kilates: '18 Kilates',
       orden: {
         numero: '',
         tipo_pago: 'Efectivo',
         // fecha_creacion: new Date().toISOString().substr(0, 10),
         fecha_entrega: moment().add(1, 'weeks').format('YYYY-MM-DD'),
-        detalle: '18 Kilates',
+        detalle: '',
         celular: '',
         costo_total: 0,
         adelanto: 0,
@@ -309,6 +312,7 @@ export default {
         return;
       }
       this.loading = true;
+      this.orden.kilates18 = this.check18Kilates;
       this.$axios.post('ordenes', {
         ...this.orden,
         user_id: this.$store.user.id
