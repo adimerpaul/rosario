@@ -23,7 +23,7 @@ class PrestamoController extends Controller
         $valorPestado = Prestamo::whereIn('estado', ['Pendiente','Activo','Entregado'])->sum('valor_prestado');
         error_log(json_encode($valorPestado));
         $valorAmortizado = PrestamoPago::whereIn('estado', ['Activo'])
-            ->whereIn('tipo_pago', ['SALDO','CARGOS','TOTAL'])
+            ->whereIn('tipo_pago', ['SALDO','CARGOS','TOTAL','MENSUALIDAD'])
             ->sum('monto');
 //        'SALDO','CARGOS','TOTAL'
         return $valorPestado - $valorAmortizado;
