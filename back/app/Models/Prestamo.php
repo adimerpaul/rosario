@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
-
-class Prestamo extends Model
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+class Prestamo extends Model implements AuditableContract
 {
+    use AuditableTrait, SoftDeletes;
     protected $table = 'prestamos';
 
     protected $fillable = [

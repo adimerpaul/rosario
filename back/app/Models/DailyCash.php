@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-class DailyCash extends Model{
-    use SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+class DailyCash extends Model implements AuditableContract{
+    use SoftDeletes, AuditableTrait;
 
     protected $table = 'daily_cashes';
     protected $fillable = [

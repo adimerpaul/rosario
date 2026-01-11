@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-class Orden extends Model{
-    use SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+class Orden extends Model implements AuditableContract{
+    use SoftDeletes, AuditableTrait;
     protected $table = 'ordenes';
     protected $fillable = [
         'numero',
@@ -23,7 +24,10 @@ class Orden extends Model{
         'nota',
         'user_id',
         'kilates18',
-        'cliente_id'
+        'cliente_id',
+        'monto',
+        'metodo',
+        'fecha'
     ];
     protected $hidden = [
         'created_at',

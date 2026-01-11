@@ -23,7 +23,7 @@ class PrestamoController extends Controller
         $valorPestado = Prestamo::whereIn('estado', ['Pendiente','Activo','Entregado'])->sum('valor_prestado');
         error_log(json_encode($valorPestado));
         $valorAmortizado = PrestamoPago::whereIn('estado', ['Activo'])
-            ->whereIn('tipo_pago', ['SALDO','CARGOS','TOTAL','MENSUALIDAD'])
+            ->whereIn('tipo_pago', ['SALDO','TOTAL'])
             ->sum('monto');
 //        'SALDO','CARGOS','TOTAL'
         return $valorPestado - $valorAmortizado;
@@ -339,30 +339,74 @@ class PrestamoController extends Controller
     {
         $user   = $request->user();
         $metodo = (string) $request->input('metodo', 'Efectivo');
-        $monto = $request->input('monto', 0);
 
-        return DB::transaction(function () use ($prestamo, $user, $metodo, $monto) {
-            $base = $this->calcBase($prestamo);
-//            $monto = $base['saldo'];
+        // En tu front el toggle se llama "omitir_cargos"
+        // Si omitir_cargos = true => paga SOLO capital
+        // Si omitir_cargos = false => paga capital + cargos
+        $omitirCargos = $request->boolean('omitir_cargos', false);
 
-            if ($monto <= 0) {
+        return DB::transaction(function () use ($prestamo, $user, $metodo, $omitirCargos) {
+
+            // 1) Capital pendiente (solo baja con pagos TOTAL o SALDO)
+            $capitalPendiente = (float) $prestamo->total_deuda; // accessor tuyo
+
+            // 2) Cargos/interés pendiente (calculado dinámico)
+            $cargosPendiente  = (float) $prestamo->deuda_interes; // accessor tuyo
+
+            if ($capitalPendiente <= 0 && $cargosPendiente <= 0) {
+                // ya está pagado todo
                 $prestamo->estado = 'Entregado';
-                $prestamo->saldo  = 0;
+                $prestamo->fecha_limite = today()->toDateString();
                 $prestamo->save();
+
                 return response()->json(['message' => 'El préstamo ya está pagado'], 200);
             }
-            $montoPrestamo = (float) $prestamo->saldo;
-            if ($monto > $montoPrestamo) {
-                $this->crearPago($prestamo, $monto - $montoPrestamo, 'CARGOS', $metodo, $user->id);
-                $monto = $montoPrestamo;
-            }
-            $this->crearPago($prestamo, $monto, 'TOTAL', $metodo, $user->id);
 
-            // Marcar como pagado explícitamente
-            $prestamo->estado = 'Entregado';
-            $prestamo->saldo  = 0;
-            // Opcional: fecha_limite = hoy o conservar
-            $prestamo->fecha_limite = today()->toDateString();
+            // =========================
+            // A) Si NO omite cargos => crea 2 pagos: CARGOS + TOTAL
+            // =========================
+            if (!$omitirCargos) {
+
+                // PAGO 1: cargos (interés)
+                if ($cargosPendiente > 0) {
+                    $this->crearPago($prestamo, $cargosPendiente, 'CARGOS', $metodo, $user->id);
+                }
+
+                // PAGO 2: capital
+                if ($capitalPendiente > 0) {
+                    $this->crearPago($prestamo, $capitalPendiente, 'TOTAL', $metodo, $user->id);
+                }
+
+                // al pagar cargos, cortas el conteo desde hoy
+                $prestamo->fecha_limite = today()->toDateString();
+                $prestamo->save();
+            }
+
+            // =========================
+            // B) Si OMITE cargos => paga SOLO capital (1 pago)
+            // =========================
+            if ($omitirCargos) {
+                if ($capitalPendiente > 0) {
+                    $this->crearPago($prestamo, $capitalPendiente, 'TOTAL', $metodo, $user->id);
+                }
+
+                // OJO: aquí NO estás pagando cargos, así que lo normal es
+                // NO mover fecha_limite a hoy (si la mueves, “perdonas” el interés)
+                // Déjala como está.
+            }
+
+            // 3) Re-evaluar estado con tus accessors
+            $prestamo->refresh(); // recarga y recalcula accessors
+            $cap = (float) $prestamo->total_deuda;
+            $car = (float) $prestamo->deuda_interes;
+
+            if ($cap <= 0 && $car <= 0) {
+                $prestamo->estado = 'Entregado';
+            } else {
+                // si queda algo (por ejemplo omitiste cargos), sigue activo
+                $prestamo->estado = 'Activo';
+            }
+
             $prestamo->save();
 
             return $prestamo->fresh()->load(['cliente','user']);

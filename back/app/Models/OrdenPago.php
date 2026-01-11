@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-class OrdenPago extends Model{
-    use SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+class OrdenPago extends Model implements AuditableContract{
+    use SoftDeletes, AuditableTrait;
     protected $table = 'orden_pagos';
     protected $fillable = [
         'fecha',

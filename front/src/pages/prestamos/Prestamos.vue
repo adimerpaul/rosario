@@ -524,7 +524,8 @@ export default {
         this.loading = true
         await this.$axios.post(`prestamos/${p.id}/pagar-todo`, {
           metodo: this.dlgTotal.metodo,
-          monto: this.saldoPreview
+          monto: this.saldoPreview,
+          omitir_cargos: this.dlgTotal.p.omitir_cargos || false,
         })
         this.$q.notify({ type:'positive', message:'Deuda liquidada' })
         this.dlgTotal.open = false

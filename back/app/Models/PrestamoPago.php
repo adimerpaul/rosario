@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-class PrestamoPago extends Model
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+class PrestamoPago extends Model  implements AuditableContract
 {
-    use SoftDeletes;
+    use SoftDeletes, AuditableTrait;
 
     protected $table = 'prestamo_pagos';
 

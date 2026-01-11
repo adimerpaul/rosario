@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-class Egreso extends Model
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable as AuditableTrait;
+class Egreso extends Model implements AuditableContract
 {
-    use SoftDeletes;
+    use SoftDeletes, AuditableTrait;
 
     protected $table = 'egresos';
 
