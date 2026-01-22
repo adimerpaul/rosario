@@ -280,6 +280,9 @@ class PrestamoController extends Controller
         // Mover fecha límite +1 mes (si no existe, usa hoy)
         $nuevaLimite = ($prestamo->fecha_limite ? Carbon::parse($prestamo->fecha_limite) : today())->addMonthNoOverflow();
         $prestamo->fecha_limite = $nuevaLimite->toDateString();
+//        fecha_cancelacion aumetar un mes mas al dia de hoy now
+        $hoy = now()->toDateString();
+        $prestamo->fecha_cancelacion = date( "Y-m-d", strtotime( "$hoy +1 month" ) );
         $prestamo->save();
         $this->refreshSaldoEstado($prestamo);
 
