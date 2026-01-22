@@ -87,9 +87,9 @@
                       <div class="">
                         <div class="text-weight-bold">#{{ p.numero }}</div>
                         <div class="text-caption text-grey-7">
-                          {{ fmtFecha(p.fecha_creacion) }}
-                          <span v-if="p.fecha_limite"> — Mes Cance: {{ fmtFecha(p.fecha_limite) }}</span>
-                          <span v-if="p.fecha_limite"> — V: {{ fmtFecha(p.fecha_cancelacion) }}</span>
+                          {{ fmtFecha(p.fecha_creacion) }} <br>
+                          <span v-if="p.fecha_limite"> Mes Cance: {{ fmtFecha(p.fecha_limite) }}</span> <br>
+                          <span v-if="p.fecha_limite"> V: {{ fmtFecha(p.fecha_cancelacion) }}</span> <br>
                         </div>
                         <div class="q-mt-xs">
                           <q-chip dense square :style="{backgroundColor: estadoColor(p)}" text-color="white">
