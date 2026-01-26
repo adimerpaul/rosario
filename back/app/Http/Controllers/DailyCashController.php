@@ -174,9 +174,9 @@ class DailyCashController extends Controller
 
         // 1) Préstamos otorgados (egreso)
         $prestamos = \App\Models\Prestamo::with(['cliente','user'])
-            ->whereDate('fecha_creacion', $date)
+            ->whereDate('prestamos.created_at', $date)
             ->when($user, fn($q) => $q->where('user_id', $user->id))
-            ->orderBy('fecha_creacion')
+            ->orderBy('prestamos.created_at')
             ->get();
 
         $itemsPrestamos = $prestamos->map(function ($pr) use ($normMetodo) {
