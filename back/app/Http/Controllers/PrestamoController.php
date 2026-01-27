@@ -282,7 +282,8 @@ class PrestamoController extends Controller
         $prestamo->fecha_limite = $nuevaLimite->toDateString();
 //        fecha_cancelacion aumetar un mes mas al dia de hoy now
         $hoy = now()->toDateString();
-        $prestamo->fecha_cancelacion = date( "Y-m-d", strtotime( "$hoy +1 month" ) );
+//        $prestamo->fecha_cancelacion = date( "Y-m-d", strtotime( "$hoy +1 month" ) ); $prstamo fecha_milite agregar un mes
+        $prestamo->fecha_cancelacion = date( "Y-m-d", strtotime( "$prestamo->fecha_cancelacion +1 month" ) );
         $prestamo->save();
         $this->refreshSaldoEstado($prestamo);
 
