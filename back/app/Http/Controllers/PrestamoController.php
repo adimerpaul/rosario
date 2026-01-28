@@ -361,6 +361,8 @@ class PrestamoController extends Controller
                 // ya está pagado todo
                 $prestamo->estado = 'Entregado';
                 $prestamo->fecha_limite = today()->toDateString();
+//                fecha_cancelacion es un mes mas la fecha limite
+                $prestamo->fecha_cancelacion = date( "Y-m-d", strtotime( "$prestamo->fecha_limite +1 month" ) );
                 $prestamo->save();
 
                 return response()->json(['message' => 'El préstamo ya está pagado'], 200);
