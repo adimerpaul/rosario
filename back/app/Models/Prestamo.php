@@ -105,7 +105,7 @@ class Prestamo extends Model implements AuditableContract
     {
         $capital     = (float) ($this->total_deuda ?? 0);
         $tasaMensual = (float) ($this->interes ?? 0) + (float) ($this->almacen ?? 0);
-        $tasaDiaria  = $capital * $tasaMensual / 100 / 30;
+        $tasaDiaria  = $capital * $tasaMensual / 100 / 31;
         return round($tasaDiaria, 2);
     }
 

@@ -231,7 +231,7 @@
     </q-card>
     <!-- DIALOG: Pagar Mensualidad -->
     <q-dialog v-model="dlgMensualidad.open" persistent>
-      <q-card style="min-width:420px">
+      <q-card style="width:420px;max-width: 90vw">
         <q-card-section class="row items-center q-gutter-sm">
           <q-icon name="payment" size="28px" color="primary"/>
           <div class="text-h6">Pagar mensualidad (30 días)</div>
