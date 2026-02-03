@@ -123,7 +123,7 @@
                     <div class="col-12 col-md-3">
                       <q-select
                         v-model="orden.tipo_pago"
-                        :options="['Efectivo', 'Tarjeta', 'Transferencia', 'QR']"
+                        :options="['Efectivo', 'QR']"
                         label="Tipo de Pago"
                         outlined
                         dense
@@ -136,13 +136,13 @@
                         </template>
                       </q-input>
                     </div>
-                    <div class="col-12 col-md-6">
-                      <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense>
-                        <template v-slot:append>
-                          <q-btn icon="mic" @click="iniciarReconocimiento('nota')" flat dense/>
-                        </template>
-                      </q-input>
-                    </div>
+<!--                    <div class="col-12 col-md-6">-->
+<!--                      <q-input label="Nota" v-model="orden.nota" type="textarea" outlined dense>-->
+<!--                        <template v-slot:append>-->
+<!--                          <q-btn icon="mic" @click="iniciarReconocimiento('nota')" flat dense/>-->
+<!--                        </template>-->
+<!--                      </q-input>-->
+<!--                    </div>-->
                     <!--                <div class="col-12">-->
                     <!--                  <q-select label="Estado" v-model="orden.estado" :options="estados" outlined dense/>-->
                     <!--                </div>-->

@@ -161,6 +161,18 @@
             <div class="strong">{{ number_format($montoBs, 2) }} Bs</div>
         </td>
     </tr>
+    <tr>
+        <td class="box">
+            <div class="label">Interes</div>
+            {{--            <div class="text-weight-medium">{{ p.total_deuda * (parseFloat(p.interes || 0) + parseFloat(p.almacen || 0)) / 100 | money }}</div>--}}
+            <div class="strong">{{ number_format(($prestamo->total_deuda * (floatval($prestamo->interes) + floatval($prestamo->almacen)) / 100)/$tipoCambio, 2) }} $us </div>
+        </td>
+        <td class="box" colspan="2">
+            <div class="label">Interes</div>
+{{--            <div class="text-weight-medium">{{ p.total_deuda * (parseFloat(p.interes || 0) + parseFloat(p.almacen || 0)) / 100 | money }}</div>--}}
+            <div class="strong">{{ number_format($prestamo->total_deuda * (floatval($prestamo->interes) + floatval($prestamo->almacen)) / 100, 2) }} Bs</div>
+        </td>
+    </tr>
 
 </table>
 
@@ -190,14 +202,17 @@
 
 <table style="width:100%; margin-top:24px;">
     <tr>
-        <td style="text-align:center; width:50%;">
+        <td style="text-align:center; width:50%;" colspan="2">
+            <br>
+            <br>
+            <br>
             <div style="border-top:1px solid #333; width:75%; margin:0 auto 4px;"></div>
             <div class="muted">Firma del Cliente</div>
         </td>
-        <td style="text-align:center; width:50%;">
-            <div style="border-top:1px solid #333; width:75%; margin:0 auto 4px;"></div>
-            <div class="muted">Firma Caja/Agencia</div>
-        </td>
+{{--        <td style="text-align:center; width:50%;">--}}
+{{--            <div style="border-top:1px solid #333; width:75%; margin:0 auto 4px;"></div>--}}
+{{--            <div class="muted">Firma Caja/Agencia</div>--}}
+{{--        </td>--}}
     </tr>
 </table>
 </body>

@@ -26,15 +26,16 @@
     $clienteNombre = $cliente->name ?? '—';
     $clienteCI     = $cliente->ci   ?? '—';
 @endphp
-
+<br>
+<br>
     <!-- ENCABEZADO -->
 <table style="width:100%; border-collapse:collapse">
-    <tr>
+    <tr >
         <td style="width:80px; vertical-align:top">
-            @php $logo = public_path('images/logo.png'); @endphp
-            @if (file_exists($logo))
-                <img src="{{ $logo }}" style="width:70px; display:block; margin:0; padding:0;">
-            @endif
+{{--            @php $logo = public_path('images/logo.png'); @endphp--}}
+{{--            @if (file_exists($logo))--}}
+{{--                <img src="{{ $logo }}" style="width:70px; display:block; margin:0; padding:0;">--}}
+{{--            @endif--}}
         </td>
         <td class="center">
             <div class="title brand">{{ $empresa['nombre'] ?? 'Joyería' }}</div>
@@ -146,13 +147,24 @@
 
 <table style="width:100%; margin-top:28px;">
     <tr>
-        <td class="center" style="width:50%">
+        <td class="" style="width:50%">
+            <br>
+            <br>
             <div style="border-top:1px solid #333; width:75%; margin:0 auto 4px;"></div>
-            <div class="xs">Firma del Cliente</div>
+            <div class="xs" style="text-align: center">
+                Firma del Cliente <br>
+            </div>
+            <div class="xs">
+                Nombre: <br>
+                C.I.:
+            </div>
         </td>
         <td class="center" style="width:50%">
+            <br>
+            <br>
             <div style="border-top:1px solid #333; width:75%; margin:0 auto 4px;"></div>
             <div class="xs">Firma Joyería</div>
+            <br>
         </td>
     </tr>
 </table>

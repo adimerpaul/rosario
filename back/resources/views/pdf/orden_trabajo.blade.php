@@ -17,7 +17,7 @@
         .w100{width:100%}
 
         /* Marco general */
-        .sheet{ border:2.5px solid #FF0000; border-radius:14px; padding:10px; }
+        .sheet{ border:2.5px solid #FF0000; border-radius:13px; padding:10px; }
 
         /* Encabezado */
         table.head{ width:100%; border-collapse:collapse }
@@ -86,10 +86,9 @@
         $dia = $fc->format('d'); $mes = $fc->format('m'); $ano = $fc->format('Y');
         $entrega = $orden->fecha_entrega ? \Carbon\Carbon::parse($orden->fecha_entrega)->format('d-m-Y') : '—';
     @endphp
-
 {{--    for por 2--}}
     @for($i=0; $i<2; $i++)
-        <div class="sheet" style="padding:10px; margin-bottom:12px">
+        <div class="sheet" style="padding-top:12px; margin-bottom:12px">
             <!-- Encabezado -->
             <table class="head">
                 <tr>
@@ -108,15 +107,17 @@
 {{--                        <div class="brand bold lg">{{ $empresa['nombre'] ?? 'JOYERIA ROSARIO' }}</div>--}}
 {{--                        <div class="xs">{{ $empresa['direccion'] ?? 'Calle Junín entre La Plata y Soria — Frente a mercado' }}</div>--}}
 {{--                        <div class="xs">Cel: {{ $empresa['cel'] ?? '704-12345' }} — {{ strtoupper($empresa['sucursal'] ?? 'ORURO') }}</div>--}}
+                        <span class="xs">{{ $hoy->format('d/m/Y') }}</span>
+
+                        <br>
+                        <br>
                         <div class="brand title mt4">ORDEN DE TRABAJO</div>
                         <div class="sub">
                             DIR. ADOLFO MIER, POTOSÍ Y PAGADOR <br>
                             (LADO PALACE HOTEL) <br>
                             CEL. 73800584 TELF. 52-55713<br>
                             Oruro - Bolivia<br>
-                            <span class="xs">Fecha: {{ $hoy->format('d/m/Y') }}</span>
-                            <br>
-                            <br>
+
                             <br>
                             <br>
                         </div>
@@ -135,8 +136,8 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="pill-badge">Nro: {{ $orden->numero }}</div>
-                                    <div class="pill-badge"><b>Bs.</b> {{ number_format($precioOro,2) }}<br></div>
+                                    <div class="pill-badge" style="font-size: 11px"><b>Nro: {{ $orden->numero }}</b></div>
+                                    <div class="pill-badge" style="font-size: 12px"><b>Bs.</b> {{ number_format($precioOro,2) }}<br></div>
                                 </td>
                             </tr>
                         </table>
@@ -158,12 +159,12 @@
 {{--                    </td>--}}
                     <td class="cell" style="width:50%">
                         <span class="label-float">El Señor:</span>
-                        <div class="md" style="margin-top:2px">{{ mb_strtoupper($orden->cliente->name ?? 'N/A') }}</div>
+                        <div class="md" style="margin-top:2px;text-align: center;font-size: 13px">{{ mb_strtoupper($orden->cliente->name ?? 'N/A') }}</div>
                     </td>
 {{--                    <td> telefono</td>--}}
                     <td class="cell" style="width:50%">
                         <span class="label-float">Teléfono:</span>
-                        <div class="md" style="margin-top:2px">{{ $orden->cliente->cellphone ?? 'N/A' }}</div>
+                        <div class="md" style="margin-top:2px;text-align: center;font-size: 13px">{{ $orden->cliente->cellphone ?? 'N/A' }}</div>
                     </td>
                 </tr>
             </table>
@@ -171,7 +172,7 @@
             <!-- Trabajo de Joya -->
             <div class="cell">
                 <span class="label-float">Trabajo de Joya:</span>
-                <div class="md" style="margin-top:2px;font-size: 14px">
+                <div class="md" style="margin-top:2px;font-size: 13px">
 
                     {{ $orden->detalle }} /
                     Peso: {{ $orden->peso }} gr.
@@ -183,9 +184,9 @@
                 <span class="label-float">Montos</span>
                 <table class="grid mt6">
                     <tr>
-                        <td class="label-float">Costo Total</td><td class="v sm">{{ number_format($orden->costo_total,2) }}</td>
-                        <td class="label-float">A cuenta</td><td class="v sm">{{ number_format($orden->adelanto,2) }}</td>
-                        <td class="label-float">Saldo</td><td class="v sm">{{ number_format($orden->saldo,2) }}</td>
+                        <td class="label-float" style="font-size: 10px">Costo Total</td><td class="v sm">{{ number_format($orden->costo_total,2) }}</td>
+                        <td class="label-float" style="font-size: 10px">A cuenta</td><td class="v sm">{{ number_format($orden->adelanto,2) }}</td>
+                        <td class="label-float" style="font-size: 10px">Saldo</td><td class="v sm">{{ number_format($orden->saldo,2) }}</td>
                     </tr>
                     {{--                <tr>--}}
                     {{--                    <td class="cell" style="width:50%">--}}
@@ -212,14 +213,14 @@
             <!-- Fecha de Entrega -->
             <div class="cell mt6">
                 <span class="label-float">Fecha de Entrega:</span>
-                <span class="md bold" style="margin-left:4px">{{ $entrega }}</span>
+                <div class="md bold" style="margin-left:4px;text-align: center">{{ $entrega }}</div>
             </div>
 
             <!-- Nota -->
             <div class="cell mt6">
                 <span class="label-float">NOTA</span>
-                <div class="xs" style="margin-top:2px">
-                    {{ $orden->nota ?: 'Ningun trabajo será entregado sin esta orden. Pasado los 30 dias la casa no se hace responsable' }}
+                <div class="xs" style="margin-top:2px;font-size: 10px">
+                    {{ $orden->nota ?: 'Ningun trabajo será entregado sin la presente orden. Importante en caso de no recojo se espera un maximo de 90 dias antes de proceder a la fundicion de la joya' }}
                 </div>
             </div>
 
@@ -241,6 +242,9 @@
 {{--                Pasado los 30 días, se procederá a la reutilizacion del material , la casa no se hace responsable--}}
 {{--            </div>--}}
         </div>
+    @if($i==0)
+        <br><br> <br>
+    @endif
     @endfor
 </div>
 </body>

@@ -97,7 +97,7 @@ class Prestamo extends Model implements AuditableContract
             $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
         }
         $dias = $fechaBase->diffInDays(today());
-        $dias ++;
+//        $dias ++;
         return round($dias, 0);
     }
 
@@ -123,7 +123,7 @@ class Prestamo extends Model implements AuditableContract
         }
         $dias = $fechaBase->diffInDays(today());
         $interesDiario = $this->total_deuda * (($this->interes + $this->almacen) / 100);
-        $interesDiario = $interesDiario / 30;
+        $interesDiario = $interesDiario / 31.5;
         return round($interesDiario * $dias, 2);
     }
 }

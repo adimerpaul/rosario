@@ -151,7 +151,9 @@
                       <div class="text-body2 ellipsis-2-lines">{{ orden.cliente?.name || 'N/A' }}</div>
                     </div>
                     <div>
-                      <span class="text-bold">Detalle: </span>{{orden.detalle}}</div>
+                    <span class="text-bold">Detalle: </span>{{orden.detalle}} <br>
+                      <span class="text-bold">Peso: </span>{{orden.peso}} g
+                    </div>
 
                     <div class="row q-mt-sm">
                       <div class="col-4">
@@ -251,7 +253,7 @@ export default {
         fecha_inicio: moment().startOf('week').format('YYYY-MM-DD'),
         fecha_fin: moment().endOf('week').format('YYYY-MM-DD'),
         user_id: null,
-        estado: 'Todos',
+        estado: 'Pendiente',
         search: ''
       },
       resumen: { total: 0, adelanto: 0, saldo: 0 },
@@ -371,9 +373,10 @@ export default {
 
     getEstadoColor (estado) {
       switch (estado) {
-        case 'Pendiente':  return '#fb8c00'
-        case 'Entregado':  return '#21ba45'
-        case 'Cancelada':  return '#e53935'
+        case 'Cancelada':  return '#fb8c00'
+        case 'Entregado':  return '#e53935'
+        case 'Pendiente':  return '#21ba45'
+        // case '':  return '#e53935'
         default:           return '#9e9e9e'
       }
     },

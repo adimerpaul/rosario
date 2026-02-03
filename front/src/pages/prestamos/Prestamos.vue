@@ -113,10 +113,12 @@
                   <q-separator spaced />
 
                   <q-card-section class="q-pt-none">
-                    <div class="row items-center">
+                    <div class="row ">
                       <q-icon name="person" size="18px" class="q-mr-xs"/>
                       <div class="text-body2 ellipsis-2-lines">{{ p.cliente?.name || 'N/A' }}</div>
-                      <div><span class="text-bold">Detalle: </span>{{p.detalle}}</div>
+                      <div class="text-body2 ellipsis-2-lines"><span class="text-bold">Detalle: </span>{{p.detalle}}</div>
+                      <br>
+                      <div class="text-body2 ellipsis-2-lines"><span class="text-bold">Peso: </span>{{p.peso}}</div>
                     </div>
 
                     <div class="row q-mt-sm">
@@ -124,7 +126,7 @@
                         <div class="text-caption text-grey-7">Prestado - deuda</div>
                         <div class="text-weight-medium">
                           {{ money(p.valor_prestado) }}
-                          <span class="text-caption text-red">{{ money(p.total_deuda) }}</span>
+                          <span class="ext-weight-medium text-red" style="font-size: 16px">{{ money(p.total_deuda) }}</span>
                         </div>
                       </div>
                       <div class="col-6">
@@ -132,7 +134,7 @@
 <!--                        <div class="text-weight-medium">{{ money(cargosEstimados(p)) }}</div>-->
 <!--                        <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>-->
                         <div class="text-weight-medium">{{ p.total_deuda * (parseFloat(p.interes || 0) + parseFloat(p.almacen || 0)) / 100 | money }}</div>
-                        <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>
+                        <div class="ext-weight-medium text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>
                       </div>
                     </div>
 
@@ -272,7 +274,7 @@
 
     <!-- DIALOG: Pagar Cargos -->
     <q-dialog v-model="dlgCargos.open" persistent>
-      <q-card style="min-width:420px">
+      <q-card style="width: 420px;max-width: 90vw">
         <q-card-section class="row items-center q-gutter-sm">
           <q-icon name="attach_money" size="28px" color="teal"/>
           <div class="text-h6">Pagar cargos acumulados</div>
@@ -326,7 +328,7 @@
 
     <!-- DIALOG: Pagar Todo -->
     <q-dialog v-model="dlgTotal.open" persistent>
-      <q-card style="min-width:420px">
+      <q-card style="width:420px;max-width: 90vw">
         <q-card-section class="row items-center q-gutter-sm">
           <q-icon name="money_off" size="28px" color="negative"/>
           <div class="text-h6">Pagar TODO</div>
