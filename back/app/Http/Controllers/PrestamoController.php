@@ -331,6 +331,7 @@ class PrestamoController extends Controller
 
             // Ajusta fecha límite a HOY (como pediste)
             $prestamo->fecha_limite = today()->toDateString();
+            $prestamo->fecha_cancelacion = date( "Y-m-d", strtotime( "$prestamo->fecha_limite +1 month" ) );
             $prestamo->save();
 
             $this->refreshSaldoEstado($prestamo);
