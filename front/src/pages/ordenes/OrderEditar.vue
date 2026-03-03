@@ -55,13 +55,17 @@
             />
           </div>
           <div class="col-12 col-sm-4">
+<!--            (this.orden.peso || 0) * (this.precioOro.value || 0);-->
             <q-input
+              @update:modelValue ="val => form.costo_total = val * precioOro.value"
               label="Peso (gr)"
               outlined dense
               v-model.number="form.peso"
               type="number"
               :readonly="!isAdmin"
             />
+<!--            <pre>{{form.peso}}</pre>-->
+<!--            <pre>{{precioOro}}</pre>-->
           </div>
           <div class="col-12 col-sm-4">
             <q-select
@@ -85,10 +89,10 @@
 
           <!-- MONTOS (solo lectura; salen de pagos) -->
           <div class="col-12 col-sm-4">
-            <q-input label="Adelanto" outlined dense :model-value="money(form.adelanto)" readonly />
+            <q-input label="Adelanto" outlined dense v-model="form.adelanto" readonly/>
           </div>
           <div class="col-12 col-sm-4">
-            <q-input label="Saldo" outlined dense :model-value="money(form.saldo)" readonly />
+            <q-input label="Saldo" outlined dense v-model="form.saldo" readonly/>
           </div>
           <div class="col-12 col-sm-4">
             <q-chip :style="{ backgroundColor: getEstadoColor(form.estado) }" text-color="white" class="q-mt-sm">
@@ -241,7 +245,8 @@ export default {
       loading: false,
       saving: false,
       savingPago: false,
-      savingPagoTodo: false
+      savingPagoTodo: false,
+      precioOro : 0
     }
   },
   computed: {
@@ -250,8 +255,10 @@ export default {
       return ['Admin','Administrador','ADMIN','administrator'].includes(String(r || '').trim())
     }
   },
-  mounted () {
+  async mounted () {
     this.fetch()
+    const res = await this.$axios.get('cogs/2');
+    this.precioOro = res.data;
   },
   methods: {
     imprimirOrden () {
@@ -288,6 +295,8 @@ export default {
           detalle: this.form.detalle,
           estado: this.form.estado,
           fecha_entrega: this.form.fecha_entrega,
+          adelanto: this.form.adelanto,
+          saldo: this.form.saldo,
           // solo admin puede enviar costo_total y peso
           ...(this.isAdmin ? {
             costo_total: this.form.costo_total,

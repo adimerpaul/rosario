@@ -25,7 +25,7 @@
         .logo{ width:58px; height:auto }
         .rings{ width:60px; height:auto }
         .title{ font-weight:800; font-size:17px; letter-spacing:.2px; }
-        .sub{ font-size:9.5px; color:#000; margin-top:-2px }
+        .sub{ font-size:12px; color:#000; margin-top:-2px }
 
         .pill-badge{               /* Bs. en pastilla */
             display:inline-block; min-width:110px; text-align:center;
@@ -137,7 +137,7 @@
                                 </td>
                                 <td>
                                     <div class="pill-badge" style="font-size: 11px"><b>Nro: {{ $orden->numero }}</b></div>
-                                    <div class="pill-badge" style="font-size: 12px"><b>Bs.</b> {{ number_format($precioOro,2) }}<br></div>
+                                    <div class="pill-badge" style="font-size: 12px"><b>Bs.</b> {{ number_format($orden->costo_total,2) }}<br></div>
                                 </td>
                             </tr>
                         </table>
@@ -243,7 +243,7 @@
 {{--            </div>--}}
         </div>
     @if($i==0)
-        <br><br> <br>
+        <br>
     @endif
     @endfor
 </div>

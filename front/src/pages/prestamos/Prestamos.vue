@@ -171,32 +171,33 @@
 
                     <q-btn-dropdown dense no-caps color="primary" label="Más">
                       <q-list>
+<!--                        v-if="p.dias_transcurridos >= 30 "-->
                         <q-item clickable v-ripple @click="openMensualidad(p)" v-close-popup
-                                v-if="p.dias_transcurridos >= 30 "
-                        >
+                                v-if="p.estado !== 'Fundido'">
                           <q-item-section avatar><q-icon name="payment"/></q-item-section>
-                          <q-item-section>Pagar mensualidad</q-item-section>
+                          <q-item-section>Pagar mes</q-item-section>
                         </q-item>
 
                         <q-item clickable v-ripple @click="openCargos(p)" v-close-popup
                                 v-if="p.dias_transcurridos > 0"
                         >
                           <q-item-section avatar><q-icon name="attach_money"/></q-item-section>
-                          <q-item-section>Pagar cargos</q-item-section>
+                          <q-item-section>Pagar hasta hoy</q-item-section>
                         </q-item>
 
                         <q-item clickable v-ripple @click="openTotal(p)" v-close-popup v-if="p.estado !== 'Fundido'">
                           <q-item-section avatar><q-icon name="money_off"/></q-item-section>
-                          <q-item-section>Pagar todo</q-item-section>
+                          <q-item-section>Pagar y entregar</q-item-section>
+                        </q-item>
+                        <q-item clickable v-ripple @click="imprimirCambiodeMoneda(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="picture_as_pdf"/></q-item-section>
+                          <q-item-section>Cambio de Moneda</q-item-section>
                         </q-item>
                         <q-item clickable v-ripple @click="imprimir(p)" v-close-popup>
                           <q-item-section avatar><q-icon name="print"/></q-item-section>
                           <q-item-section>Imprimir Contrato</q-item-section>
                         </q-item>
-                        <q-item clickable v-ripple @click="imprimirCambiodeMoneda(p)" v-close-popup>
-                          <q-item-section avatar><q-icon name="picture_as_pdf"/></q-item-section>
-                          <q-item-section>Imprimir Cambio de Moneda</q-item-section>
-                        </q-item>
+
 <!--                        btn fundir-->
                         <q-item clickable v-ripple @click="fundirPrestamo(p)" v-close-popup v-if="p.estado !== 'Fundido'">
                           <q-item-section avatar><q-icon name="merge_type"/></q-item-section>

@@ -53,7 +53,7 @@
                         type="date"
                         v-model="prestamo.fecha_creacion"
                         outlined dense
-                        :readonly="!isAdmin"
+                        readonly
                       />
                     </div>
 
@@ -62,6 +62,7 @@
                         label="Mes cancelado"
                         type="date"
                         v-model="prestamo.fecha_limite"
+                        readonly
                         outlined dense
                       />
                     </div>
@@ -79,7 +80,7 @@
                       <q-input label="Peso bruto (kg)" type="number"
                                v-model.number="prestamo.peso"
                                min="0" step="0.001" outlined dense
-                               :readonly="!isAdmin" @update:model-value="recalcular"
+                               readonly @update:model-value="recalcular"
                       />
                     </div>
 
@@ -87,7 +88,7 @@
                       <q-input label="Merma/Piedra (kg)" type="number"
                                v-model.number="prestamo.merma"
                                min="0" step="0.001" outlined dense
-                               :readonly="!isAdmin" @update:model-value="recalcular"
+                               readonly @update:model-value="recalcular"
                       />
                     </div>
 
@@ -103,14 +104,15 @@
                     <div class="col-6 col-md-4">
                       <q-select label="Interés (%)" outlined dense
                                 v-model.number="prestamo.interes" :options="[1,2,3]"
-                                @update:model-value="recalcular" :readonly="!isAdmin"
+                                @update:model-value="recalcular"
+                                readonly
                       />
                     </div>
 
                     <div class="col-6 col-md-4">
                       <q-select label="Almacén (%)" outlined dense
                                 v-model.number="prestamo.almacen" :options="[2,3]"
-                                @update:model-value="recalcular" :readonly="!isAdmin"
+                                @update:model-value="recalcular" readonly
                       />
                     </div>
 

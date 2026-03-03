@@ -161,7 +161,7 @@
                       <q-select
                         label="Almacén (%)" outlined dense
                         v-model.number="prestamo.almacen"
-                        :options="[1,1.5,2,3]"
+                        :options="[0,1,1.5,2,2.5,3]"
                         @update:model-value="calcularSaldo"
                         :readonly="!isAdmin"
                       />

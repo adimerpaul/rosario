@@ -253,8 +253,9 @@ class OrdenController extends Controller{
 
         // Recalcular montos por pagos activos
         $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
-        $orden->adelanto = $pagado;
-        $orden->saldo = max(0, ($orden->costo_total ?? 0) - $pagado);
+//        $orden->adelanto = $orden->adelanto + $pagado;
+        $orden->saldo = $request->costo_total - ($request->adelanto + $pagado);
+//        $orden->saldo = max(0, ($orden->costo_total ?? 0) - $orden->adelanto);
         $orden->save();
 
         return $orden->load(['cliente','user']);
@@ -289,6 +290,10 @@ class OrdenController extends Controller{
             'cel' => '7380504',
             'nit' => '',
         ];
+//        actulziar orden con los pagor realizados
+        $pagosActivos = $orden->pagos()->where('estado','Activo')->sum('monto');
+        $orden->adelanto = $orden->adelanto + $pagosActivos;
+//        $orden->saldo = max(0, ($orden->costo_total ?? 0) - $orden->adelanto);
 
         // Render del PDF
         $pdf = Pdf::loadView('pdf.orden_trabajo', [

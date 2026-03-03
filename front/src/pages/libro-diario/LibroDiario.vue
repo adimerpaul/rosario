@@ -365,7 +365,7 @@ export default {
     return {
       fecha: moment().format('YYYY-MM-DD'),
       usuario: null,
-      metodo: null, // EFECTIVO / QR (opcional)
+      metodo: 'EFECTIVO', // EFECTIVO / QR (opcional)
 
       usuarios: [],
 

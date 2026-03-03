@@ -136,10 +136,10 @@ class PrestamoController extends Controller
         // Empresa (ajusta a tu fuente real)
         $empresa = [
             'nombre'    => 'Joyería Rosario',
-            'direccion' => 'Calle Junín entre La Plata y Soria — Frente a mercado',
+            'direccion' => 'Adolfomier entre potosi y pagador',
             'ciudad'    => 'Oruro',
             'pais'      => 'Bolivia',
-            'cel'       => '704-12345',
+            'cel'       => '73800584',
         ];
 
         // Cálculos base (reusa tu helper interno)
@@ -149,9 +149,13 @@ class PrestamoController extends Controller
         $fc = $prestamo->fecha_creacion ? Carbon::parse($prestamo->fecha_creacion) : now();
         // Plazo fijo 30 días (ajusta si quieres variable)
         $plazoDias   = 30;
+//        $vencimiento = $prestamo->fecha_limite
+//            ? Carbon::parse($prestamo->fecha_limite)
+//            : (clone $fc)->addDays($plazoDias);
+//        $vencimeinto es la fecha limite + un mes
         $vencimiento = $prestamo->fecha_limite
-            ? Carbon::parse($prestamo->fecha_limite)
-            : (clone $fc)->addDays($plazoDias);
+            ? Carbon::parse($prestamo->fecha_limite)->addMonthNoOverflow()
+            : (clone $fc)->addMonthNoOverflow();
 
         // Moneda (elige tu etiqueta de visualización)
         // En tu imagen usas "SUS" (dólares). Puedes parametrizar si manejas múltiples monedas.

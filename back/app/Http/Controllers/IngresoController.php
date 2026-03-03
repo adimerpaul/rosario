@@ -22,12 +22,13 @@ class IngresoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'fecha'       => 'required|date',
+//            'fecha'       => 'required|date',
             'descripcion' => 'required|string|max:255',
             'metodo'      => 'required|in:EFECTIVO,QR',
             'monto'       => 'required|numeric|min:0.01',
             'nota'        => 'nullable|string|max:255',
         ]);
+        $data['fecha'] = now()->toDateString();
 
         $data['user_id'] = optional($request->user())->id;
 
