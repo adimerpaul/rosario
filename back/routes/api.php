@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('egresos', [EgresoController::class, 'index']);
     Route::post('egresos', [EgresoController::class, 'store']);
     Route::post('egresos/{egreso}/anular', [EgresoController::class, 'anular']);
+    Route::post('egresos/{egreso}/toggle-metodo', [EgresoController::class, 'toggleMetodo']);
 
     Route::post('prestamos/{prestamo}/pagar-mensualidad', [PrestamoController::class, 'pagarMensualidad']);
     Route::post('prestamos/{prestamo}/pagar-cargos', [PrestamoController::class, 'pagarCargos']);
@@ -84,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('ingresos', [IngresoController::class, 'index']);
     Route::post('ingresos', [IngresoController::class, 'store']);
     Route::post('ingresos/{ingreso}/anular', [IngresoController::class, 'anular']);
+    Route::post('ingresos/{ingreso}/toggle-metodo', [IngresoController::class, 'toggleMetodo']);
 //    totalInvertido
     Route::get('totalInvertido', [PrestamoController::class, 'totalInvertido']);
     Route::post('prestamos/{prestamo}/fundir', [PrestamoController::class, 'fundir']);
@@ -99,4 +101,3 @@ Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia']);
 
 Route::get('/prestamos/{prestamo}/pdf', [PrestamoController::class, 'pdf']);
 Route::get('/prestamos/{prestamo}/cambio/pdf', [\App\Http\Controllers\PrestamoController::class, 'comprobanteCambioPrestamoPdf']);
-

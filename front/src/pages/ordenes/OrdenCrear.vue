@@ -18,9 +18,13 @@
                     </template>
                   </q-input>
                 </div>
-                <div class="col-12 col-md-2 text-right">
+                <div class="col-6 col-md-2 text-right">
                   <q-btn label="Buscar" color="primary" class="q-mb-sm" @click="getClientes" icon="search"
                          :loading="loading" no-caps dense size="10px"/>
+                </div>
+                <div class="col-6 col-md-2 text-right">
+                  <q-btn label="Nuevo" color="positive" class="q-mb-sm" @click="openClientDialog" icon="add"
+                         :loading="clientLoading" no-caps dense size="10px"/>
                 </div>
               </div>
               <div class="col-12 q-mt-sm">
@@ -170,6 +174,33 @@
         </div>
       </q-card-section>
     </q-card>
+
+    <q-dialog v-model="clientDialog" persistent>
+      <q-card style="width: 420px; max-width: 95vw;">
+        <q-card-section class="row items-center q-pb-sm">
+          <div class="text-h6">Nuevo Cliente</div>
+          <q-space />
+          <q-btn icon="close" flat round dense @click="clientDialog = false" />
+        </q-card-section>
+        <q-card-section class="q-pt-none">
+          <q-form @submit.prevent="crearClienteRapido">
+            <q-input v-model="clientForm.name" label="Nombre" outlined dense
+                     :rules="[val => !!val || 'Campo requerido']"
+                     @update:model-value="clientForm.name = upper(clientForm.name)" />
+            <q-input v-model="clientForm.ci" label="CI" outlined dense class="q-mt-sm"
+                     :rules="[val => !!val || 'Campo requerido']"
+                     @update:model-value="clientForm.ci = upper(clientForm.ci)" />
+            <q-select v-model="clientForm.status" label="Estado" :options="statuses" outlined dense class="q-mt-sm" />
+            <q-input v-model="clientForm.cellphone" label="Celular" outlined dense class="q-mt-sm" />
+
+            <div class="q-mt-md text-right">
+              <q-btn flat label="Cancelar" color="negative" @click="clientDialog = false" :loading="clientLoading" />
+              <q-btn label="Guardar" type="submit" color="positive" class="q-ml-sm" :loading="clientLoading" />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -204,10 +235,21 @@ export default {
       clientes: [],
       clienteFiltro: '',
       loading: false,
+      clientLoading: false,
       precioOro: {value: 0},
       costoBase: 0,
       reconocimiento: null,
       reconocimientoCampo: false,
+      clientDialog: false,
+      clientForm: {
+        name: '',
+        ci: '',
+        status: 'Confiable',
+        cellphone: '',
+        address: '',
+        observation: ''
+      },
+      statuses: ['Confiable', 'No Confiable', 'VIP'],
     }
   },
   async mounted() {
@@ -244,6 +286,44 @@ export default {
 
   },
   methods: {
+    upper(value) {
+      return (value || '').toUpperCase();
+    },
+    normalizeClientPayload(client) {
+      return {
+        ...client,
+        name: this.upper(client.name),
+        ci: this.upper(client.ci),
+        address: this.upper(client.address),
+        observation: this.upper(client.observation),
+      };
+    },
+    openClientDialog() {
+      this.clientForm = {
+        name: '',
+        ci: '',
+        status: 'Confiable',
+        cellphone: '',
+        address: '',
+        observation: ''
+      };
+      this.clientDialog = true;
+    },
+    crearClienteRapido() {
+      this.clientLoading = true;
+      this.$axios.post('clients', this.normalizeClientPayload(this.clientForm)).then((res) => {
+        const nuevoCliente = res.data;
+        this.clientDialog = false;
+        this.page = 1;
+        this.getClientes();
+        this.seleccionarCliente(nuevoCliente);
+        this.$alert.success('Cliente creado y seleccionado');
+      }).catch(err => {
+        this.$alert.error(err.response?.data?.message || 'Error al crear cliente');
+      }).finally(() => {
+        this.clientLoading = false;
+      });
+    },
     coloca18Kilates() {
       // this.detalles
       if (this.check18Kilates) {

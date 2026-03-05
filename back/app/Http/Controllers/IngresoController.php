@@ -55,4 +55,19 @@ class IngresoController extends Controller
 
         return response()->json($ingreso->fresh()->load('user:id,name'));
     }
+
+    public function toggleMetodo(Request $request, Ingreso $ingreso)
+    {
+        $user = $request->user();
+        if (!$user || ($user->role ?? null) !== 'Administrador') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $actual = strtoupper((string) $ingreso->metodo);
+        $nuevoMetodo = $actual === 'QR' ? 'EFECTIVO' : 'QR';
+
+        $ingreso->update(['metodo' => $nuevoMetodo]);
+
+        return response()->json($ingreso->fresh()->load('user:id,name'));
+    }
 }

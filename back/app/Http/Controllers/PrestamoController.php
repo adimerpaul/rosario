@@ -467,6 +467,7 @@ class PrestamoController extends Controller
 
         $q = Prestamo::with(['cliente','user'])->orderBy('id', 'desc');
         if ($userId) $q->where('user_id', $userId);
+        if ($request->filled('cliente_id')) $q->where('cliente_id', (int) $request->query('cliente_id'));
         if ($estado && $estado !== 'Todos') $q->where('estado', $estado);
 
         if ($search) {

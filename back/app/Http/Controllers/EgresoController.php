@@ -57,4 +57,19 @@ class EgresoController extends Controller
 
         return response()->json($egreso->fresh()->load('user:id,name'));
     }
+
+    public function toggleMetodo(Request $request, Egreso $egreso)
+    {
+        $user = $request->user();
+        if (!$user || ($user->role ?? null) !== 'Administrador') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $actual = strtoupper((string) $egreso->metodo);
+        $nuevoMetodo = $actual === 'QR' ? 'EFECTIVO' : 'QR';
+
+        $egreso->update(['metodo' => $nuevoMetodo]);
+
+        return response()->json($egreso->fresh()->load('user:id,name'));
+    }
 }

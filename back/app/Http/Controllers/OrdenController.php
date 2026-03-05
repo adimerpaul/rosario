@@ -136,6 +136,10 @@ class OrdenController extends Controller{
             $query->where('user_id', $request->user_id);
         }
 
+        if ($request->filled('cliente_id')) {
+            $query->where('cliente_id', (int) $request->cliente_id);
+        }
+
         if ($request->filled('estado') && $request->estado !== 'Todos') {
             $query->where('estado', $request->estado);
         }

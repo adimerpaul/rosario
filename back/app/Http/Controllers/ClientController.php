@@ -24,7 +24,7 @@ class ClientController extends Controller{
             'ci' => 'required|unique:clients',
         ]);
 
-        return Client::create($request->all());
+        return Client::create($this->normalizeClientData($request->all()));
     }
 
     public function update(Request $request, Client $client)
@@ -34,7 +34,7 @@ class ClientController extends Controller{
 //            'ci' => 'required|unique:clients,ci,' . $client->id,
         ]);
 
-        $client->update($request->all());
+        $client->update($this->normalizeClientData($request->all()));
         return $client;
     }
 
@@ -42,5 +42,18 @@ class ClientController extends Controller{
     {
         $client->delete();
         return response()->json(['message' => 'Cliente eliminado']);
+    }
+
+    private function normalizeClientData(array $data): array
+    {
+        $fieldsToUpper = ['name', 'ci', 'address', 'observation'];
+
+        foreach ($fieldsToUpper as $field) {
+            if (isset($data[$field]) && is_string($data[$field])) {
+                $data[$field] = mb_strtoupper(trim($data[$field]), 'UTF-8');
+            }
+        }
+
+        return $data;
     }
 }
