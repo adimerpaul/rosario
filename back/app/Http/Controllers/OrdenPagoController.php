@@ -6,29 +6,30 @@ use App\Models\Orden;
 use App\Models\OrdenPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use function Symfony\Component\Translation\t;
 
-class OrdenPagoController extends Controller{
+class OrdenPagoController extends Controller
+{
     public function index(Orden $orden)
     {
         return $orden->pagos()->with('user')->orderByDesc('id')->get();
     }
+
     public function anular(OrdenPago $pago)
     {
         return DB::transaction(function () use ($pago) {
             if ($pago->estado === 'Anulado') {
-                return response()->json(['message' => 'El pago ya está anulado'], 409);
+                return response()->json(['message' => 'El pago ya esta anulado'], 409);
             }
 
             $pago->estado = 'Anulado';
             $pago->save();
 
             $orden = $pago->orden()->first();
-            $pagado = $orden->pagos()->where('estado','Activo')->sum('monto');
+            $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
             $orden->adelanto = $pagado;
             $orden->saldo = max(0, ($orden->costo_total ?? 0) - $pagado);
             if ($orden->saldo > 0 && $orden->estado === 'Entregado') {
-                $orden->estado = 'Pendiente'; // si corresponde
+                $orden->estado = 'Pendiente';
             }
             $orden->save();
 
@@ -39,51 +40,64 @@ class OrdenPagoController extends Controller{
     public function store(Request $request, Orden $orden)
     {
         $data = $request->validate([
-            'monto'  => 'required|numeric|min:0.01',
+            'monto' => 'required|numeric|min:0.01',
             'metodo' => 'nullable|string|max:50',
         ]);
 
-//        return DB::transaction(function () use ($orden, $data, $request) {
-            $pago = $orden->pagos()->create([
-                'fecha'  => now(),
-                'monto'  => $data['monto'],
-                'metodo' => $data['metodo'] ?? 'EFECTIVO',
-                'estado' => 'Activo',
-                'user_id'=> $request->user()->id ?? null
-            ]);
-            $pagado = $orden->pagos()->where('estado','Activo')->sum('monto');
-            $orden->saldo = $orden->costo_total - $pagado - $orden->adelanto;
-            error_log("costo_total: " . $orden->costo_total.", pagado: " . $pagado . ", adelanto: " . $orden->adelanto . ", saldo: " . $orden->saldo);
-//            if ($orden->saldo <= 0 && $orden->estado !== 'Cancelada') {
-//                $orden->estado = 'Entregado'; // opcional, según tu flujo
-//            }
-            $orden->save();
+        $pago = $orden->pagos()->create([
+            'fecha' => now(),
+            'monto' => $data['monto'],
+            'metodo' => $data['metodo'] ?? 'EFECTIVO',
+            'estado' => 'Activo',
+            'user_id' => $request->user()->id ?? null,
+        ]);
 
-            return $pago->load('user');
-//        });
+        $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
+        $orden->saldo = $orden->costo_total - $pagado - $orden->adelanto;
+        $orden->save();
+
+        return $pago->load('user');
     }
 
-    public function update(OrdenPago $pago){
+    public function update(OrdenPago $pago)
+    {
         if ($pago->estado === 'Anulado') {
-            return response()->json(['message' => 'El pago ya está anulado'], 400);
+            return response()->json(['message' => 'El pago ya esta anulado'], 400);
         }
-        $orden = Orden::findOrFail($pago->orden_id);
-//        if ($orden->estado !== 'Pendiente') {
-//            return response()->json(['message' => 'La orden no está en estado pendiente'], 400);
-//        }
-        // Actualizar el saldo de la orden
-        $orden->saldo += $pago->monto;
 
-//        error_log("Saldo de la orden actualizado: " . $orden->saldo);
+        $orden = Orden::findOrFail($pago->orden_id);
+
+        $orden->saldo += $pago->monto;
         if ($orden->saldo > 0) {
-            $orden->estado = 'Pendiente'; // Cambiar estado a Pendiente si el saldo es mayor a 0
+            $orden->estado = 'Pendiente';
         } else {
-            $orden->estado = 'Entregado'; // Cambiar estado a Entregado si el saldo es 0 o menor
+            $orden->estado = 'Entregado';
         }
         $orden->save();
+
         $pago->update([
-            'estado' => 'Anulado'
+            'estado' => 'Anulado',
         ]);
+
         return response()->json(['message' => 'Pago anulado correctamente'], 200);
+    }
+
+    public function toggleMetodo(Request $request, OrdenPago $pago)
+    {
+        $user = $request->user();
+        if (!$user || ($user->role ?? null) !== 'Administrador') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        if (($pago->estado ?? 'Activo') !== 'Activo') {
+            return response()->json(['message' => 'Solo se puede cambiar el metodo en pagos activos'], 422);
+        }
+
+        $actual = strtoupper((string) $pago->metodo);
+        $nuevoMetodo = $actual === 'QR' ? 'EFECTIVO' : 'QR';
+
+        $pago->update(['metodo' => $nuevoMetodo]);
+
+        return response()->json($pago->fresh()->load('user'));
     }
 }

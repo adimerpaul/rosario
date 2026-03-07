@@ -115,11 +115,11 @@
 
                 <td class="text-right" v-if="$store.user?.role === 'Administrador'">
                   <q-btn
-                    v-if="it.fuente === 'INGRESO' && it.estado === 'Activo'"
+                    v-if="canToggleIngresoMetodo(it)"
                     dense flat color="primary" icon="swap_horiz"
                     :label="it.metodo === 'QR' ? 'Cambiar a EFECTIVO' : 'Cambiar a QR'"
                     no-caps size="10px"
-                    @click="toggleMetodoIngreso(it)"
+                    @click="toggleMetodoItemIngreso(it)"
                   />
                   <q-btn
                     v-if="it.fuente === 'INGRESO' && it.estado === 'Activo'"
@@ -493,6 +493,53 @@ export default {
           this.$alert?.error?.(e.response?.data?.message || 'No se pudo cambiar el metodo')
         })
         .finally(() => { this.loading = false })
+    },
+
+    toggleMetodoPagoOrden (item) {
+      this.loading = true
+      this.$axios.post(`ordenes/pagos/${item.id}/toggle-metodo`)
+        .then(() => {
+          this.$alert?.success?.('Metodo actualizado')
+          this.fetchDiario()
+        })
+        .catch((e) => {
+          this.$alert?.error?.(e.response?.data?.message || 'No se pudo cambiar el metodo')
+        })
+        .finally(() => { this.loading = false })
+    },
+
+    toggleMetodoPagoPrestamo (item) {
+      this.loading = true
+      this.$axios.post(`prestamos/pagos/${item.id}/toggle-metodo`)
+        .then(() => {
+          this.$alert?.success?.('Metodo actualizado')
+          this.fetchDiario()
+        })
+        .catch((e) => {
+          this.$alert?.error?.(e.response?.data?.message || 'No se pudo cambiar el metodo')
+        })
+        .finally(() => { this.loading = false })
+    },
+
+    canToggleIngresoMetodo (item) {
+      if ((item?.estado || 'Activo') !== 'Activo') return false
+      return item?.fuente === 'INGRESO' ||
+        String(item?.key || '').startsWith('po-') ||
+        String(item?.key || '').startsWith('pp-')
+    },
+
+    toggleMetodoItemIngreso (item) {
+      if (item?.fuente === 'INGRESO') {
+        this.toggleMetodoIngreso(item)
+        return
+      }
+      if (String(item?.key || '').startsWith('po-')) {
+        this.toggleMetodoPagoOrden(item)
+        return
+      }
+      if (String(item?.key || '').startsWith('pp-')) {
+        this.toggleMetodoPagoPrestamo(item)
+      }
     },
 
     toggleMetodoEgreso (item) {

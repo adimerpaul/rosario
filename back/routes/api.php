@@ -63,11 +63,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('prestamos/{prestamo}/pagos', [PrestamoController::class, 'pagos']);
     Route::post('prestamos/pagos', [PrestamoController::class, 'pagar']);
     Route::put('prestamos/pagos/{pago}/anular', [PrestamoController::class, 'anularPago']);
+    Route::post('prestamos/pagos/{pago}/toggle-metodo', [PrestamoController::class, 'toggleMetodoPago']);
 
     Route::post('ordenes/{orden}/pagar-todo', [OrdenController::class, 'pagarTodo']);
     Route::get('ordenes/{orden}/pagos', [OrdenPagoController::class, 'index']); // si no lo tienes aún
     Route::post('ordenes/{orden}/pagos', [OrdenPagoController::class, 'store']);
     Route::post('ordenes/pagos/{pago}/anular', [OrdenPagoController::class, 'anular']); // usado en el front
+    Route::post('ordenes/pagos/{pago}/toggle-metodo', [OrdenPagoController::class, 'toggleMetodo']);
 
     Route::get('ordenesRetrasadas', [OrdenController::class, 'atrasadas']);
     Route::get('prestamosRetrasados', [PrestamoController::class, 'retrasados']);

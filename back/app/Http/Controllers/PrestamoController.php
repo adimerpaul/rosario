@@ -702,4 +702,23 @@ class PrestamoController extends Controller
             return response()->json(['message' => 'Pago anulado']);
         });
     }
+
+    public function toggleMetodoPago(Request $request, PrestamoPago $pago)
+    {
+        $user = $request->user();
+        if (!$user || ($user->role ?? null) !== 'Administrador') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        if (($pago->estado ?? 'Activo') !== 'Activo') {
+            return response()->json(['message' => 'Solo se puede cambiar el metodo en pagos activos'], 422);
+        }
+
+        $actual = strtoupper((string) $pago->metodo);
+        $nuevoMetodo = $actual === 'QR' ? 'EFECTIVO' : 'QR';
+
+        $pago->update(['metodo' => $nuevoMetodo]);
+
+        return response()->json($pago->fresh()->load('user'));
+    }
 }
