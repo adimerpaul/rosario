@@ -258,9 +258,24 @@ export default {
       )
       return phone ? `https://wa.me/${phone}?text=${msg}` : null
     },
-    imprimir (id) {
-      const url = `${this.$axios.defaults.baseURL}/ordenes/${id}/pdf`
-      window.open(url, '_blank')
+    async imprimir (id) {
+      try {
+        const response = await this.$axios.get(`ordenes/${id}/pdf`, {
+          responseType: 'blob'
+        })
+        const blob = new Blob([response.data], { type: 'application/pdf' })
+        const fileName = response.headers['content-disposition']?.match(/filename="?([^"]+)"?/)?.[1] || `orden_trabajo_${id}.pdf`
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      } catch (err) {
+        this.$alert?.error?.(err.response?.data?.message || 'Error al descargar la orden')
+      }
     }
   }
 }

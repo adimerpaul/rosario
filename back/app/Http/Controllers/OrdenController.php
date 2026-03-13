@@ -307,10 +307,7 @@ class OrdenController extends Controller{
             'hoy' => now(),
         ])->setPaper('letter', 'portrait');
 
-        // Mostrar en el navegador
         $fileName = 'orden_trabajo_'.$orden->numero.'.pdf';
-        return $pdf->stream($fileName);
-        // Si prefieres descarga:
-        // return $pdf->download($fileName);
+        return $pdf->download($fileName);
     }
 }

@@ -261,9 +261,24 @@ export default {
     this.precioOro = res.data;
   },
   methods: {
-    imprimirOrden () {
-      const url = `${this.$axios.defaults.baseURL}/ordenes/${this.id}/pdf`
-      window.open(url, '_blank')
+    async imprimirOrden () {
+      try {
+        const response = await this.$axios.get(`ordenes/${this.id}/pdf`, {
+          responseType: 'blob'
+        })
+        const blob = new Blob([response.data], { type: 'application/pdf' })
+        const fileName = response.headers['content-disposition']?.match(/filename="?([^"]+)"?/)?.[1] || `orden_trabajo_${this.id}.pdf`
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      } catch (err) {
+        this.$alert?.error?.(err.response?.data?.message || 'Error al descargar la orden')
+      }
     },
     imprimirGarantia () {
       const url = `${this.$axios.defaults.baseURL}/ordenes/${this.id}/garantia`
