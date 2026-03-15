@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Estuche;
 use App\Models\Joya;
 use Illuminate\Http\Request;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -16,6 +17,7 @@ class JoyaController extends Controller
         $search = trim((string) $request->input('search', ''));
 
         return Joya::query()
+            ->with(['estucheItem.columna.vitrina'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nombre', 'like', "%{$search}%")
@@ -90,7 +92,11 @@ class JoyaController extends Controller
             'tipo' => 'required|string|in:Importada,Joya nacional,Plata',
             'peso' => 'required|numeric|min:0',
             'linea' => 'required|string|in:Mama,Papa,Roger,Andreina',
-            'estuche' => 'required|string|max:255',
+            'estuche_id' => [
+                'required',
+                'exists:estuches,id',
+                'unique:joyas,estuche_id,'.$request->route('joya')?->id,
+            ],
             'nombre' => 'required|string|max:255',
             'monto_bs' => 'required|numeric|min:0',
         ]);
@@ -98,10 +104,13 @@ class JoyaController extends Controller
 
     private function normalizeData(array $data): array
     {
-        foreach (['estuche', 'nombre'] as $field) {
-            if (isset($data[$field]) && is_string($data[$field])) {
-                $data[$field] = mb_strtoupper(trim($data[$field]), 'UTF-8');
-            }
+        if (isset($data['nombre']) && is_string($data['nombre'])) {
+            $data['nombre'] = mb_strtoupper(trim($data['nombre']), 'UTF-8');
+        }
+
+        if (isset($data['estuche_id'])) {
+            $estuche = Estuche::find($data['estuche_id']);
+            $data['estuche'] = $estuche?->nombre;
         }
 
         return $data;

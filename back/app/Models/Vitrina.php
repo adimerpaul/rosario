@@ -7,21 +7,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
-class Joya extends Model implements AuditableContract
+class Vitrina extends Model implements AuditableContract
 {
     use AuditableTrait, SoftDeletes;
 
-    protected $table = 'joyas';
+    protected $table = 'vitrinas';
 
     protected $fillable = [
-        'tipo',
-        'peso',
-        'linea',
-        'estuche_id',
-        'estuche',
         'nombre',
-        'imagen',
-        'monto_bs',
+        'orden',
     ];
 
     protected $hidden = [
@@ -30,8 +24,8 @@ class Joya extends Model implements AuditableContract
         'deleted_at',
     ];
 
-    public function estucheItem()
+    public function columnas()
     {
-        return $this->belongsTo(Estuche::class, 'estuche_id');
+        return $this->hasMany(VitrinaColumna::class)->orderBy('orden');
     }
 }

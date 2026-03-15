@@ -5,11 +5,14 @@ use App\Http\Controllers\CogController;
 use App\Http\Controllers\DailyCashController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EgresoController;
+use App\Http\Controllers\EstucheController;
 use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\JoyaController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PrestamoController;
+use App\Http\Controllers\VitrinaColumnaController;
+use App\Http\Controllers\VitrinaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +37,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/joyas/{joya}', [JoyaController::class, 'update']);
     Route::delete('/joyas/{joya}', [JoyaController::class, 'destroy']);
     Route::post('/joyas/{joya}/imagen', [JoyaController::class, 'updateImagen']);
+    Route::get('/vitrinas', [VitrinaController::class, 'index']);
+    Route::post('/vitrinas', [VitrinaController::class, 'store']);
+    Route::put('/vitrinas/{vitrina}', [VitrinaController::class, 'update']);
+    Route::delete('/vitrinas/{vitrina}', [VitrinaController::class, 'destroy']);
+    Route::post('/vitrina-columnas', [VitrinaColumnaController::class, 'store']);
+    Route::put('/vitrina-columnas/{columna}', [VitrinaColumnaController::class, 'update']);
+    Route::delete('/vitrina-columnas/{columna}', [VitrinaColumnaController::class, 'destroy']);
+    Route::get('/estuches/options', [EstucheController::class, 'options']);
+    Route::post('/estuches', [EstucheController::class, 'store']);
+    Route::put('/estuches/{estuche}', [EstucheController::class, 'update']);
+    Route::delete('/estuches/{estuche}', [EstucheController::class, 'destroy']);
 
     Route::get('/clients', [ClientController::class, 'index']);
     Route::post('/clients', [ClientController::class, 'store']);
