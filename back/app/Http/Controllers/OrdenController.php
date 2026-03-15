@@ -185,7 +185,15 @@ class OrdenController extends Controller
             ->orderByDesc('fecha_creacion');
 
         if ($request->filled('tipo')) {
-            $query->where('tipo', $request->input('tipo'));
+            $tipo = $request->input('tipo');
+            $query->where(function ($q) use ($tipo) {
+                $q->where('tipo', $tipo);
+
+                if ($tipo === 'Orden') {
+                    $q->orWhereNull('tipo')
+                        ->orWhere('tipo', '');
+                }
+            });
         }
 
         if ($request->has('user_id') && $request->user_id !== null && $request->user_id !== 'null') {

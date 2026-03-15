@@ -260,10 +260,10 @@ export default {
       usuarios: [],
       estados: ['Todos', 'Pendiente', 'Entregado', 'Cancelada'],
       filters: {
-        fecha_inicio: moment().startOf('week').format('YYYY-MM-DD'),
-        fecha_fin: moment().endOf('week').format('YYYY-MM-DD'),
+        fecha_inicio: null,
+        fecha_fin: null,
         user_id: null,
-        estado: 'Pendiente',
+        estado: 'Todos',
         search: ''
       },
       resumen: { total: 0, adelanto: 0, saldo: 0 },
