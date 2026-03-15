@@ -124,3 +124,4 @@ Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia']);
 
 Route::get('/prestamos/{prestamo}/pdf', [PrestamoController::class, 'pdf']);
 Route::get('/prestamos/{prestamo}/cambio/pdf', [\App\Http\Controllers\PrestamoController::class, 'comprobanteCambioPrestamoPdf']);
+Route::get('/prestamos/pagos/{pago}/pdf', [PrestamoController::class, 'pagoPdf']);

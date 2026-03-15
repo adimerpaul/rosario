@@ -2,171 +2,175 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>Contrato de préstamo</title>
+    <title>Préstamo</title>
     <style>
-        @page { margin: 8mm; }
-        body{ font-family: DejaVu Sans, sans-serif; color:#111; }
-        .brand{ color:#d00; }
-        .xs{font-size:10px} .sm{font-size:11px} .md{font-size:12px} .lg{font-size:14px}
-        .bold{font-weight:700} .center{text-align:center}
-        .box{ border:1.5px solid #333; border-radius:6px; padding:6px 8px; }
-        .grid{ width:100%; border-collapse:separate; border-spacing:8px; }
-        .label{ font-size:11px; color:#444; margin-bottom:2px; }
-        .kv{ width:100%; }
-        .kv td{ padding:2px 0; vertical-align:top; }
-        .right{ text-align:right; }
-        .title{ font-size:16px; font-weight:800; letter-spacing:.2px; }
-        .muted{ color:#666; }
-        .mt4{ margin-top:4px } .mt8{ margin-top:8px } .mt12{ margin-top:12px }
-        .pill{ display:inline-block; padding:2px 8px; border:1px solid #555; border-radius:10px; font-size:11px; }
+        @page { margin: 12mm; }
+        body { font-family: DejaVu Sans, sans-serif; color:#111; }
+        .sheet { border:2px solid #991b1b; border-radius:14px; padding:10px 12px; }
+        .brand { color:#991b1b; }
+        .title { font-size:17px; font-weight:800; letter-spacing:.2px; }
+        .sm { font-size:11px; }
+        .md { font-size:12px; }
+        .xs { font-size:10px; }
+        .bold { font-weight:700; }
+        .right { text-align:right; }
+        .center { text-align:center; }
+        .muted { color:#666; }
+        .badge {
+            display:inline-block;
+            border:1.5px solid #991b1b;
+            border-radius:12px;
+            padding:4px 10px;
+            font-size:11px;
+            font-weight:700;
+        }
+        .box {
+            border:1.5px solid #991b1b;
+            border-radius:12px;
+            padding:8px 10px;
+            vertical-align:top;
+        }
+        .label {
+            display:inline-block;
+            font-size:10px;
+            color:#991b1b;
+            font-weight:700;
+            margin-bottom:3px;
+        }
+        table.grid { width:100%; border-collapse:separate; border-spacing:6px; }
+        .sign-line { border-top:1px solid #111; width:78%; margin:20px auto 4px; }
     </style>
 </head>
 <body>
 @php
     $clienteNombre = $cliente->name ?? '—';
-    $clienteCI     = $cliente->ci   ?? '—';
+    $clienteCI = $cliente->ci ?? '—';
+    $logo = public_path('images/logo.png');
 @endphp
-<br>
-<br>
-    <!-- ENCABEZADO -->
-<table style="width:100%; border-collapse:collapse">
-    <tr >
-        <td style="width:80px; vertical-align:top">
-{{--            @php $logo = public_path('images/logo.png'); @endphp--}}
-{{--            @if (file_exists($logo))--}}
-{{--                <img src="{{ $logo }}" style="width:70px; display:block; margin:0; padding:0;">--}}
-{{--            @endif--}}
-        </td>
-        <td class="center">
-            <div class="title brand">{{ $empresa['nombre'] ?? 'Joyería' }}</div>
-            <div class="xs">{{ $empresa['direccion'] ?? '' }}</div>
-            <div class="xs">{{ ($empresa['ciudad'] ?? '') . ' - ' . ($empresa['pais'] ?? '') }}</div>
-            <div class="xs">Cel: {{ $empresa['cel'] ?? '' }}</div>
-            <div class="md bold mt8">CONTRATO DE PRÉSTAMO POR 30 DÍAS</div>
-        </td>
-        <td class="right" style="width:160px; vertical-align:top">
-            <div class="pill">Nro: {{ $numero ?? '—' }}</div>
-        </td>
-    </tr>
-</table>
 
-<!-- FILA 1,2,3,4 -->
-<table class="grid mt12">
-    <tr>
-        <td class="box" style="width:48%">
-            <div class="label">1. Lugar y fecha</div>
-            <div class="md">{{ $lugar ?? '—' }}, {{ $fecha_creacion? $fecha_creacion->translatedFormat('d \\de F \\de Y') : '—' }}</div>
-        </td>
-        <td class="box" style="width:22%">
-            <div class="label">2. Plazo</div>
-            <div class="md">{{ $plazoDias }} Días</div>
-        </td>
-        <td class="box" style="width:30%">
-            <div class="label">3. Vencimiento</div>
-            <div class="md">{{ $vencimiento? $vencimiento->format('d/m/Y') : '—' }}</div>
-        </td>
-    </tr>
-    <tr>
-        <td class="box" style="width:48%">
-            <div class="label">5. Nombre</div>
-            <div class="md">{{ $clienteNombre }}</div>
-        </td>
-        <td class="box" style="width:22%">
-            <div class="label">6. C.I.</div>
-            <div class="md">{{ $clienteCI }}</div>
-        </td>
-        <td class="box" style="width:30%">
-            <div class="label">4. Moneda</div>
-            <div class="md">{{ $monedaLarga }}</div>
-        </td>
-    </tr>
-    <tr>
-        <td class="box" style="width:48%">
-            <div class="label">7. Cel.</div>
-            <div class="md">{{ $cel ?? '—' }}</div>
-        </td>
-        <td class="box" style="width:22%">
-            <div class="label">8. Valor acordado de los bienes</div>
-            <div class="md">{{ number_format($valorBienes, 2) }} {{ $monedaCorta }}</div>
-        </td>
-        <td class="box" style="width:30%">
-            <div class="label">9. Capital solicitado</div>
-            <div class="md">{{ number_format($capitalSolic, 2) }} {{ $monedaCorta }}</div>
-        </td>
-    </tr>
-</table>
+<div class="sheet">
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <td style="width:82px; vertical-align:top;">
+                @if (file_exists($logo))
+                    <img src="{{ $logo }}" style="width:62px; display:block;">
+                @endif
+            </td>
+            <td class="center">
+                <div class="title brand">{{ $empresa['nombre'] ?? 'Joyería Rosario' }}</div>
+                <div class="sm">{{ $empresa['direccion'] ?? '' }}</div>
+                <div class="sm">{{ ($empresa['ciudad'] ?? '') . ' - ' . ($empresa['pais'] ?? '') }}</div>
+                <div class="sm">Cel: {{ $empresa['cel'] ?? '' }}</div>
+                <div class="md bold" style="margin-top:6px;">PRÉSTAMO POR 30 DÍAS</div>
+            </td>
+            <td class="right" style="width:150px; vertical-align:top;">
+                <div class="badge">Nro: {{ $numero ?? '—' }}</div>
+            </td>
+        </tr>
+    </table>
 
-<!-- INTERÉS / GASTOS / CARGO MENSUAL -->
-<table class="grid mt8">
-    <tr>
-        <td class="box" style="width:33%">
-            <div class="label">10. Interés</div>
-            <div class="md">{{ rtrim(rtrim(number_format($interesMensual,2), '0'),'.') }} %</div>
-            <div class="xs muted">Interés 30d: {{ number_format($interesMonto30,2) }} {{ $monedaCorta }}</div>
-        </td>
-        <td class="box" style="width:33%">
-            <div class="label">11. Gastos deuda y conservación</div>
-            <div class="md">{{ rtrim(rtrim(number_format($almacenMensual,2), '0'),'.') }} %</div>
-            <div class="xs muted">Conservación 30d: {{ number_format($almacenMonto30,2) }} {{ $monedaCorta }}</div>
-        </td>
-        <td class="box" style="width:34%">
-            <div class="label">12. Cargo mensual</div>
-            <div class="md">{{ number_format($cargoMensual,2) }} {{ $monedaCorta }}</div>
-        </td>
-    </tr>
-</table>
+    <table class="grid" style="margin-top:8px;">
+        <tr>
+            <td class="box" style="width:42%;">
+                <div class="label">Cliente</div>
+                <div class="md bold">{{ $clienteNombre }}</div>
+                <div class="sm">CI: {{ $clienteCI }}</div>
+                <div class="sm">Cel: {{ $cel ?? '—' }}</div>
+            </td>
+            <td class="box" style="width:18%;">
+                <div class="label">Lugar</div>
+                <div class="md">{{ $lugar ?? '—' }}</div>
+            </td>
+            <td class="box" style="width:20%;">
+                <div class="label">Fecha</div>
+                <div class="md">{{ $fecha_creacion ? $fecha_creacion->format('d/m/Y') : '—' }}</div>
+            </td>
+            <td class="box" style="width:20%;">
+                <div class="label">Vencimiento</div>
+                <div class="md">{{ $vencimiento ? $vencimiento->format('d/m/Y') : '—' }}</div>
+            </td>
+        </tr>
+    </table>
 
-<!-- DETALLE DE JOYAS + PESOS -->
-<div class="box mt12">
-    <div class="label">DETALLE DE JOYAS</div>
-    <div class="md">{{ $detalle ?? '—' }}</div>
+    <table class="grid">
+        <tr>
+            <td class="box" style="width:25%;">
+                <div class="label">Moneda</div>
+                <div class="md">{{ $monedaLarga }}</div>
+            </td>
+            <td class="box" style="width:25%;">
+                <div class="label">Valor bienes</div>
+                <div class="md">{{ number_format($valorBienes, 2) }} {{ $monedaCorta }}</div>
+            </td>
+            <td class="box" style="width:25%;">
+                <div class="label">Capital solicitado</div>
+                <div class="md">{{ number_format($capitalSolic, 2) }} {{ $monedaCorta }}</div>
+            </td>
+            <td class="box" style="width:25%;">
+                <div class="label">Cargo mensual</div>
+                <div class="md">{{ number_format($cargoMensual, 2) }} {{ $monedaCorta }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="grid">
+        <tr>
+            <td class="box" style="width:33%;">
+                <div class="label">Interés</div>
+                <div class="md">{{ rtrim(rtrim(number_format($interesMensual,2), '0'),'.') }} %</div>
+                <div class="xs muted">30 días: {{ number_format($interesMonto30,2) }} {{ $monedaCorta }}</div>
+            </td>
+            <td class="box" style="width:33%;">
+                <div class="label">Almacén</div>
+                <div class="md">{{ rtrim(rtrim(number_format($almacenMensual,2), '0'),'.') }} %</div>
+                <div class="xs muted">30 días: {{ number_format($almacenMonto30,2) }} {{ $monedaCorta }}</div>
+            </td>
+            <td class="box" style="width:34%;">
+                <div class="label">Plazo</div>
+                <div class="md">{{ $plazoDias }} días</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="box" style="margin-top:6px;">
+        <div class="label">Detalle de joyas</div>
+        <div class="md">{{ $detalle ?? '—' }}</div>
+    </div>
+
+    <table class="grid" style="margin-top:6px;">
+        <tr>
+            <td class="box" style="width:33%;">
+                <div class="label">Peso total</div>
+                <div class="md">{{ number_format($pesoTotalGr, 3) }} gr</div>
+            </td>
+            <td class="box" style="width:33%;">
+                <div class="label">Peso merma/piedras</div>
+                <div class="md">{{ number_format($mermaGr, 3) }} gr</div>
+            </td>
+            <td class="box" style="width:34%;">
+                <div class="label">Peso en oro</div>
+                <div class="md">{{ number_format($pesoOroGr, 3) }} gr</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="xs muted" style="margin-top:8px;">
+        El cliente declara la veracidad de la información proporcionada y el origen lícito de los bienes dejados en prenda.
+        P.B.: peso bruto.
+    </div>
+
+    <table style="width:100%; margin-top:18px;">
+        <tr>
+            <td style="width:50%;">
+                <div class="sign-line"></div>
+                <div class="xs center">Firma del cliente</div>
+            </td>
+            <td style="width:50%;">
+                <div class="sign-line"></div>
+                <div class="xs center">Firma joyería</div>
+            </td>
+        </tr>
+    </table>
 </div>
-
-<table class="grid mt8">
-    <tr>
-        <td class="box" style="width:33%">
-            <div class="label">13. peso Total</div>
-            <div class="md">{{ number_format($pesoTotalGr, 3) }} gr</div>
-        </td>
-        <td class="box" style="width:33%">
-            <div class="label">14. peso merma/piedras</div>
-            <div class="md">{{ number_format($mermaGr, 3) }} gr</div>
-        </td>
-        <td class="box" style="width:34%">
-            <div class="label">15. peso en oro</div>
-            <div class="md">{{ number_format($pesoOroGr, 3) }} gr</div>
-        </td>
-    </tr>
-</table>
-
-<div class="xs muted mt8">
-    * El CLIENTE que suscribe el presente documento, declara la veracidad de la información proporcionada y el origen lícito de los bienes dejados en prenda, asimismo se compromete a facilitar la información y documentación adicional del origen y/o destino del dinero solicitado en préstamo, cuando la EMPRESA se lo requiera, además reconoce que cualquier información falsa, dará lugar a las acciones legales que correspondan.
-    <br>
-    ACLARACIÓN: P. B.: PESO BRUTO
-</div>
-
-<table style="width:100%; margin-top:28px;">
-    <tr>
-        <td class="" style="width:50%">
-            <br>
-            <br>
-            <div style="border-top:1px solid #333; width:75%; margin:0 auto 4px;"></div>
-            <div class="xs" style="text-align: center">
-                Firma del Cliente <br>
-            </div>
-            <div class="xs">
-                Nombre: <br>
-                C.I.:
-            </div>
-        </td>
-        <td class="center" style="width:50%">
-            <br>
-            <br>
-            <div style="border-top:1px solid #333; width:75%; margin:0 auto 4px;"></div>
-            <div class="xs">Firma Joyería</div>
-            <br>
-        </td>
-    </tr>
-</table>
 </body>
 </html>
