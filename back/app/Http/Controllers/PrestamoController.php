@@ -9,6 +9,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrestamoController extends Controller
 {
@@ -473,22 +474,25 @@ class PrestamoController extends Controller
         });
     }
 
-    public function retrasados(Request $request)
+    protected function retrasadosQuery(Request $request)
     {
         $hoy = now()->toDateString();
         $diasMin = max(1, (int) $request->query('dias', 1));
         $userId = $request->query('user_id');
         $search = trim((string) $request->query('search', ''));
-        $perPage = (int) $request->query('per_page', 24);
+        $connection = DB::connection()->getDriverName();
+        $diffExpr = $connection === 'sqlite'
+            ? 'CAST(julianday(?) - julianday(fecha_limite) AS INTEGER)'
+            : 'DATEDIFF(?, fecha_limite)';
 
         $q = Prestamo::with(['cliente', 'user'])
             ->whereNotIn('estado', ['Entregado', 'Cancelado'])
             ->whereNotNull('fecha_limite')
             ->whereDate('fecha_limite', '<', $hoy)
-            ->whereRaw('DATEDIFF(?, fecha_limite) >= ?', [$hoy, $diasMin])
+            ->whereRaw("{$diffExpr} >= ?", [$hoy, $diasMin])
             ->select('*')
-            ->selectRaw('DATEDIFF(?, fecha_limite) as dias_retraso', [$hoy])
-            ->orderByDesc('dias_retraso')
+            ->selectRaw("{$diffExpr} as dias_retraso", [$hoy])
+            ->orderBy('dias_retraso')
             ->orderBy('fecha_limite');
 
         if ($userId) {
@@ -506,7 +510,80 @@ class PrestamoController extends Controller
             });
         }
 
-        return $q->paginate($perPage)->appends($request->query());
+        return $q;
+    }
+
+    public function retrasados(Request $request)
+    {
+        $perPage = max(1, min(100, (int) $request->query('per_page', 24)));
+        $q = $this->retrasadosQuery($request);
+
+        $items = $q->paginate($perPage)->appends($request->query());
+        $collection = $q->get();
+
+        $summary = [
+            'total' => $collection->count(),
+            'saldo' => round((float) $collection->sum(fn ($prestamo) => (float) ($prestamo->saldo ?? 0)), 2),
+            'capital_invertido' => round((float) $collection->sum(fn ($prestamo) => (float) ($prestamo->valor_prestado ?? 0)), 2),
+            'prom_dias' => round((float) $collection->avg('dias_retraso'), 1),
+            'max_dias' => (int) $collection->max('dias_retraso'),
+        ];
+
+        return response()->json([
+            'data' => $items->items(),
+            'meta' => [
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+                'per_page' => $items->perPage(),
+                'total' => $items->total(),
+            ],
+            'summary' => $summary,
+        ]);
+    }
+
+    public function retrasadosExport(Request $request): StreamedResponse
+    {
+        $rows = $this->retrasadosQuery($request)->get();
+        $fileName = 'prestamos-retrasados-'.now()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, [
+                'Numero',
+                'Cliente',
+                'CI',
+                'Celular',
+                'Fecha limite',
+                'Dias retraso',
+                'Capital prestado',
+                'Saldo actual',
+                'Estado',
+                'Usuario',
+                'Detalle',
+            ]);
+
+            foreach ($rows as $prestamo) {
+                fputcsv($handle, [
+                    $prestamo->numero,
+                    $prestamo->cliente?->name,
+                    $prestamo->cliente?->ci,
+                    $prestamo->celular,
+                    $prestamo->fecha_limite,
+                    $prestamo->dias_retraso,
+                    number_format((float) ($prestamo->valor_prestado ?? 0), 2, '.', ''),
+                    number_format((float) ($prestamo->saldo ?? 0), 2, '.', ''),
+                    $prestamo->estado,
+                    $prestamo->user?->name,
+                    $prestamo->detalle,
+                ]);
+            }
+
+            fclose($handle);
+        }, $fileName, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function index(Request $request)

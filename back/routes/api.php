@@ -96,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('ordenesRetrasadas', [OrdenController::class, 'atrasadas']);
     Route::get('prestamosRetrasados', [PrestamoController::class, 'retrasados']);
+    Route::get('prestamosRetrasados/export', [PrestamoController::class, 'retrasadosExport']);
 
     Route::get('egresos', [EgresoController::class, 'index']);
     Route::post('egresos', [EgresoController::class, 'store']);
