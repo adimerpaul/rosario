@@ -39,4 +39,9 @@ class Joya extends Model implements AuditableContract
     {
         return $this->belongsTo(User::class);
     }
+
+    public function ventas()
+    {
+        return $this->hasMany(Orden::class, 'joya_id');
+    }
 }
