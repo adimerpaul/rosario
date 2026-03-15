@@ -186,11 +186,21 @@
                   <q-separator />
 
                   <q-card-actions align="between" class="q-pa-sm">
-                    <q-btn dense flat icon="edit" label="Editar" @click="$router.push('/ordenes/editar/' + orden.id)" />
+                    <q-btn dense flat no-caps icon="edit" label="Editar" @click="$router.push('/ordenes/editar/' + orden.id)" />
                     <div>
-                      <q-btn dense flat icon="payment" @click="pagarTodo(orden)" />
-                      <q-btn dense flat icon="print" @click="imprimirOrden(orden.id)" />
-                      <q-btn dense flat icon="assignment" @click="imprimirGarantia(orden.id)" />
+                      <q-btn dense flat no-caps icon="payment" @click="pagarTodo(orden)" />
+                      <q-btn dense flat no-caps icon="print" @click="imprimirOrden(orden.id)" />
+                      <q-btn dense flat no-caps icon="assignment" @click="imprimirGarantia(orden.id)" />
+                      <q-btn
+                        v-if="orden.estado !== 'Cancelada'"
+                        dense
+                        flat
+                        no-caps
+                        color="negative"
+                        icon="block"
+                        label="Anular"
+                        @click="anularOrden(orden)"
+                      />
                     </div>
                   </q-card-actions>
                 </q-card>
@@ -312,6 +322,25 @@ export default {
           })
           .catch(err => {
             this.$alert?.error(err.response?.data?.message || 'Error al registrar el pago')
+          })
+      })
+    },
+    anularOrden(orden) {
+      this.$q.dialog({
+        title: 'Anular orden',
+        message: `Desea anular la orden ${orden.numero}?`,
+        cancel: true,
+        persistent: true
+      }).onOk(() => {
+        this.$axios.post(`/ordenes/${orden.id}/cancelar`, {
+          anular_pagos: true
+        })
+          .then(() => {
+            this.$alert?.success('Orden anulada correctamente')
+            this.getOrdenes()
+          })
+          .catch(err => {
+            this.$alert?.error(err.response?.data?.message || 'Error al anular la orden')
           })
       })
     },
