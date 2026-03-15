@@ -3,24 +3,24 @@
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CogController;
 use App\Http\Controllers\DailyCashController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EgresoController;
 use App\Http\Controllers\IngresoController;
+use App\Http\Controllers\JoyaController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PrestamoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
 
-//Route::get('/user', function (Request $request) {
+// Route::get('/user', function (Request $request) {
 //    return $request->user();
-//})->middleware('auth:sanctum');
+// })->middleware('auth:sanctum');
 Route::post('/login', [App\Http\Controllers\UserController::class, 'login']);
 Route::get('/migrate', [App\Http\Controllers\MigracionController::class, 'migrate']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [App\Http\Controllers\UserController::class, 'logout']);
     Route::get('/me', [App\Http\Controllers\UserController::class, 'me']);
-
 
     Route::get('/users', [App\Http\Controllers\UserController::class, 'index']);
     Route::post('/users', [App\Http\Controllers\UserController::class, 'store']);
@@ -28,6 +28,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{user}', [App\Http\Controllers\UserController::class, 'destroy']);
     Route::put('/updatePassword/{user}', [App\Http\Controllers\UserController::class, 'updatePassword']);
     Route::post('/{user}/avatar', [App\Http\Controllers\UserController::class, 'updateAvatar']);
+
+    Route::get('/joyas', [JoyaController::class, 'index']);
+    Route::post('/joyas', [JoyaController::class, 'store']);
+    Route::put('/joyas/{joya}', [JoyaController::class, 'update']);
+    Route::delete('/joyas/{joya}', [JoyaController::class, 'destroy']);
+    Route::post('/joyas/{joya}/imagen', [JoyaController::class, 'updateImagen']);
 
     Route::get('/clients', [ClientController::class, 'index']);
     Route::post('/clients', [ClientController::class, 'store']);
@@ -52,14 +58,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('daily-cash', [DailyCashController::class, 'show']);          // ?date=YYYY-MM-DD
     Route::post('daily-cash', [DailyCashController::class, 'storeOrUpdate']); // {date, opening_amount, note?}
 
-
     Route::get('prestamos', [PrestamoController::class, 'index']);
     Route::get('prestamos/{prestamo}', [PrestamoController::class, 'show']);
     Route::post('prestamos', [PrestamoController::class, 'store']);
     Route::put('prestamos/{prestamo}', [PrestamoController::class, 'update']);
     Route::delete('prestamos/{prestamo}', [PrestamoController::class, 'destroy']);
 
-// pagos
+    // pagos
     Route::get('prestamos/{prestamo}/pagos', [PrestamoController::class, 'pagos']);
     Route::post('prestamos/pagos', [PrestamoController::class, 'pagar']);
     Route::put('prestamos/pagos/{pago}/anular', [PrestamoController::class, 'anularPago']);
@@ -74,7 +79,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('ordenesRetrasadas', [OrdenController::class, 'atrasadas']);
     Route::get('prestamosRetrasados', [PrestamoController::class, 'retrasados']);
 
-
     Route::get('egresos', [EgresoController::class, 'index']);
     Route::post('egresos', [EgresoController::class, 'store']);
     Route::post('egresos/{egreso}/anular', [EgresoController::class, 'anular']);
@@ -88,18 +92,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('ingresos', [IngresoController::class, 'store']);
     Route::post('ingresos/{ingreso}/anular', [IngresoController::class, 'anular']);
     Route::post('ingresos/{ingreso}/toggle-metodo', [IngresoController::class, 'toggleMetodo']);
-//    totalInvertido
+    //    totalInvertido
     Route::get('totalInvertido', [PrestamoController::class, 'totalInvertido']);
     Route::post('prestamos/{prestamo}/fundir', [PrestamoController::class, 'fundir']);
     Route::get('dashboard', [DashboardController::class, 'show']);
     Route::get('dashboard/reportes', [DashboardController::class, 'reportes']);
 
-
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf']);
 Route::get('/ordenes/{orden}/garantia', [OrdenController::class, 'garantia']);
 
-//prestamod pdf
+// prestamod pdf
 
 Route::get('/prestamos/{prestamo}/pdf', [PrestamoController::class, 'pdf']);
 Route::get('/prestamos/{prestamo}/cambio/pdf', [\App\Http\Controllers\PrestamoController::class, 'comprobanteCambioPrestamoPdf']);

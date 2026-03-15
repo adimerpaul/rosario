@@ -76,6 +76,21 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        $joyas = [
+            ['tipo' => 'Importada', 'peso' => 5.00, 'linea' => 'Mama', 'estuche' => 'ESTUCHE 15 ANOS 2', 'nombre' => 'ANILLO MUJER ROSADO', 'imagen' => 'joya.png', 'monto_bs' => 5400.00],
+            ['tipo' => 'Joya nacional', 'peso' => 7.50, 'linea' => 'Papa', 'estuche' => 'ESTUCHE PRINCIPAL 1', 'nombre' => 'CADENA HOMBRE CLASICA', 'imagen' => 'joya.png', 'monto_bs' => 4200.00],
+            ['tipo' => 'Plata', 'peso' => 3.20, 'linea' => 'Roger', 'estuche' => 'ESTUCHE PLATA A', 'nombre' => 'ANILLO PLATA CORAZON', 'imagen' => 'joya.png', 'monto_bs' => 450.00],
+            ['tipo' => 'Importada', 'peso' => 4.10, 'linea' => 'Andreina', 'estuche' => 'ESTUCHE NUEVO B', 'nombre' => 'DIJE FLOR BRILLANTE', 'imagen' => 'joya.png', 'monto_bs' => 3800.00],
+            ['tipo' => 'Joya nacional', 'peso' => 6.30, 'linea' => 'Mama', 'estuche' => 'ESTUCHE VITRINA 3', 'nombre' => 'ARETES MODELO LUNA', 'imagen' => 'joya.png', 'monto_bs' => 2950.00],
+        ];
+
+        foreach ($joyas as $joya) {
+            \App\Models\Joya::updateOrCreate(
+                ['nombre' => $joya['nombre'], 'linea' => $joya['linea']],
+                $joya
+            );
+        }
         //        exit();
         $clients = [
             ['name' => 'Juan Apaza Andrade', 'ci' => '765678', 'cellphone' => '72466152'],
