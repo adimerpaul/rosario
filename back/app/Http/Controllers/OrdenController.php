@@ -324,6 +324,29 @@ class OrdenController extends Controller
         return $orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina']);
     }
 
+    public function toggleMetodo(Request $request, Orden $orden)
+    {
+        $user = $request->user();
+        if (! $user || ($user->role ?? null) !== 'Administrador') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        if (($orden->estado ?? 'Pendiente') === 'Cancelada') {
+            return response()->json(['message' => 'No se puede cambiar el metodo de una orden cancelada'], 422);
+        }
+
+        if ((float) ($orden->adelanto ?? 0) <= 0) {
+            return response()->json(['message' => 'La orden no tiene adelanto para cambiar de metodo'], 422);
+        }
+
+        $actual = strtoupper((string) $orden->tipo_pago);
+        $nuevoMetodo = $actual === 'QR' ? 'Efectivo' : 'QR';
+
+        $orden->update(['tipo_pago' => $nuevoMetodo]);
+
+        return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina']));
+    }
+
     public function update(Request $request, Orden $orden)
     {
         $data = $request->all();

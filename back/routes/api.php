@@ -71,6 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ordenes/pagos', [OrdenPagoController::class, 'store']);
     Route::put('/ordenes/pagos/{pago}', [OrdenPagoController::class, 'update']);
     Route::post('/ordenes/{orden}/cancelar', [OrdenController::class, 'cancelar']);
+    Route::post('/ordenes/{orden}/toggle-metodo', [OrdenController::class, 'toggleMetodo']);
 
     Route::get('daily-cash', [DailyCashController::class, 'show']);          // ?date=YYYY-MM-DD
     Route::post('daily-cash', [DailyCashController::class, 'storeOrUpdate']); // {date, opening_amount, note?}
