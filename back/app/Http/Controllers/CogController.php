@@ -9,7 +9,7 @@ class CogController extends Controller
 {
     public function index()
     {
-        return Cog::all();
+        return Cog::orderBy('id')->get();
     }
 
     public function update(Request $request, Cog $cog)
@@ -18,10 +18,14 @@ class CogController extends Controller
             'value' => 'required|numeric|min:0',
         ]);
         $cog->update(['value' => $request->value]);
+
         return response()->json(['message' => 'Actualizado correctamente']);
     }
-    function show($id){
+
+    public function show($id)
+    {
         $cog = Cog::findOrFail($id);
+
         return response()->json($cog);
     }
 }
