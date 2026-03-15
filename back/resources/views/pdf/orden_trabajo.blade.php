@@ -24,6 +24,13 @@
         table.head td{ vertical-align:middle }
         .logo{ width:58px; height:auto }
         .rings{ width:60px; height:auto }
+        .orden-photo{
+            width: 88px;
+            height: 88px;
+            border:1.5px solid #FF0000;
+            border-radius:10px;
+            padding:2px;
+        }
         .title{ font-weight:800; font-size:17px; letter-spacing:.2px; }
         .sub{ font-size:12px; color:#000; margin-top:-2px }
 
@@ -131,7 +138,9 @@
                         <table>
                             <tr>
                                 <td>
-                                    @if(file_exists(public_path('images/rings.png')))
+                                    @if(!empty($orden->foto_modelo) && file_exists(public_path('images/'.$orden->foto_modelo)))
+                                        <div class="mt4"><img class="orden-photo" src="{{ public_path('images/'.$orden->foto_modelo) }}"></div>
+                                    @elseif(file_exists(public_path('images/rings.png')))
                                         <div class="mt4"><img class="rings" src="{{ public_path('images/rings.png') }}"></div>
                                     @endif
                                 </td>

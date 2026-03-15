@@ -31,6 +31,7 @@ class Orden extends Model implements AuditableContract
         'cliente_id',
         'joya_id',
         'tipo',
+        'foto_modelo',
         'monto',
         'metodo',
         'fecha',

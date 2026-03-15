@@ -8,6 +8,8 @@ use App\Models\Orden;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class OrdenController extends Controller
 {
@@ -238,6 +240,7 @@ class OrdenController extends Controller
             'saldo' => 'nullable|numeric|min:0',
             'tipo_pago' => 'nullable|in:Efectivo,QR',
             'joya_id' => $isVentaDirecta ? 'required|exists:joyas,id' : 'nullable|exists:joyas,id',
+            'foto_modelo' => 'nullable|image|max:5120',
         ]);
 
         $user = $request->user();
@@ -253,6 +256,10 @@ class OrdenController extends Controller
             'nota' => $request->input('nota', ''),
             'detalle' => $request->input('detalle', ''),
         ];
+
+        if ($request->hasFile('foto_modelo')) {
+            $payload['foto_modelo'] = $this->storeOrdenImage($request->file('foto_modelo'));
+        }
 
         if ($isVentaDirecta) {
             $joya = Joya::with(['estucheItem.columna.vitrina'])->findOrFail($request->integer('joya_id'));
@@ -438,5 +445,19 @@ class OrdenController extends Controller
         }
 
         return round((float) ($joya->monto_bs ?? 0), 2);
+    }
+
+    private function storeOrdenImage($file): string
+    {
+        $filename = time().'_'.uniqid('orden_', true).'.jpg';
+        $path = public_path('images/'.$filename);
+
+        $manager = new ImageManager(new Driver);
+        $manager->read($file->getPathname())
+            ->cover(900, 900)
+            ->toJpeg(78)
+            ->save($path);
+
+        return $filename;
     }
 }

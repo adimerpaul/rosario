@@ -349,6 +349,7 @@ export default {
       this.$axios.get('ordenes', {
         params: {
           ...this.filters,
+          tipo: 'Orden',
           page: this.pagination.page,
           per_page: this.pagination.rowsPerPage
         }

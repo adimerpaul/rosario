@@ -524,11 +524,16 @@ export default {
     canToggleIngresoMetodo (item) {
       if ((item?.estado || 'Activo') !== 'Activo') return false
       return item?.fuente === 'INGRESO' ||
+        item?.fuente === 'ORDEN' ||
         String(item?.key || '').startsWith('po-') ||
         String(item?.key || '').startsWith('pp-')
     },
 
     toggleMetodoItemIngreso (item) {
+      if (item?.fuente === 'ORDEN') {
+        this.toggleMetodoOrden(item)
+        return
+      }
       if (item?.fuente === 'INGRESO') {
         this.toggleMetodoIngreso(item)
         return
@@ -540,6 +545,19 @@ export default {
       if (String(item?.key || '').startsWith('pp-')) {
         this.toggleMetodoPagoPrestamo(item)
       }
+    },
+
+    toggleMetodoOrden (item) {
+      this.loading = true
+      this.$axios.post(`ordenes/${item.id}/toggle-metodo`)
+        .then(() => {
+          this.$alert?.success?.('Metodo actualizado')
+          this.fetchDiario()
+        })
+        .catch((e) => {
+          this.$alert?.error?.(e.response?.data?.message || 'No se pudo cambiar el metodo')
+        })
+        .finally(() => { this.loading = false })
     },
 
     toggleMetodoEgreso (item) {
