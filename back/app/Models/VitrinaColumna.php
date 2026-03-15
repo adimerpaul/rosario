@@ -30,8 +30,8 @@ class VitrinaColumna extends Model implements AuditableContract
         return $this->belongsTo(Vitrina::class);
     }
 
-    public function estuche()
+    public function estuches()
     {
-        return $this->hasOne(Estuche::class, 'vitrina_columna_id');
+        return $this->hasMany(Estuche::class, 'vitrina_columna_id')->orderBy('orden');
     }
 }

@@ -37,6 +37,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/joyas/{joya}', [JoyaController::class, 'update']);
     Route::delete('/joyas/{joya}', [JoyaController::class, 'destroy']);
     Route::post('/joyas/{joya}/imagen', [JoyaController::class, 'updateImagen']);
+    Route::post('/joyas/{joya}/asignar-estuche', [JoyaController::class, 'asignarEstuche']);
+    Route::post('/joyas/{joya}/quitar-estuche', [JoyaController::class, 'quitarEstuche']);
     Route::get('/vitrinas', [VitrinaController::class, 'index']);
     Route::post('/vitrinas', [VitrinaController::class, 'store']);
     Route::put('/vitrinas/{vitrina}', [VitrinaController::class, 'update']);

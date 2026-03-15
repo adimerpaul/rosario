@@ -25,20 +25,25 @@ class Estuche extends Model implements AuditableContract
         'deleted_at',
     ];
 
-    protected $appends = ['ocupado'];
+    protected $appends = ['ocupado', 'joyas_count'];
 
     public function columna()
     {
         return $this->belongsTo(VitrinaColumna::class, 'vitrina_columna_id');
     }
 
-    public function joya()
+    public function joyas()
     {
-        return $this->hasOne(Joya::class);
+        return $this->hasMany(Joya::class);
     }
 
     public function getOcupadoAttribute(): bool
     {
-        return $this->joya()->exists();
+        return $this->joyas()->exists();
+    }
+
+    public function getJoyasCountAttribute(): int
+    {
+        return $this->joyas()->count();
     }
 }

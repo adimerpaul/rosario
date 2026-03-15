@@ -29,6 +29,11 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   Router.beforeEach((to, from, next) => {
     if (to.matched.some(record => record.meta.requiresAuth)) {
       if (useCounterStore().isLogged) {
+        const allowedRoles = to.matched.find(record => record.meta.roles)?.meta?.roles
+        if (allowedRoles && !allowedRoles.includes(useCounterStore().user.role)) {
+          next('/')
+          return
+        }
         next()
         return
       }

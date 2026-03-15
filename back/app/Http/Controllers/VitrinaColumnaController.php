@@ -42,8 +42,8 @@ class VitrinaColumnaController extends Controller
     {
         $this->ensureAdmin($request);
 
-        if ($columna->estuche()->exists()) {
-            return response()->json(['message' => 'No se puede eliminar una columna con estuche'], 422);
+        if ($columna->estuches()->exists()) {
+            return response()->json(['message' => 'No se puede eliminar una columna con estuches'], 422);
         }
 
         $columna->delete();

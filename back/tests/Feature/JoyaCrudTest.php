@@ -14,7 +14,7 @@ it('creates fake joyas from seed data', function () {
 
 it('allows an admin to create a joya', function () {
     Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
-    $estuche = Estuche::whereDoesntHave('joya')->firstOrFail();
+    $estuche = Estuche::firstOrFail();
 
     $this->postJson('/api/joyas', [
         'tipo' => 'Importada',
@@ -32,9 +32,31 @@ it('allows an admin to create a joya', function () {
         ]);
 });
 
+it('allows an admin to create a joya without estuche', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
+
+    $this->postJson('/api/joyas', [
+        'tipo' => 'Importada',
+        'peso' => 2.5,
+        'linea' => 'Mama',
+        'estuche_id' => null,
+        'nombre' => 'Dije sin estuche',
+        'monto_bs' => 1200,
+    ])->assertCreated()
+        ->assertJsonFragment([
+            'nombre' => 'DIJE SIN ESTUCHE',
+        ]);
+
+    $this->assertDatabaseHas('joyas', [
+        'nombre' => 'DIJE SIN ESTUCHE',
+        'estuche_id' => null,
+        'estuche' => null,
+    ]);
+});
+
 it('forbids a vendedor from accessing joyas crud', function () {
     Sanctum::actingAs(User::factory()->create(['role' => 'Vendedor']));
-    $estuche = Estuche::whereDoesntHave('joya')->firstOrFail();
+    $estuche = Estuche::firstOrFail();
 
     $this->getJson('/api/joyas')->assertForbidden();
     $this->postJson('/api/joyas', [
@@ -54,15 +76,13 @@ it('allows an admin to update and delete a joya', function () {
         'tipo' => 'Importada',
         'peso' => 4,
         'linea' => 'Papa',
-        'estuche_id' => Estuche::whereDoesntHave('joya')->firstOrFail()->id,
+        'estuche_id' => Estuche::firstOrFail()->id,
         'estuche' => 'ESTUCHE BASE',
         'nombre' => 'ANILLO BASE',
         'imagen' => 'default.png',
         'monto_bs' => 500,
     ]);
-    $nuevoEstuche = Estuche::whereDoesntHave('joya')
-        ->where('id', '!=', $joya->estuche_id)
-        ->firstOrFail();
+    $nuevoEstuche = Estuche::where('id', '!=', $joya->estuche_id)->firstOrFail();
 
     $this->putJson('/api/joyas/'.$joya->id, [
         'tipo' => 'Plata',
@@ -82,4 +102,19 @@ it('allows an admin to update and delete a joya', function () {
         ->assertOk();
 
     $this->assertSoftDeleted('joyas', ['id' => $joya->id]);
+});
+
+it('allows an admin to remove a joya from its estuche', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
+
+    $joya = Joya::firstOrFail();
+
+    $this->postJson('/api/joyas/'.$joya->id.'/quitar-estuche')
+        ->assertOk();
+
+    $this->assertDatabaseHas('joyas', [
+        'id' => $joya->id,
+        'estuche_id' => null,
+        'estuche' => null,
+    ]);
 });

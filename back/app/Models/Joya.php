@@ -18,6 +18,7 @@ class Joya extends Model implements AuditableContract
         'peso',
         'linea',
         'estuche_id',
+        'user_id',
         'estuche',
         'nombre',
         'imagen',
@@ -25,7 +26,6 @@ class Joya extends Model implements AuditableContract
     ];
 
     protected $hidden = [
-        'created_at',
         'updated_at',
         'deleted_at',
     ];
@@ -33,5 +33,10 @@ class Joya extends Model implements AuditableContract
     public function estucheItem()
     {
         return $this->belongsTo(Estuche::class, 'estuche_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

@@ -11,7 +11,7 @@ class EstucheController extends Controller
     {
         $this->ensureViewer($request);
 
-        return Estuche::with(['columna.vitrina', 'joya:id,nombre,estuche_id'])
+        return Estuche::with(['columna.vitrina', 'joyas:id,nombre,estuche_id'])
             ->orderBy('nombre')
             ->get()
             ->map(function (Estuche $estuche) {
@@ -19,8 +19,8 @@ class EstucheController extends Controller
                     'id' => $estuche->id,
                     'nombre' => $estuche->nombre,
                     'label' => $estuche->columna?->vitrina?->nombre.' / '.$estuche->columna?->codigo.' / '.$estuche->nombre,
-                    'ocupado' => $estuche->joya !== null,
-                    'joya_id' => $estuche->joya?->id,
+                    'ocupado' => $estuche->joyas->isNotEmpty(),
+                    'joyas_count' => $estuche->joyas->count(),
                 ];
             })->values();
     }
@@ -30,7 +30,7 @@ class EstucheController extends Controller
         $this->ensureAdmin($request);
 
         $data = $request->validate([
-            'vitrina_columna_id' => 'required|exists:vitrina_columnas,id|unique:estuches,vitrina_columna_id',
+            'vitrina_columna_id' => 'required|exists:vitrina_columnas,id',
             'nombre' => 'required|string|max:255',
             'orden' => 'nullable|integer|min:1',
         ]);
@@ -53,8 +53,8 @@ class EstucheController extends Controller
 
         $estuche->update($this->normalizeData($data));
 
-        if ($estuche->joya) {
-            $estuche->joya->update(['estuche' => $estuche->nombre]);
+        if ($estuche->joyas()->exists()) {
+            $estuche->joyas()->update(['estuche' => $estuche->nombre]);
         }
 
         return $estuche->fresh();
@@ -64,8 +64,8 @@ class EstucheController extends Controller
     {
         $this->ensureAdmin($request);
 
-        if ($estuche->joya) {
-            return response()->json(['message' => 'No se puede eliminar un estuche con joya asignada'], 422);
+        if ($estuche->joyas()->exists()) {
+            return response()->json(['message' => 'No se puede eliminar un estuche con joyas asignadas'], 422);
         }
 
         $estuche->delete();

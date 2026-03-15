@@ -105,6 +105,8 @@ const { proxy } = getCurrentInstance()
 const linksList = [
   {title: 'Principal', icon: 'home', link: '/', can: 'Todos'},
   {title: 'Usuarios', icon: 'people', link: '/usuarios', can: 'Administrador'},
+  {title: 'Joyas', icon: 'diamond', link: '/joyas', can: 'Administrador'},
+  {title: 'Estuches', icon: 'inventory_2', link: '/estuches', can: ['Administrador', 'Vendedor']},
 //   clientes ordenes prestamos libroDIario ordenesRetrasadso y prestamosRetrasados
   {title: 'Clientes', icon: 'people', link: '/clientes', can: ['Administrador', 'Vendedor']},
   {title: 'Ordenes Crear', icon: 'add_circle', link: '/ordenes/crear', can: ['Administrador', 'Vendedor']},

@@ -46,13 +46,6 @@ return new class extends Migration
             'V1',
             'V2',
             'V3',
-            'V4',
-            'V5',
-//            'V chica 1',
-//            'V chica 2',
-//            'V chica 3',
-//            'V chica 4',
-//            'V chica 5',
         ];
 
         $joyas = DB::table('joyas')->orderBy('id')->get()->values();

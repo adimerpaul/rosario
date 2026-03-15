@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('tipo');
             $table->decimal('peso', 10, 2)->default(0);
             $table->string('linea');
-            $table->string('estuche');
+            $table->string('estuche')->nullable();
             $table->string('nombre');
             $table->string('imagen')->nullable()->default('joya.png');
             $table->decimal('monto_bs', 12, 2)->default(0);

@@ -18,7 +18,7 @@ it('shows vitrinas tree to administrador and vendedor', function () {
 
     $this->getJson('/api/vitrinas')
         ->assertOk()
-        ->assertJsonFragment(['nombre' => 'V chica 1']);
+        ->assertJsonFragment(['nombre' => 'V3']);
 });
 
 it('allows only admin to manage vitrinas structure', function () {

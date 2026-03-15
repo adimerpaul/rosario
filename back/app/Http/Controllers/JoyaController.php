@@ -15,9 +15,12 @@ class JoyaController extends Controller
         $this->ensureAdmin($request);
 
         $search = trim((string) $request->input('search', ''));
+        $soloSinEstuche = $request->boolean('sin_estuche', false);
+        $perPage = (int) $request->input('per_page', 12);
 
-        return Joya::query()
-            ->with(['estucheItem.columna.vitrina'])
+        $query = Joya::query()
+            ->with(['estucheItem.columna.vitrina', 'user:id,name,username'])
+            ->when($soloSinEstuche, fn ($query) => $query->whereNull('estuche_id'))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nombre', 'like', "%{$search}%")
@@ -26,8 +29,14 @@ class JoyaController extends Controller
                         ->orWhere('estuche', 'like', "%{$search}%");
                 });
             })
-            ->orderBy('id', 'desc')
-            ->get();
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+
+        if ($soloSinEstuche) {
+            return $query->get();
+        }
+
+        return $query->paginate($perPage)->appends($request->query());
     }
 
     public function store(Request $request)
@@ -35,6 +44,8 @@ class JoyaController extends Controller
         $this->ensureAdmin($request);
 
         $data = $this->validateData($request);
+        $data['user_id'] = $request->user()->id;
+        $data['created_at'] = now();
 
         return Joya::create($this->normalizeData($data));
     }
@@ -44,6 +55,9 @@ class JoyaController extends Controller
         $this->ensureAdmin($request);
 
         $data = $this->validateData($request);
+        if (! $joya->created_at) {
+            $data['created_at'] = now();
+        }
 
         $joya->update($this->normalizeData($data));
 
@@ -86,17 +100,43 @@ class JoyaController extends Controller
         ]);
     }
 
+    public function asignarEstuche(Request $request, Joya $joya)
+    {
+        $this->ensureAdmin($request);
+
+        $data = $request->validate([
+            'estuche_id' => 'required|exists:estuches,id',
+        ]);
+
+        $estuche = Estuche::findOrFail($data['estuche_id']);
+
+        $joya->update([
+            'estuche_id' => $estuche->id,
+            'estuche' => $estuche->nombre,
+        ]);
+
+        return $joya->fresh()->load('estucheItem.columna.vitrina');
+    }
+
+    public function quitarEstuche(Request $request, Joya $joya)
+    {
+        $this->ensureAdmin($request);
+
+        $joya->update([
+            'estuche_id' => null,
+            'estuche' => null,
+        ]);
+
+        return response()->json(['message' => 'Joya retirada del estuche']);
+    }
+
     private function validateData(Request $request): array
     {
         return $request->validate([
             'tipo' => 'required|string|in:Importada,Joya nacional,Plata',
             'peso' => 'required|numeric|min:0',
             'linea' => 'required|string|in:Mama,Papa,Roger,Andreina',
-            'estuche_id' => [
-                'required',
-                'exists:estuches,id',
-                'unique:joyas,estuche_id,'.$request->route('joya')?->id,
-            ],
+            'estuche_id' => ['nullable', 'exists:estuches,id'],
             'nombre' => 'required|string|max:255',
             'monto_bs' => 'required|numeric|min:0',
         ]);
@@ -108,9 +148,11 @@ class JoyaController extends Controller
             $data['nombre'] = mb_strtoupper(trim($data['nombre']), 'UTF-8');
         }
 
-        if (isset($data['estuche_id'])) {
+        if (array_key_exists('estuche_id', $data) && $data['estuche_id']) {
             $estuche = Estuche::find($data['estuche_id']);
             $data['estuche'] = $estuche?->nombre;
+        } elseif (array_key_exists('estuche_id', $data)) {
+            $data['estuche'] = null;
         }
 
         return $data;

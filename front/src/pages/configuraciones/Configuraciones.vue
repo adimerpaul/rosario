@@ -7,7 +7,7 @@
       <q-separator />
       <q-card-section>
         <div class="row q-col-gutter-sm">
-          <div v-for="cog in cogs" :key="cog.id" class="col-12 col-md-6">
+          <div v-for="cog in cogsOrdenados" :key="cog.id" class="col-12 col-md-6">
             <q-card flat bordered>
               <q-card-section>
                 <div class="text-subtitle2">{{ cog.name }}</div>
@@ -38,6 +38,30 @@ export default {
       cogs: [],
       loading: false
     };
+  },
+  computed: {
+    cogsOrdenados() {
+      const orden = [
+        'Precio Compra',
+        'Precio Venta',
+        'Prestamos para comprar',
+        'Tipo de cambio',
+        'Joya importada'
+      ];
+
+      return [...this.cogs].sort((a, b) => {
+        const indiceA = orden.indexOf(a.name);
+        const indiceB = orden.indexOf(b.name);
+        const ordenA = indiceA === -1 ? Number.MAX_SAFE_INTEGER : indiceA;
+        const ordenB = indiceB === -1 ? Number.MAX_SAFE_INTEGER : indiceB;
+
+        if (ordenA !== ordenB) {
+          return ordenA - ordenB;
+        }
+
+        return a.id - b.id;
+      });
+    }
   },
   mounted() {
     this.getCogs();
