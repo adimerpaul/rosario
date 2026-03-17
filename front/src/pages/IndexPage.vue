@@ -78,11 +78,11 @@
     </div>
 
     <!-- Retrasos + Donut -->
-    <div class="row q-col-gutter-md q-mb-md">
+    <div class="row q-mb-md">
       <div class="col-12 col-md-6">
         <q-card flat bordered class="shadow-1">
           <q-card-section class="row items-center">
-            <div class="col">
+            <div class="col-12">
               <div class="text-subtitle1 text-weight-bold">Retrasos</div>
               <div class="text-caption text-grey-7">Órdenes y Préstamos con atraso</div>
             </div>
