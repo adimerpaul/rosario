@@ -247,7 +247,7 @@
                     <div class="q-mt-sm">
                       <q-btn flat color="primary" no-caps icon="image" label="Cambiar imagen" @click="$refs.fileInput.click()" />
                     </div>
-                    <input ref="fileInput" type="file" style="display: none;" accept="image/*" @change="onFileChange" />
+                    <input ref="fileInput" type="file" style="display: none;" accept="image/*" capture="environment" @change="onFileChange" />
                   </q-card-section>
                 </q-card>
               </div>
