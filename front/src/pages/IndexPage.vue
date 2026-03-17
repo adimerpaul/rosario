@@ -1,8 +1,8 @@
 <template>
   <q-page class="q-pa-md bg-grey-2">
     <!-- Header -->
-    <div class="row items-center q-col-gutter-sm q-mb-md">
-      <div class="col">
+    <div class="row items-center q-mb-md">
+      <div class="col-12">
         <div class="text-h5 text-weight-bold">Dashboard</div>
         <div class="text-caption text-grey-7">
           Resumen por día y mejoras por semanas.
