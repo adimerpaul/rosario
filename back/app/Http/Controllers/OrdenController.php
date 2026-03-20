@@ -364,14 +364,23 @@ class OrdenController extends Controller
 
     public function update(Request $request, Orden $orden)
     {
-        $data = $request->all();
-        unset($data['cliente_id']);
+        $request->validate([
+            'foto_modelo' => 'nullable|image|max:5120',
+        ]);
+
+        $data = $request->except(['cliente_id']);
 
         $user = $request->user();
         $isAdmin = in_array(strtolower($user->role ?? ''), ['admin', 'administrador', 'administrator'], true);
 
         if (! $isAdmin) {
             unset($data['costo_total'], $data['peso'], $data['estado'], $data['joya_id'], $data['tipo']);
+        }
+
+        if ($request->hasFile('foto_modelo')) {
+            $data['foto_modelo'] = $this->storeOrdenImage($request->file('foto_modelo'));
+        } else {
+            unset($data['foto_modelo']);
         }
 
         $orden->update($data);

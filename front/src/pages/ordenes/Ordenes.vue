@@ -189,8 +189,26 @@
                     <q-btn dense flat no-caps icon="edit" label="Editar" @click="$router.push('/ordenes/editar/' + orden.id)" />
                     <div>
                       <q-btn dense flat no-caps icon="payment" @click="pagarTodo(orden)" />
-                      <q-btn dense flat no-caps icon="print" @click="imprimirOrden(orden.id)" />
-                      <q-btn dense flat no-caps icon="assignment" @click="imprimirGarantia(orden.id)" />
+                      <q-btn-dropdown dense flat no-caps dropdown-icon="arrow_drop_down" icon="print">
+                        <q-list dense style="min-width: 220px">
+                          <q-item clickable v-close-popup @click="imprimirOrdenPdf(orden.id)">
+                            <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
+                            <q-item-section>Orden de trabajo PDF</q-item-section>
+                          </q-item>
+                          <q-item clickable v-close-popup @click="imprimirGarantiaPdf(orden.id)">
+                            <q-item-section avatar><q-icon name="assignment" /></q-item-section>
+                            <q-item-section>Garantia PDF</q-item-section>
+                          </q-item>
+                          <q-item clickable v-close-popup @click="imprimirOrdenDirecto(orden.id)">
+                            <q-item-section avatar><q-icon name="print" /></q-item-section>
+                            <q-item-section>Orden de trabajo directo</q-item-section>
+                          </q-item>
+                          <q-item clickable v-close-popup @click="imprimirGarantiaDirecto(orden.id)">
+                            <q-item-section avatar><q-icon name="local_printshop" /></q-item-section>
+                            <q-item-section>Garantia directa</q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-btn-dropdown>
                       <q-btn
                         v-if="orden.estado !== 'Cancelada'"
                         dense
@@ -251,6 +269,7 @@
 
 <script>
 import moment from 'moment'
+import { printGarantiaDirecta, printOrdenTrabajoDirecto } from 'src/utils/orderPrint'
 
 export default {
   name: 'OrdenesPage',
@@ -344,7 +363,7 @@ export default {
           })
       })
     },
-    async imprimirOrden (id) {
+    async imprimirOrdenPdf (id) {
       try {
         const response = await this.$axios.get(`ordenes/${id}/pdf`, {
           responseType: 'blob'
@@ -363,9 +382,23 @@ export default {
         this.$alert?.error(err.response?.data?.message || 'Error al descargar la orden')
       }
     },
-    imprimirGarantia (id) {
+    imprimirGarantiaPdf (id) {
       const url = `${this.$axios.defaults.baseURL}/ordenes/${id}/garantia`
       window.open(url, '_blank')
+    },
+    async imprimirOrdenDirecto (id) {
+      try {
+        await printOrdenTrabajoDirecto(this.$axios, id)
+      } catch (err) {
+        this.$alert?.error(err.response?.data?.message || 'Error al imprimir directo la orden')
+      }
+    },
+    async imprimirGarantiaDirecto (id) {
+      try {
+        await printGarantiaDirecta(this.$axios, id)
+      } catch (err) {
+        this.$alert?.error(err.response?.data?.message || 'Error al imprimir directo la garantia')
+      }
     },
     getUsuarios () {
       this.$axios.get('users').then(res => {

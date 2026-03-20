@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AlmacenController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CogController;
 use App\Http\Controllers\DailyCashController;
@@ -116,6 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('prestamos/{prestamo}/fundir', [PrestamoController::class, 'fundir']);
     Route::get('dashboard', [DashboardController::class, 'show']);
     Route::get('dashboard/reportes', [DashboardController::class, 'reportes']);
+    Route::get('almacen', [AlmacenController::class, 'index']);
+    Route::post('almacen/entradas', [AlmacenController::class, 'entrar']);
+    Route::post('almacen/salidas', [AlmacenController::class, 'salir']);
 
 });
 Route::get('/ordenes/{orden}/pdf', [OrdenController::class, 'pdf']);

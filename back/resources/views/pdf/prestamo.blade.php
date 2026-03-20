@@ -52,18 +52,20 @@
     <table style="width:100%; border-collapse:collapse;">
         <tr>
             <td style="width:82px; vertical-align:top;">
-                @if (file_exists($logo))
-                    <img src="{{ $logo }}" style="width:62px; display:block;">
-                @endif
+{{--                @if (file_exists($logo))--}}
+{{--                    <img src="{{ $logo }}" style="width:62px; display:block;">--}}
+{{--                @endif--}}
             </td>
             <td class="center">
-                <div class="title brand">{{ $empresa['nombre'] ?? 'Joyería Rosario' }}</div>
-                <div class="sm">{{ $empresa['direccion'] ?? '' }}</div>
+{{--                <div class="title brand">{{ $empresa['nombre'] ?? 'Joyería Rosario' }}</div>--}}
+                <br><br>
+{{--                <div class="sm">{{ $empresa['direccion'] ?? '' }}</div>--}}
                 <div class="sm">{{ ($empresa['ciudad'] ?? '') . ' - ' . ($empresa['pais'] ?? '') }}</div>
                 <div class="sm">Cel: {{ $empresa['cel'] ?? '' }}</div>
                 <div class="md bold" style="margin-top:6px;">PRÉSTAMO POR 30 DÍAS</div>
             </td>
             <td class="right" style="width:150px; vertical-align:top;">
+                <br><br>
                 <div class="badge">Nro: {{ $numero ?? '—' }}</div>
             </td>
         </tr>
@@ -164,6 +166,7 @@
             <td style="width:50%;">
                 <div class="sign-line"></div>
                 <div class="xs center">Firma del cliente</div>
+                <div class="xs center"> {{ $clienteNombre }} </div>
             </td>
             <td style="width:50%;">
                 <div class="sign-line"></div>

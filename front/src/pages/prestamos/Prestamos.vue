@@ -191,11 +191,19 @@
                         </q-item>
                         <q-item clickable v-ripple @click="imprimirCambiodeMoneda(p)" v-close-popup>
                           <q-item-section avatar><q-icon name="picture_as_pdf"/></q-item-section>
-                          <q-item-section>Cambio de Moneda</q-item-section>
+                          <q-item-section>Cambio de Moneda PDF</q-item-section>
+                        </q-item>
+                        <q-item clickable v-ripple @click="imprimirCambioDirecto(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="local_printshop"/></q-item-section>
+                          <q-item-section>Cambio de Moneda directo</q-item-section>
                         </q-item>
                         <q-item clickable v-ripple @click="imprimir(p)" v-close-popup>
                           <q-item-section avatar><q-icon name="print"/></q-item-section>
-                          <q-item-section>Imprimir Contrato</q-item-section>
+                          <q-item-section>Imprimir Contrato PDF</q-item-section>
+                        </q-item>
+                        <q-item clickable v-ripple @click="imprimirDirecto(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="receipt_long"/></q-item-section>
+                          <q-item-section>Imprimir Contrato directo</q-item-section>
                         </q-item>
 
 <!--                        btn fundir-->
@@ -373,6 +381,7 @@
 
 <script>
 import moment from 'moment'
+import { printCambioMonedaDirecto, printPrestamoDirecto } from 'src/utils/loanPrint'
 
 export default {
   name: 'PrestamosPage',
@@ -493,6 +502,20 @@ export default {
     imprimirCambiodeMoneda(p) {
       const url = this.$axios.defaults.baseURL + `/prestamos/${p.id}/cambio/pdf`
       window.open(url, '_blank')
+    },
+    async imprimirDirecto (p) {
+      try {
+        await printPrestamoDirecto(this.$axios, p.id, p)
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al imprimir el contrato directo')
+      }
+    },
+    async imprimirCambioDirecto (p) {
+      try {
+        await printCambioMonedaDirecto(this.$axios, p.id, p)
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al imprimir el cambio de moneda directo')
+      }
     },
     async confirmMensualidad () {
       const p = this.dlgMensualidad.p

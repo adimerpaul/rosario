@@ -16,7 +16,26 @@
         </div>
         <div class="col-12 col-md-auto">
           <div class="row q-gutter-sm justify-end">
-            <q-btn color="secondary" icon="print" label="Imprimir" no-caps dense @click="imprimirPrestamo" />
+            <q-btn-dropdown color="secondary" icon="print" label="Imprimir" no-caps dense>
+              <q-list dense style="min-width: 220px">
+                <q-item clickable v-close-popup @click="imprimirPrestamo">
+                  <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
+                  <q-item-section>Contrato PDF</q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="imprimirPrestamoDirecto">
+                  <q-item-section avatar><q-icon name="print" /></q-item-section>
+                  <q-item-section>Contrato directo</q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="imprimirCambioMonedaPdf">
+                  <q-item-section avatar><q-icon name="currency_exchange" /></q-item-section>
+                  <q-item-section>Cambio de moneda PDF</q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="imprimirCambioMonedaDirecto">
+                  <q-item-section avatar><q-icon name="local_printshop" /></q-item-section>
+                  <q-item-section>Cambio de moneda directo</q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
             <q-btn color="primary" icon="save" label="Actualizar" no-caps dense :loading="loading" @click="actualizarPrestamo" />
             <q-btn color="positive" icon="payments" label="Registrar pago" no-caps dense :loading="loading" @click="openPagoDialog" />
           </div>
@@ -256,6 +275,7 @@
 
 <script>
 import moment from 'moment'
+import { printCambioMonedaDirecto, printPrestamoDirecto } from 'src/utils/loanPrint'
 
 export default {
   name: 'PrestamoEditarPage',
@@ -459,6 +479,24 @@ export default {
     imprimirPrestamo () {
       const url = this.$axios.defaults.baseURL + `/prestamos/${this.prestamo.id}/pdf`
       window.open(url, '_blank')
+    },
+    imprimirCambioMonedaPdf () {
+      const url = this.$axios.defaults.baseURL + `/prestamos/${this.prestamo.id}/cambio/pdf`
+      window.open(url, '_blank')
+    },
+    async imprimirPrestamoDirecto () {
+      try {
+        await printPrestamoDirecto(this.$axios, this.prestamo.id, this.prestamo)
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al imprimir el contrato directo')
+      }
+    },
+    async imprimirCambioMonedaDirecto () {
+      try {
+        await printCambioMonedaDirecto(this.$axios, this.prestamo.id, this.prestamo)
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al imprimir el cambio de moneda directo')
+      }
     },
     money (v) {
       return Number(v || 0).toFixed(2)

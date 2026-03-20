@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
-use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+
 class Prestamo extends Model implements AuditableContract
 {
     use AuditableTrait, SoftDeletes;
+
     protected $table = 'prestamos';
 
     protected $fillable = [
@@ -33,13 +35,29 @@ class Prestamo extends Model implements AuditableContract
         'estado',
     ];
 
-    protected $hidden = ['created_at','updated_at','deleted_at'];
+    protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
 
-    protected $appends = ['dias_transcurridos','cargo_diario','cargos_acumulados','total_deuda','deuda_interes'];
+    protected $appends = ['dias_transcurridos', 'cargo_diario', 'cargos_acumulados', 'total_deuda', 'deuda_interes'];
 
-    public function cliente() { return $this->belongsTo(Client::class, 'cliente_id'); }
-    public function user()    { return $this->belongsTo(User::class, 'user_id'); }
-    public function pagos()   { return $this->hasMany(PrestamoPago::class, 'prestamo_id'); }
+    public function cliente()
+    {
+        return $this->belongsTo(Client::class, 'cliente_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(PrestamoPago::class, 'prestamo_id');
+    }
+
+    public function almacenMovimientos()
+    {
+        return $this->hasMany(AlmacenMovimiento::class, 'prestamo_id');
+    }
 
     /* =========================
        CÁLCULO DE SALDO DINÁMICO
@@ -48,48 +66,51 @@ class Prestamo extends Model implements AuditableContract
     public function getSaldoAttribute($stored)
     {
         return $this->total_deuda + $this->deuda_interes;
-//        $capital = (float) ($this->total_deuda ?? 0);
-//        if ($capital <= 0) return 0.0;
-//
-//        // tasa mensual total
-//        $tasaMensual = (float) ($this->interes ?? 0) + (float) ($this->almacen ?? 0);
-//        $tasaDiaria  = $tasaMensual / 100 / 30;
+        //        $capital = (float) ($this->total_deuda ?? 0);
+        //        if ($capital <= 0) return 0.0;
+        //
+        //        // tasa mensual total
+        //        $tasaMensual = (float) ($this->interes ?? 0) + (float) ($this->almacen ?? 0);
+        //        $tasaDiaria  = $tasaMensual / 100 / 30;
 
-//        $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
-//
-//        if ($tienePagos && $this->fecha_limite) {
-//            $fechaBase = Carbon::parse($this->fecha_limite);
-//        } else {
-//            $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
-//        }
-////        error_log('fechaBase: ' . $fechaBase->toDateString());
-//
-//        $dias = max(0, $fechaBase->diffInDays(today()));
-////        error_log('dias: ' . $dias);
-//
-//        // cargos
-//        $cargos = round($capital * $tasaDiaria * $dias, 2);
-//
-//        // pagado
-//        $pagado = (float) $this->pagos()
-//            ->where('estado','Activo')
-//            ->whereIn('tipo_pago', ['TOTAL', 'SALDO'])
-//            ->sum('monto');
-//
-//        $saldo = round($capital + $cargos - $pagado, 2);
-//        return $saldo > 0 ? $saldo : 0.0;
+        //        $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
+        //
+        //        if ($tienePagos && $this->fecha_limite) {
+        //            $fechaBase = Carbon::parse($this->fecha_limite);
+        //        } else {
+        //            $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
+        //        }
+        // //        error_log('fechaBase: ' . $fechaBase->toDateString());
+        //
+        //        $dias = max(0, $fechaBase->diffInDays(today()));
+        // //        error_log('dias: ' . $dias);
+        //
+        //        // cargos
+        //        $cargos = round($capital * $tasaDiaria * $dias, 2);
+        //
+        //        // pagado
+        //        $pagado = (float) $this->pagos()
+        //            ->where('estado','Activo')
+        //            ->whereIn('tipo_pago', ['TOTAL', 'SALDO'])
+        //            ->sum('monto');
+        //
+        //        $saldo = round($capital + $cargos - $pagado, 2);
+        //        return $saldo > 0 ? $saldo : 0.0;
     }
 
-    function getTotalDeudaAttribute(){
-//        pago sea total o saldo de los prastmos_pagos
+    public function getTotalDeudaAttribute()
+    {
+        //        pago sea total o saldo de los prastmos_pagos
         $totalPagado = (float) $this->pagos()
-            ->where('estado','Activo')
+            ->where('estado', 'Activo')
             ->whereIn('tipo_pago', ['TOTAL', 'SALDO'])
             ->sum('monto');
+
         return round(($this->valor_prestado ?? 0) - $totalPagado, 2);
     }
 
-    public function getDiasTranscurridosAttribute(){
+    public function getDiasTranscurridosAttribute()
+    {
         $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
         if ($tienePagos && $this->fecha_limite) {
             $fechaBase = Carbon::parse($this->fecha_limite);
@@ -97,15 +118,17 @@ class Prestamo extends Model implements AuditableContract
             $fechaBase = $this->fecha_creacion ? Carbon::parse($this->fecha_creacion) : today();
         }
         $dias = $fechaBase->diffInDays(today());
-//        $dias ++;
+
+        //        $dias ++;
         return round($dias, 0);
     }
 
     public function getCargoDiarioAttribute()
     {
-        $capital     = (float) ($this->total_deuda ?? 0);
+        $capital = (float) ($this->total_deuda ?? 0);
         $tasaMensual = (float) ($this->interes ?? 0) + (float) ($this->almacen ?? 0);
-        $tasaDiaria  = $capital * $tasaMensual / 100 / 31;
+        $tasaDiaria = $capital * $tasaMensual / 100 / 31;
+
         return round($tasaDiaria, 2);
     }
 
@@ -113,6 +136,7 @@ class Prestamo extends Model implements AuditableContract
     {
         return round($this->cargo_diario * $this->dias_transcurridos, 2);
     }
+
     public function getDeudaInteresAttribute()
     {
         $tienePagos = $this->pagos()->where('estado', 'Activo')->exists();
@@ -124,6 +148,7 @@ class Prestamo extends Model implements AuditableContract
         $dias = $fechaBase->diffInDays(today());
         $interesDiario = $this->total_deuda * (($this->interes + $this->almacen) / 100);
         $interesDiario = $interesDiario / 31.5;
+
         return round($interesDiario * $dias, 2);
     }
 }

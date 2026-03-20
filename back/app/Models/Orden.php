@@ -65,6 +65,11 @@ class Orden extends Model implements AuditableContract
         return $this->hasMany(OrdenPago::class, 'orden_id');
     }
 
+    public function almacenMovimientos()
+    {
+        return $this->hasMany(AlmacenMovimiento::class, 'orden_id');
+    }
+
     protected $appends = ['totalPagos'];
 
     public function getTotalPagosAttribute()

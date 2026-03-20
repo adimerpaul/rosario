@@ -10,6 +10,7 @@ const routes = [
       {path: '/ventas-joyas/crear', component: () => import('pages/ventas/VentaJoyaCrear.vue'), meta: {requiresAuth: true, roles: ['Administrador', 'Vendedor']}},
       {path: '/ventas-joyas', component: () => import('pages/ventas/VentasJoyas.vue'), meta: {requiresAuth: true, roles: ['Administrador', 'Vendedor']}},
       {path: '/clientes', component: () => import('pages/clientes/Cliente.vue'), meta: {requiresAuth: true}},
+      {path: '/almacen', component: () => import('pages/almacen/Almacen.vue'), meta: {requiresAuth: true, roles: ['Administrador', 'Vendedor']}},
       {path: '/ordenes', component: () => import('pages/ordenes/Ordenes.vue'), meta: {requiresAuth: true}},
       {path: '/ordenes/crear', name: 'crearOrden', component: () => import('pages/ordenes/OrdenCrear.vue'), meta: {requiresAuth: true}},
       {

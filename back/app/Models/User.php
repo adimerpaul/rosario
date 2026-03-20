@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable as AuditableTrait;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+
 class User extends Authenticatable implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, HasApiTokens, AuditableTrait;
+    use AuditableTrait, HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -55,8 +56,14 @@ class User extends Authenticatable implements AuditableContract
             'password' => 'hashed',
         ];
     }
-    function docente()
+
+    public function docente()
     {
         return $this->belongsTo(Docente::class);
+    }
+
+    public function almacenMovimientos()
+    {
+        return $this->hasMany(AlmacenMovimiento::class, 'user_id');
     }
 }
