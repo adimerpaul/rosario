@@ -12,238 +12,220 @@ class DailyCashController extends Controller
     public function show(Request $request)
     {
         $date = $request->query('date', now()->toDateString());
+        $metodoPago = $request->query('metodo_pago');
+        $username = $request->query('usuario');
 
-        // filtros opcionales
-        $metodo_pago = $request->query('metodo_pago'); // EFECTIVO | QR | null
-        $username    = $request->query('usuario');     // username | null
-
-        // user efectivo (si no es admin, solo él)
         $auth = $request->user();
         $user = null;
 
         if ($auth && ($auth->role ?? '') !== 'Administrador') {
             $user = $auth;
-        } else {
-            if ($username) {
-                $user = User::where('username', $username)->first();
-                if (!$user) {
-                    // usuario no existe -> estructura vacía
-                    $daily = DailyCash::firstOrCreate(
-                        ['date' => $date],
-                        ['opening_amount' => 0, 'user_id' => optional($auth)->id]
-                    );
+        } elseif ($username) {
+            $user = User::where('username', $username)->first();
 
-                    return response()->json([
-                        'date' => $date,
-                        'daily_cash' => $daily,
-                        'suggested_opening_amount' => 0,
-                        'items_ingresos' => [],
-                        'items_egresos' => [],
-                        'total_ingresos' => (float)$daily->opening_amount,
-                        'total_egresos' => 0.0,
-                        'total_caja' => (float)$daily->opening_amount,
-                    ]);
-                }
+            if (! $user) {
+                $daily = DailyCash::firstOrCreate(
+                    ['date' => $date],
+                    ['opening_amount' => 0, 'user_id' => optional($auth)->id]
+                );
+
+                return response()->json([
+                    'date' => $date,
+                    'daily_cash' => $daily,
+                    'suggested_opening_amount' => 0,
+                    'items_ingresos' => [],
+                    'items_egresos' => [],
+                    'total_ingresos' => (float) $daily->opening_amount,
+                    'total_egresos' => 0.0,
+                    'total_caja' => (float) $daily->opening_amount,
+                ]);
             }
         }
 
-        // Caja del día
+        $suggested = $this->calculateSuggestedOpeningAmount($date, $user);
+
         $daily = DailyCash::firstOrCreate(
             ['date' => $date],
-            ['opening_amount' => 0, 'user_id' => optional($auth)->id]
+            ['opening_amount' => $suggested, 'user_id' => optional($auth)->id]
         );
 
-        // ✅ Sugerido (ayer) en el mismo response (SIN otro GET en frontend)
-        $yesterday = Carbon::parse($date)->subDay()->toDateString();
-        $suggested = (float) (DailyCash::where('date', $yesterday)->value('opening_amount') ?? 0);
+        if ((float) $daily->opening_amount <= 0 && $suggested > 0) {
+            $daily->opening_amount = $suggested;
+            $daily->user_id = $daily->user_id ?: optional($auth)->id;
+            $daily->save();
+            $daily->refresh();
+        }
 
-        // normalizar método
-        $normMetodo = function ($m) {
-            $m = strtoupper(trim((string)$m));
-            if ($m === 'CASH') return 'EFECTIVO';
-            if ($m === '') return null;
-            return $m;
+        $normMetodo = function ($metodo) {
+            $metodo = strtoupper(trim((string) $metodo));
+            if ($metodo === 'CASH') return 'EFECTIVO';
+            if ($metodo === '') return null;
+            return $metodo;
         };
 
-        // helper: aplica filtro metodo si viene
-        $passMetodo = function ($m) use ($metodo_pago, $normMetodo) {
-            if (!$metodo_pago) return true;
-            return $normMetodo($m) === $normMetodo($metodo_pago);
+        $passMetodo = function ($metodo) use ($metodoPago, $normMetodo) {
+            if (! $metodoPago) return true;
+            return $normMetodo($metodo) === $normMetodo($metodoPago);
         };
 
-        /* ===================== INGRESOS (planos) ===================== */
-
-        // 1) Órdenes (adelanto)
-        $ordenes = \App\Models\Orden::with(['cliente','user'])
+        $ordenes = \App\Models\Orden::with(['cliente', 'user'])
             ->whereDate('fecha_creacion', $date)
-            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->where('estado', '!=', 'Cancelada')
             ->orderBy('fecha_creacion')
             ->get();
 
-        $itemsOrden = $ordenes->map(function ($o) use ($normMetodo) {
+        $itemsOrden = $ordenes->map(function ($orden) use ($normMetodo) {
             return [
-                'id'          => $o->id,
-                'hora'        => Carbon::parse($o->fecha_creacion)->format('H:i'),
-                'descripcion' => "Orden {$o->numero} — ".($o->cliente->name ?? 'N/A'),
-                'monto'       => (float) ($o->adelanto ?? 0),
-                'usuario'     => $o->user->username ?? $o->user->name ?? 'N/A',
-                'metodo'      => $normMetodo($o->tipo_pago),
-                'fuente'      => 'ORDEN',
-                'estado'      => 'Activo',
-                'key'         => "o-{$o->id}",
+                'id' => $orden->id,
+                'hora' => Carbon::parse($orden->fecha_creacion)->format('H:i'),
+                'descripcion' => 'Orden '.$orden->numero.' - '.($orden->cliente->name ?? 'N/A'),
+                'monto' => (float) ($orden->adelanto ?? 0),
+                'usuario' => $orden->user->username ?? $orden->user->name ?? 'N/A',
+                'metodo' => $normMetodo($orden->tipo_pago),
+                'fuente' => 'ORDEN',
+                'estado' => 'Activo',
+                'key' => 'o-'.$orden->id,
             ];
-        })->filter(fn($x) => $x['monto'] > 0)->values();
+        })->filter(fn ($item) => $item['monto'] > 0)->values();
 
-        // 2) Pagos de órdenes
-        $pagosOrdenes = \App\Models\OrdenPago::with(['orden.cliente','user'])
+        $pagosOrdenes = \App\Models\OrdenPago::with(['orden.cliente', 'user'])
             ->whereDate('fecha', $date)
-            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->where('estado', 'Activo')
-            ->whereHas('orden', fn($q) => $q->where('estado', '!=', 'Cancelada'))
+            ->whereHas('orden', fn ($q) => $q->where('estado', '!=', 'Cancelada'))
             ->orderBy('created_at')
             ->get();
 
-        $itemsPagoOrden = $pagosOrdenes->map(function ($p) use ($normMetodo) {
+        $itemsPagoOrden = $pagosOrdenes->map(function ($pago) use ($normMetodo) {
             return [
-                'id'          => $p->id,
-                'hora'        => optional($p->created_at)->format('H:i') ?: '—',
-                'descripcion' => "Pago orden {$p->orden->numero} — ".($p->orden->cliente->name ?? 'N/A'),
-                'monto'       => (float) $p->monto,
-                'usuario'     => $p->user->username ?? $p->user->name ?? 'N/A',
-                'metodo'      => $normMetodo($p->metodo),
-                'fuente'      => 'PAGO ORDEN',
-                'estado'      => $p->estado ?? 'Activo',
-                'key'         => "po-{$p->id}",
+                'id' => $pago->id,
+                'hora' => optional($pago->created_at)->format('H:i') ?: '-',
+                'descripcion' => 'Pago orden '.$pago->orden->numero.' - '.($pago->orden->cliente->name ?? 'N/A'),
+                'monto' => (float) $pago->monto,
+                'usuario' => $pago->user->username ?? $pago->user->name ?? 'N/A',
+                'metodo' => $normMetodo($pago->metodo),
+                'fuente' => 'PAGO ORDEN',
+                'estado' => $pago->estado ?? 'Activo',
+                'key' => 'po-'.$pago->id,
             ];
         })->values();
 
-        // 3) Pagos de préstamos
-        $pagosPrestamos = \App\Models\PrestamoPago::with(['prestamo.cliente','user'])
+        $pagosPrestamos = \App\Models\PrestamoPago::with(['prestamo.cliente', 'user'])
             ->whereDate('fecha', $date)
-            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->where('estado', 'Activo')
             ->orderBy('created_at')
             ->get();
 
-        $itemsPagoPrest = $pagosPrestamos->map(function ($p) use ($normMetodo) {
+        $itemsPagoPrest = $pagosPrestamos->map(function ($pago) use ($normMetodo) {
             return [
-                'id'          => $p->id,
-                'hora'        => optional($p->created_at)->format('H:i') ?: '—',
-                'descripcion' => "Pago préstamo {$p->prestamo->numero} — ".($p->prestamo->cliente->name ?? 'N/A'),
-                'monto'       => (float) $p->monto,
-                'usuario'     => $p->user->username ?? $p->user->name ?? 'N/A',
-                'metodo'      => $normMetodo($p->metodo),
-                'fuente'      => 'PAGO PRÉSTAMO',
-                'estado'      => $p->estado ?? 'Activo',
-                'key'         => "pp-{$p->id}",
+                'id' => $pago->id,
+                'hora' => optional($pago->created_at)->format('H:i') ?: '-',
+                'descripcion' => 'Pago prestamo '.$pago->prestamo->numero.' - '.($pago->prestamo->cliente->name ?? 'N/A'),
+                'monto' => (float) $pago->monto,
+                'usuario' => $pago->user->username ?? $pago->user->name ?? 'N/A',
+                'metodo' => $normMetodo($pago->metodo),
+                'fuente' => 'PAGO PRESTAMO',
+                'estado' => $pago->estado ?? 'Activo',
+                'key' => 'pp-'.$pago->id,
             ];
         })->values();
 
-        // 4) Ingresos manuales
         $ingresosOtros = \App\Models\Ingreso::with(['user'])
             ->whereDate('fecha', $date)
-            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->orderBy('created_at')
             ->get();
 
-        $itemsIngresoOtros = $ingresosOtros->map(function ($i) use ($normMetodo) {
+        $itemsIngresoOtros = $ingresosOtros->map(function ($ingreso) use ($normMetodo) {
             return [
-                'id'          => $i->id,
-                'hora'        => optional($i->created_at)->format('H:i') ?: '—',
-                'descripcion' => $i->descripcion,
-                'monto'       => (float) $i->monto,
-                'usuario'     => $i->user->username ?? $i->user->name ?? 'N/A',
-                'metodo'      => $normMetodo($i->metodo ?? 'EFECTIVO'),
-                'fuente'      => 'INGRESO',
-                'estado'      => $i->estado ?? 'Activo',
-                'key'         => "in-{$i->id}",
+                'id' => $ingreso->id,
+                'hora' => optional($ingreso->created_at)->format('H:i') ?: '-',
+                'descripcion' => $ingreso->descripcion,
+                'monto' => (float) $ingreso->monto,
+                'usuario' => $ingreso->user->username ?? $ingreso->user->name ?? 'N/A',
+                'metodo' => $normMetodo($ingreso->metodo ?? 'EFECTIVO'),
+                'fuente' => 'INGRESO',
+                'estado' => $ingreso->estado ?? 'Activo',
+                'key' => 'in-'.$ingreso->id,
             ];
         })->values();
 
-        // juntar ingresos
-        $items_ingresos = collect()
+        $itemsIngresos = collect()
             ->merge($itemsOrden)
             ->merge($itemsPagoOrden)
             ->merge($itemsPagoPrest)
             ->merge($itemsIngresoOtros)
-            ->filter(fn($x) => $passMetodo($x['metodo'] ?? null)) // filtro por método si viene
+            ->filter(fn ($item) => $passMetodo($item['metodo'] ?? null))
             ->values();
 
-        /* ===================== EGRESOS (planos) ===================== */
-
-        // 1) Préstamos otorgados (egreso)
-        $prestamos = \App\Models\Prestamo::with(['cliente','user'])
+        $prestamos = \App\Models\Prestamo::with(['cliente', 'user'])
             ->whereDate('prestamos.created_at', $date)
-            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->orderBy('prestamos.created_at')
             ->get();
 
-        $itemsPrestamos = $prestamos->map(function ($pr) use ($normMetodo) {
+        $itemsPrestamos = $prestamos->map(function ($prestamo) use ($normMetodo) {
             return [
-                'id'          => $pr->id,
-                'hora'        => Carbon::parse($pr->fecha_creacion)->format('H:i'),
-                'descripcion' => "Préstamo {$pr->numero} — ".($pr->cliente->name ?? 'N/A'),
-                'monto'       => (float) ($pr->valor_prestado ?? 0),
-                'usuario'     => $pr->user->username ?? $pr->user->name ?? 'N/A',
-                'metodo'      => $normMetodo($pr->metodo_entrega ?? $pr->metodo ?? 'EFECTIVO'),
-                'fuente'      => 'PRÉSTAMO OTORGADO',
-                'estado'      => 'Activo',
-                'key'         => "pr-{$pr->id}",
+                'id' => $prestamo->id,
+                'hora' => Carbon::parse($prestamo->fecha_creacion)->format('H:i'),
+                'descripcion' => 'Prestamo '.$prestamo->numero.' - '.($prestamo->cliente->name ?? 'N/A'),
+                'monto' => (float) ($prestamo->valor_prestado ?? 0),
+                'usuario' => $prestamo->user->username ?? $prestamo->user->name ?? 'N/A',
+                'metodo' => $normMetodo($prestamo->metodo_entrega ?? $prestamo->metodo ?? 'EFECTIVO'),
+                'fuente' => 'PRESTAMO OTORGADO',
+                'estado' => 'Activo',
+                'key' => 'pr-'.$prestamo->id,
             ];
-        })->filter(fn($x) => $x['monto'] > 0)->values();
+        })->filter(fn ($item) => $item['monto'] > 0)->values();
 
-        // 2) Egresos manuales
         $egresosOtros = \App\Models\Egreso::with(['user'])
             ->whereDate('fecha', $date)
-            ->when($user, fn($q) => $q->where('user_id', $user->id))
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->orderBy('created_at')
             ->get();
 
-        $itemsEgresoOtros = $egresosOtros->map(function ($e) use ($normMetodo) {
+        $itemsEgresoOtros = $egresosOtros->map(function ($egreso) use ($normMetodo) {
             return [
-                'id'          => $e->id,
-                'hora'        => optional($e->created_at)->format('H:i') ?: '—',
-                'descripcion' => $e->descripcion,
-                'monto'       => (float) $e->monto,
-                'usuario'     => $e->user->username ?? $e->user->name ?? 'N/A',
-                'metodo'      => $normMetodo($e->metodo ?? 'EFECTIVO'),
-                'fuente'      => 'EGRESO',
-                'estado'      => $e->estado ?? 'Activo',
-                'key'         => "eg-{$e->id}",
+                'id' => $egreso->id,
+                'hora' => optional($egreso->created_at)->format('H:i') ?: '-',
+                'descripcion' => $egreso->descripcion,
+                'monto' => (float) $egreso->monto,
+                'usuario' => $egreso->user->username ?? $egreso->user->name ?? 'N/A',
+                'metodo' => $normMetodo($egreso->metodo ?? 'EFECTIVO'),
+                'fuente' => 'EGRESO',
+                'estado' => $egreso->estado ?? 'Activo',
+                'key' => 'eg-'.$egreso->id,
             ];
         })->values();
 
-        $items_egresos = collect()
+        $itemsEgresos = collect()
             ->merge($itemsPrestamos)
             ->merge($itemsEgresoOtros)
-            ->filter(fn($x) => $passMetodo($x['metodo'] ?? null))
+            ->filter(fn ($item) => $passMetodo($item['metodo'] ?? null))
             ->values();
 
-        /* ===================== TOTALES ===================== */
-
-        $sumActivos = fn($items) => (float) collect($items)
-            ->filter(fn($x) => ($x['estado'] ?? 'Activo') === 'Activo')
+        $sumActivos = fn ($items) => (float) collect($items)
+            ->filter(fn ($item) => ($item['estado'] ?? 'Activo') === 'Activo')
             ->sum('monto');
 
-        $ingresosSinCaja = $sumActivos($items_ingresos);
-        $egresosTotal    = $sumActivos($items_egresos);
+        $ingresosSinCaja = $sumActivos($itemsIngresos);
+        $egresosTotal = $sumActivos($itemsEgresos);
 
-        $total_ingresos = (float)$daily->opening_amount + $ingresosSinCaja;
-        $total_egresos  = (float)$egresosTotal;
-        $total_caja     = (float)$daily->opening_amount + $ingresosSinCaja - $egresosTotal;
+        $totalIngresos = (float) $daily->opening_amount + $ingresosSinCaja;
+        $totalEgresos = $egresosTotal;
+        $totalCaja = (float) $daily->opening_amount + $ingresosSinCaja - $egresosTotal;
 
         return response()->json([
             'date' => $date,
             'daily_cash' => $daily,
-            'suggested_opening_amount' => $suggested,
-
-            'items_ingresos' => $items_ingresos,
-            'items_egresos'  => $items_egresos,
-
-            'total_ingresos' => round($total_ingresos, 2),
-            'total_egresos'  => round($total_egresos, 2),
-            'total_caja'     => round($total_caja, 2),
+            'suggested_opening_amount' => round($suggested, 2),
+            'items_ingresos' => $itemsIngresos,
+            'items_egresos' => $itemsEgresos,
+            'total_ingresos' => round($totalIngresos, 2),
+            'total_egresos' => round($totalEgresos, 2),
+            'total_caja' => round($totalCaja, 2),
         ]);
     }
 
@@ -265,5 +247,72 @@ class DailyCashController extends Controller
         );
 
         return response()->json($daily->fresh());
+    }
+
+    private function calculateSuggestedOpeningAmount(string $date, ?User $user = null): float
+    {
+        $yesterday = Carbon::parse($date)->subDay()->toDateString();
+        $opening = (float) (DailyCash::where('date', $yesterday)->value('opening_amount') ?? 0);
+
+        $ingresos = 0.0;
+        $egresos = 0.0;
+
+        $ingresos += (float) \App\Models\Orden::query()
+            ->whereDate('fecha_creacion', $yesterday)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where('estado', '!=', 'Cancelada')
+            ->where(function ($q) {
+                $q->where('tipo_pago', 'Efectivo')->orWhere('tipo_pago', 'EFECTIVO');
+            })
+            ->sum('adelanto');
+
+        $ingresos += (float) \App\Models\OrdenPago::query()
+            ->whereDate('fecha', $yesterday)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where('estado', 'Activo')
+            ->where(function ($q) {
+                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
+            })
+            ->sum('monto');
+
+        $ingresos += (float) \App\Models\PrestamoPago::query()
+            ->whereDate('fecha', $yesterday)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where('estado', 'Activo')
+            ->where(function ($q) {
+                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
+            })
+            ->sum('monto');
+
+        $ingresos += (float) \App\Models\Ingreso::query()
+            ->whereDate('fecha', $yesterday)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where('estado', 'Activo')
+            ->where(function ($q) {
+                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
+            })
+            ->sum('monto');
+
+        $egresos += (float) \App\Models\Prestamo::query()
+            ->whereDate('created_at', $yesterday)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where(function ($q) {
+                $q->where('metodo_entrega', 'Efectivo')
+                    ->orWhere('metodo_entrega', 'EFECTIVO')
+                    ->orWhere('metodo', 'Efectivo')
+                    ->orWhere('metodo', 'EFECTIVO');
+            })
+            ->sum('valor_prestado');
+
+        $egresos += (float) \App\Models\Egreso::query()
+            ->whereDate('fecha', $yesterday)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where('estado', 'Activo')
+            ->where(function ($q) {
+                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
+            })
+            ->sum('monto');
+
+        return round($opening + $ingresos - $egresos, 2);
     }
 }
