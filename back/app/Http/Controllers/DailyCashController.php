@@ -6,9 +6,12 @@ use App\Models\DailyCash;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class DailyCashController extends Controller
 {
+    private ?string $prestamoMetodoColumn = null;
+
     public function show(Request $request)
     {
         $date = $request->query('date', now()->toDateString());
@@ -167,13 +170,15 @@ class DailyCashController extends Controller
             ->get();
 
         $itemsPrestamos = $prestamos->map(function ($prestamo) use ($normMetodo) {
+            $metodoColumn = $this->prestamoMetodoColumn();
+
             return [
                 'id' => $prestamo->id,
                 'hora' => Carbon::parse($prestamo->fecha_creacion)->format('H:i'),
                 'descripcion' => 'Prestamo '.$prestamo->numero.' - '.($prestamo->cliente->name ?? 'N/A'),
                 'monto' => (float) ($prestamo->valor_prestado ?? 0),
                 'usuario' => $prestamo->user->username ?? $prestamo->user->name ?? 'N/A',
-                'metodo' => $normMetodo($prestamo->metodo_entrega ?? $prestamo->metodo ?? 'EFECTIVO'),
+                'metodo' => $normMetodo($metodoColumn ? $prestamo->{$metodoColumn} : 'EFECTIVO'),
                 'fuente' => 'PRESTAMO OTORGADO',
                 'estado' => 'Activo',
                 'key' => 'pr-'.$prestamo->id,
@@ -293,16 +298,22 @@ class DailyCashController extends Controller
             })
             ->sum('monto');
 
-        $egresos += (float) \App\Models\Prestamo::query()
+        $prestamoMetodoColumn = $this->prestamoMetodoColumn();
+
+        $prestamosQuery = \App\Models\Prestamo::query()
             ->whereDate('created_at', $yesterday)
-            ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where(function ($q) {
-                $q->where('metodo_entrega', 'Efectivo')
-                    ->orWhere('metodo_entrega', 'EFECTIVO')
-                    ->orWhere('metodo', 'Efectivo')
-                    ->orWhere('metodo', 'EFECTIVO');
-            })
-            ->sum('valor_prestado');
+            ->when($user, fn ($q) => $q->where('user_id', $user->id));
+
+        if ($prestamoMetodoColumn) {
+            $prestamosQuery->where(function ($q) use ($prestamoMetodoColumn) {
+                $q->where($prestamoMetodoColumn, 'Efectivo')
+                    ->orWhere($prestamoMetodoColumn, 'EFECTIVO')
+                    ->orWhere($prestamoMetodoColumn, 'Cash')
+                    ->orWhere($prestamoMetodoColumn, 'CASH');
+            });
+        }
+
+        $egresos += (float) $prestamosQuery->sum('valor_prestado');
 
         $egresos += (float) \App\Models\Egreso::query()
             ->whereDate('fecha', $yesterday)
@@ -314,5 +325,22 @@ class DailyCashController extends Controller
             ->sum('monto');
 
         return round($opening + $ingresos - $egresos, 2);
+    }
+
+    private function prestamoMetodoColumn(): ?string
+    {
+        if ($this->prestamoMetodoColumn !== null) {
+            return $this->prestamoMetodoColumn;
+        }
+
+        if (Schema::hasColumn('prestamos', 'metodo')) {
+            return $this->prestamoMetodoColumn = 'metodo';
+        }
+
+        if (Schema::hasColumn('prestamos', 'metodo_entrega')) {
+            return $this->prestamoMetodoColumn = 'metodo_entrega';
+        }
+
+        return $this->prestamoMetodoColumn = '';
     }
 }
