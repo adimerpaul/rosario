@@ -59,6 +59,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/ordenes', [OrdenController::class, 'index']); // listado filtrado
     Route::get('/ordenes/joyas-disponibles', [OrdenController::class, 'joyasDisponiblesVenta']);
+    Route::get('/ordenes/joyas-vitrina', [OrdenController::class, 'joyasVitrina']);
+    Route::get('/reportes/ventas/pdf', [OrdenController::class, 'ventasReportePdf']);
+    Route::get('/reportes/inventario/existencias/pdf', [OrdenController::class, 'inventarioExistenciasPdf']);
+    Route::get('/reportes/inventario/movimientos/pdf', [OrdenController::class, 'inventarioMovimientosPdf']);
     Route::post('/ordenes', [OrdenController::class, 'store']);
     Route::get('/ordenes/{orden}', [OrdenController::class, 'show']);
     Route::put('/ordenes/{orden}', [OrdenController::class, 'update']);

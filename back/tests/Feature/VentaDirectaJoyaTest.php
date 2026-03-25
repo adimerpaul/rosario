@@ -128,3 +128,134 @@ it('excludes already sold joyas from available sale list until cancellation', fu
         ->assertOk()
         ->assertJsonFragment(['id' => $joya->id]);
 });
+
+it('filters available direct-sale joyas by linea', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Vendedor']));
+
+    $joyaMama = Joya::where('linea', 'Mama')->firstOrFail();
+
+    $this->getJson('/api/ordenes/joyas-disponibles?linea=Mama')
+        ->assertOk()
+        ->assertJsonFragment(['id' => $joyaMama->id])
+        ->assertJsonMissing(['linea' => 'Papa']);
+});
+
+it('filters direct sales by exact fecha and linea', function () {
+    $user = User::factory()->create(['role' => 'Administrador']);
+    Sanctum::actingAs($user);
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE FILTRO',
+        'ci' => '555666',
+        'status' => 'Confiable',
+        'cellphone' => '70001010',
+        'address' => 'ORURO',
+    ]);
+
+    $joyaMama = Joya::where('linea', 'Mama')->firstOrFail();
+    $joyaPapa = Joya::where('linea', 'Papa')->firstOrFail();
+
+    Orden::create([
+        'numero' => 'V0100-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => '2026-03-20 10:00:00',
+        'fecha_entrega' => '2026-03-20',
+        'detalle' => 'VENTA MAMA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 1500,
+        'adelanto' => 1500,
+        'saldo' => 0,
+        'estado' => 'Entregado',
+        'peso' => $joyaMama->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $user->id,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joyaMama->id,
+    ]);
+
+    Orden::create([
+        'numero' => 'V0101-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => '2026-03-21 10:00:00',
+        'fecha_entrega' => '2026-03-21',
+        'detalle' => 'VENTA PAPA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 1800,
+        'adelanto' => 1800,
+        'saldo' => 0,
+        'estado' => 'Entregado',
+        'peso' => $joyaPapa->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $user->id,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joyaPapa->id,
+    ]);
+
+    $this->getJson('/api/ordenes?tipo=Venta%20directa&fecha=2026-03-20&linea=Mama')
+        ->assertOk()
+        ->assertJsonFragment(['numero' => 'V0100-2026'])
+        ->assertJsonMissing(['numero' => 'V0101-2026']);
+});
+
+it('lists jewel showcase statuses for ventas joyas filtering', function () {
+    $user = User::factory()->create(['role' => 'Administrador']);
+    Sanctum::actingAs($user);
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE ESTADOS',
+        'ci' => '999888',
+        'status' => 'Confiable',
+        'cellphone' => '77700000',
+        'address' => 'ORURO',
+    ]);
+
+    $joyaReservada = Joya::firstOrFail();
+    $joyaVendida = Joya::where('id', '!=', $joyaReservada->id)->firstOrFail();
+
+    Orden::create([
+        'numero' => 'V0200-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => '2026-03-22 10:00:00',
+        'fecha_entrega' => '2026-03-30',
+        'detalle' => 'VENTA RESERVADA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 2000,
+        'adelanto' => 500,
+        'saldo' => 1500,
+        'estado' => 'Pendiente',
+        'peso' => $joyaReservada->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $user->id,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joyaReservada->id,
+    ]);
+
+    Orden::create([
+        'numero' => 'V0201-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => '2026-03-23 10:00:00',
+        'fecha_entrega' => '2026-03-23',
+        'detalle' => 'VENTA ENTREGADA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 3000,
+        'adelanto' => 3000,
+        'saldo' => 0,
+        'estado' => 'Entregado',
+        'peso' => $joyaVendida->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $user->id,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joyaVendida->id,
+    ]);
+
+    $this->getJson('/api/ordenes/joyas-vitrina?estado_joya=RESERVADO')
+        ->assertOk()
+        ->assertJsonFragment([
+            'id' => $joyaReservada->id,
+            'estado_joya' => 'RESERVADO',
+        ])
+        ->assertJsonMissing([
+            'id' => $joyaVendida->id,
+            'estado_joya' => 'VENDIDO',
+        ]);
+});

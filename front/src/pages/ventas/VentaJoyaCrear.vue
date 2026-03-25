@@ -7,10 +7,32 @@
             <q-card-section class="row items-center q-col-gutter-sm">
               <div class="col-12 col-md">
                 <div class="text-h5 text-weight-bold">Vender joya</div>
-                <div class="text-caption text-grey-7">Selecciona una joya disponible por vitrina, estuche o nombre.</div>
+                <div class="text-caption text-grey-7">Selecciona una joya disponible por vitrina, estuche, linea o nombre.</div>
               </div>
               <div class="col-12 col-md-auto">
-                <q-btn color="primary" no-caps icon="refresh" label="Actualizar" :loading="loadingJoyas" @click="getJoyas" />
+                <div class="row q-gutter-sm">
+                  <q-btn color="primary" no-caps icon="refresh" label="Actualizar" :loading="loadingJoyas" @click="getJoyas" />
+                  <q-btn-dropdown color="dark" no-caps icon="print" label="Impresiones">
+                    <q-list dense>
+                      <q-item clickable v-close-popup @click="openReportDialog('ventas_detalle')">
+                        <q-item-section avatar><q-icon name="receipt_long" /></q-item-section>
+                        <q-item-section>Detalle de ventas</q-item-section>
+                      </q-item>
+                      <q-item clickable v-close-popup @click="openReportDialog('ventas_todas')">
+                        <q-item-section avatar><q-icon name="list_alt" /></q-item-section>
+                        <q-item-section>Todas las ventas</q-item-section>
+                      </q-item>
+                      <q-item clickable v-close-popup @click="openReportDialog('inventario_movimientos')">
+                        <q-item-section avatar><q-icon name="swap_horiz" /></q-item-section>
+                        <q-item-section>Movimientos al inventario</q-item-section>
+                      </q-item>
+                      <q-item clickable v-close-popup @click="openReportDialog('inventario_existencias')">
+                        <q-item-section avatar><q-icon name="inventory_2" /></q-item-section>
+                        <q-item-section>Existencias de inventario</q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-btn-dropdown>
+                </div>
               </div>
             </q-card-section>
 
@@ -18,7 +40,7 @@
 
             <q-card-section>
               <div class="row q-col-gutter-sm">
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                   <q-select
                     v-model="filters.vitrina_id"
                     :options="vitrinaOptions"
@@ -32,7 +54,7 @@
                     label="Vitrina"
                   />
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                   <q-select
                     v-model="filters.estuche_id"
                     :options="estucheOptions"
@@ -46,7 +68,18 @@
                     label="Estuche"
                   />
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
+                  <q-select
+                    v-model="filters.linea"
+                    :options="lineaOptions"
+                    emit-value
+                    map-options
+                    outlined
+                    dense
+                    label="Linea"
+                  />
+                </div>
+                <div class="col-12 col-md-3">
                   <q-input
                     v-model="filters.search"
                     outlined
@@ -76,9 +109,10 @@
                 >
                   <q-img :src="imagenUrl(joya.imagen)" class="joya-card__image" fit="cover" />
                   <q-card-section class="q-pa-sm">
-                    <div class="text-body2 text-weight-bold ellipsis">{{ joya.nombre }}</div>
-                    <div class="text-caption text-grey-7">{{ joya.tipo }} · {{ joya.peso }} gr</div>
-                    <div class="text-caption text-grey-7">{{ joya.vitrina_nombre || 'Sin vitrina' }} / {{ joya.estuche_nombre || 'Sin estuche' }}</div>
+                    <div class="text-body2 text-weight-bold ellipsis-2-lines">{{ joya.nombre }}</div>
+                    <div class="text-caption text-grey-7">{{ joya.tipo }}  {{ lineaLabel(joya.linea) }}</div>
+                    <div class="text-caption text-grey-7">{{ joya.peso }} gr</div>
+                    <div class="text-caption text-grey-7 ellipsis">{{ joya.vitrina_nombre || 'Sin vitrina' }} / {{ joya.estuche_nombre || 'Sin estuche' }}</div>
                     <div class="text-subtitle2 text-primary text-weight-bold q-mt-xs">{{ money(joya.precio_referencial) }} Bs</div>
                   </q-card-section>
                 </q-card>
@@ -104,7 +138,7 @@
                 <q-img :src="imagenUrl(selectedJoya.imagen)" class="selected-joya__image" fit="cover" />
                 <div>
                   <div class="text-subtitle1 text-weight-bold">{{ selectedJoya.nombre }}</div>
-                  <div class="text-caption text-grey-7">{{ selectedJoya.tipo }} · {{ selectedJoya.linea }}</div>
+                  <div class="text-caption text-grey-7">{{ selectedJoya.tipo }}  {{ lineaLabel(selectedJoya.linea) }}</div>
                   <div class="text-caption text-grey-7">{{ selectedJoya.vitrina_nombre || 'Sin vitrina' }} / {{ selectedJoya.estuche_nombre || 'Sin estuche' }}</div>
                 </div>
               </div>
@@ -140,14 +174,14 @@
                 </div>
 
                 <div v-if="form.cliente" class="q-mt-sm selected-client">
-                  Cliente: <b>{{ form.cliente.name }}</b> · CI {{ form.cliente.ci }}
+                  Cliente: <b>{{ form.cliente.name }}</b>  CI {{ form.cliente.ci }}
                 </div>
 
                 <q-list bordered separator class="q-mt-sm client-list">
                   <q-item v-for="cliente in clientes" :key="cliente.id" clickable @click="seleccionarCliente(cliente)">
                     <q-item-section>
                       <q-item-label>{{ cliente.name }}</q-item-label>
-                      <q-item-label caption>{{ cliente.ci }} · {{ cliente.cellphone || 'Sin celular' }}</q-item-label>
+                      <q-item-label caption>{{ cliente.ci }}  {{ cliente.cellphone || 'Sin celular' }}</q-item-label>
                     </q-item-section>
                     <q-item-section side>
                       <q-chip dense :color="cliente.status === 'Confiable' ? 'green' : cliente.status === 'No Confiable' ? 'red' : 'orange'" text-color="white">
@@ -221,6 +255,64 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="reportDialog">
+      <q-card style="width: 560px; max-width: 96vw;">
+        <q-card-section class="row items-center q-pb-sm">
+          <div class="text-h6">Impresiones</div>
+          <q-space />
+          <q-btn flat round dense icon="close" @click="reportDialog = false" />
+        </q-card-section>
+        <q-card-section class="q-pt-none">
+          <div class="row q-col-gutter-sm">
+            <div class="col-12">
+              <q-select
+                v-model="reportForm.type"
+                :options="reportOptions"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Tipo de impresion"
+              />
+            </div>
+            <div v-if="reportUsesDates" class="col-12 col-sm-6">
+              <q-input v-model="reportForm.fecha_inicio" type="date" outlined dense label="Fecha inicio" />
+            </div>
+            <div v-if="reportUsesDates" class="col-12 col-sm-6">
+              <q-input v-model="reportForm.fecha_fin" type="date" outlined dense label="Fecha final" />
+            </div>
+            <div class="col-12 col-sm-6">
+              <q-select
+                v-model="reportForm.linea"
+                :options="lineaOptions"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Linea"
+              />
+            </div>
+            <div v-if="reportUsesEstuche" class="col-12 col-sm-6">
+              <q-select
+                v-model="reportForm.estuche_id"
+                :options="estucheOptionsFull"
+                emit-value
+                map-options
+                clearable
+                outlined
+                dense
+                label="Estuche"
+              />
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat color="negative" no-caps label="Cancelar" @click="reportDialog = false" />
+          <q-btn color="primary" no-caps icon="print" label="Imprimir" @click="imprimirReporte" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -239,9 +331,11 @@ export default {
       clientes: [],
       clienteFiltro: '',
       clientDialog: false,
+      reportDialog: false,
       filters: {
         vitrina_id: null,
         estuche_id: null,
+        linea: null,
         search: ''
       },
       form: {
@@ -256,6 +350,13 @@ export default {
         saldo: 0,
         tipo_pago: 'Efectivo',
         detalle: ''
+      },
+      reportForm: {
+        type: 'ventas_detalle',
+        fecha_inicio: moment().startOf('month').format('YYYY-MM-DD'),
+        fecha_fin: moment().endOf('month').format('YYYY-MM-DD'),
+        linea: null,
+        estuche_id: null
       },
       clientForm: {
         name: '',
@@ -272,6 +373,15 @@ export default {
     vitrinaOptions () {
       return this.vitrinas.map(vitrina => ({ label: vitrina.nombre, value: vitrina.id }))
     },
+    lineaOptions () {
+      return [
+        { label: 'Todos', value: null },
+        { label: 'Mama', value: 'Mama' },
+        { label: 'Papa', value: 'Papa' },
+        { label: 'Roger', value: 'Roger' },
+        { label: 'Reina', value: 'Andreina' }
+      ]
+    },
     estucheOptions () {
       return this.vitrinas
         .filter(vitrina => !this.filters.vitrina_id || vitrina.id === this.filters.vitrina_id)
@@ -279,6 +389,26 @@ export default {
           label: `${vitrina.nombre} / ${columna.codigo} / ${estuche.nombre}`,
           value: estuche.id
         }))))
+    },
+    estucheOptionsFull () {
+      return this.vitrinas.flatMap(vitrina => (vitrina.columnas || []).flatMap(columna => (columna.estuches || []).map(estuche => ({
+        label: `${vitrina.nombre} / ${columna.codigo} / ${estuche.nombre}`,
+        value: estuche.id
+      }))))
+    },
+    reportOptions () {
+      return [
+        { label: 'Detalle de ventas', value: 'ventas_detalle' },
+        { label: 'Todas las ventas', value: 'ventas_todas' },
+        { label: 'Movimientos al inventario', value: 'inventario_movimientos' },
+        { label: 'Existencias de inventario', value: 'inventario_existencias' }
+      ]
+    },
+    reportUsesDates () {
+      return this.reportForm.type !== 'inventario_existencias'
+    },
+    reportUsesEstuche () {
+      return this.reportForm.type === 'inventario_movimientos' || this.reportForm.type === 'inventario_existencias'
     },
     selectedJoya () {
       return this.joyas.find(joya => joya.id === this.form.joya_id) || null
@@ -301,6 +431,13 @@ export default {
     },
     imagenUrl (imagen) {
       return `${this.$url}/../images/${imagen || 'joya.png'}`
+    },
+    lineaLabel (value) {
+      return value === 'Andreina' ? 'Reina' : (value || 'Sin linea')
+    },
+    openReportDialog (type) {
+      this.reportForm.type = type
+      this.reportDialog = true
     },
     getVitrinas () {
       this.$axios.get('vitrinas').then(({ data }) => {
@@ -379,6 +516,43 @@ export default {
         this.clientLoading = false
       })
     },
+    async descargarPdf (url, params = {}) {
+      const response = await this.$axios.get(url, {
+        params,
+        responseType: 'blob'
+      })
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const fileName = response.headers['content-disposition']?.match(/filename=\"?([^\"]+)\"?/)?.[1] || 'reporte.pdf'
+      const href = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = href
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(href)
+    },
+    async imprimirReporte () {
+      try {
+        const routeMap = {
+          ventas_detalle: 'reportes/ventas/pdf',
+          ventas_todas: 'reportes/ventas/pdf',
+          inventario_movimientos: 'reportes/inventario/movimientos/pdf',
+          inventario_existencias: 'reportes/inventario/existencias/pdf'
+        }
+
+        await this.descargarPdf(routeMap[this.reportForm.type], {
+          fecha_inicio: this.reportUsesDates ? this.reportForm.fecha_inicio : null,
+          fecha_fin: this.reportUsesDates ? this.reportForm.fecha_fin : null,
+          linea: this.reportForm.linea,
+          estuche_id: this.reportUsesEstuche ? this.reportForm.estuche_id : null,
+          tipo_reporte: this.reportForm.type === 'ventas_todas' ? 'todas' : 'detalle'
+        })
+        this.reportDialog = false
+      } catch (err) {
+        this.$alert.error(err.response?.data?.message || 'Error al imprimir el reporte')
+      }
+    },
     guardarVenta () {
       if (!this.form.joya_id) {
         this.$alert.error('Debe seleccionar una joya')
@@ -412,6 +586,9 @@ export default {
     'filters.estuche_id' () {
       this.getJoyas()
     },
+    'filters.linea' () {
+      this.getJoyas()
+    },
     'filters.search' () {
       this.getJoyas()
     }
@@ -437,8 +614,8 @@ export default {
 
 .joyas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
 }
 
 .joya-card {
@@ -458,7 +635,7 @@ export default {
 }
 
 .joya-card__image {
-  height: 150px;
+  height: 118px;
 }
 
 .selected-joya {
@@ -492,5 +669,12 @@ export default {
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.ellipsis-2-lines {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
