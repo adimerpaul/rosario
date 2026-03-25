@@ -708,6 +708,8 @@ class PrestamoController extends Controller
         $isAdmin = in_array(strtolower($user->role ?? ''), ['admin', 'administrador', 'administrator']);
 
         return DB::transaction(function () use ($prestamo, $data, $isAdmin) {
+            unset($data['interes']);
+
             // Precio compra oro (cogs id=3) para valor_total referencial
             $precioOro = optional(Cog::find(3))->value ?? 0;
 
@@ -728,7 +730,7 @@ class PrestamoController extends Controller
 
             // Si vienen los valores, úsalos; si no, toma actuales
             $vp = array_key_exists('valor_prestado', $data) ? (float) $data['valor_prestado'] : (float) $prestamo->valor_prestado;
-            $i = array_key_exists('interes', $data) ? (float) $data['interes'] : (float) $prestamo->interes;
+            $i = (float) $prestamo->interes;
             $a = array_key_exists('almacen', $data) ? (float) $data['almacen'] : (float) $prestamo->almacen;
 
             // Pagos activos (para coherencia en respuesta; el modelo recalcula saldo dinámico al leer)

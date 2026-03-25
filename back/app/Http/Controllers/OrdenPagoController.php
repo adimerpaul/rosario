@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Egreso;
 use App\Models\Orden;
 use App\Models\OrdenPago;
 use Illuminate\Http\Request;
@@ -14,9 +15,9 @@ class OrdenPagoController extends Controller
         return $orden->pagos()->with('user')->orderByDesc('id')->get();
     }
 
-    public function anular(OrdenPago $pago)
+    public function anular(Request $request, OrdenPago $pago)
     {
-        return DB::transaction(function () use ($pago) {
+        return DB::transaction(function () use ($pago, $request) {
             if ($pago->estado === 'Anulado') {
                 return response()->json(['message' => 'El pago ya esta anulado'], 409);
             }
@@ -32,6 +33,16 @@ class OrdenPagoController extends Controller
                 $orden->estado = 'Pendiente';
             }
             $orden->save();
+
+            Egreso::create([
+                'fecha' => now()->toDateString(),
+                'descripcion' => 'ANULACION ADELANTO ORDEN '.$orden->numero,
+                'metodo' => $this->normalizarMetodoCaja($pago->metodo),
+                'monto' => round((float) $pago->monto, 2),
+                'estado' => 'Activo',
+                'user_id' => $request->user()?->id,
+                'nota' => 'Reversion automatica de adelanto anulado',
+            ]);
 
             return response()->json(['message' => 'Pago anulado']);
         });
@@ -99,5 +110,16 @@ class OrdenPagoController extends Controller
         $pago->update(['metodo' => $nuevoMetodo]);
 
         return response()->json($pago->fresh()->load('user'));
+    }
+
+    private function normalizarMetodoCaja(?string $metodo): string
+    {
+        $valor = strtoupper(trim((string) $metodo));
+
+        return match ($valor) {
+            'QR' => 'QR',
+            'EFECTIVO' => 'EFECTIVO',
+            default => 'EFECTIVO',
+        };
     }
 }

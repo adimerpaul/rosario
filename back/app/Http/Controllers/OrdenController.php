@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cog;
+use App\Models\Egreso;
 use App\Models\Joya;
 use App\Models\Orden;
 use App\Models\User;
@@ -233,16 +234,34 @@ class OrdenController extends Controller
         }
 
         DB::transaction(function () use ($orden, $request) {
+            $adelantoActual = (float) ($orden->adelanto ?? 0);
+            $pagosActivos = $orden->pagos()->where('estado', 'Activo')->get();
+            $totalPagosActivos = (float) $pagosActivos->sum('monto');
+
             $orden->estado = 'Cancelada';
 
             if ($request->boolean('anular_pagos')) {
                 $orden->pagos()->where('estado', 'Activo')->update(['estado' => 'Anulado']);
-                $nuevoAdelanto = $orden->pagos()->where('estado', 'Activo')->sum('monto');
-                $orden->adelanto = $nuevoAdelanto;
-                $orden->saldo = max(0, ($orden->costo_total ?? 0) - $nuevoAdelanto);
+                $orden->adelanto = 0;
+                $orden->saldo = max(0, (float) ($orden->costo_total ?? 0));
+            } else {
+                $orden->saldo = max(0, (float) ($orden->costo_total ?? 0) - $adelantoActual - $totalPagosActivos);
             }
 
             $orden->save();
+
+            $montoRevertido = $request->boolean('anular_pagos')
+                ? $adelantoActual + $totalPagosActivos
+                : $adelantoActual;
+
+            if ($montoRevertido > 0) {
+                $this->registrarEgresoAnulacionOrden(
+                    $request,
+                    $orden,
+                    $montoRevertido,
+                    $this->resolverMetodoAnulacionOrden($orden, $pagosActivos->pluck('metodo')->all())
+                );
+            }
         });
 
         return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina']));
@@ -563,6 +582,10 @@ class OrdenController extends Controller
             unset($data['costo_total'], $data['peso'], $data['estado'], $data['joya_id'], $data['tipo']);
         }
 
+        if (! $isAdmin || $request->has('costo_total')) {
+            unset($data['adelanto']);
+        }
+
         if ($request->hasFile('foto_modelo')) {
             $data['foto_modelo'] = $this->storeOrdenImage($request->file('foto_modelo'));
         } else {
@@ -572,7 +595,12 @@ class OrdenController extends Controller
         $orden->update($data);
 
         $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
-        $orden->saldo = (float) $request->input('costo_total', $orden->costo_total) - ((float) $request->input('adelanto', $orden->adelanto) + $pagado);
+        $orden->saldo = max(0, (float) ($orden->costo_total ?? 0) - ((float) ($orden->adelanto ?? 0) + $pagado));
+
+        if ($orden->estado !== 'Cancelada') {
+            $orden->estado = $orden->saldo <= 0 ? 'Entregado' : 'Pendiente';
+        }
+
         $orden->save();
 
         return $orden->load(['cliente', 'user', 'joya.estucheItem.columna.vitrina']);
@@ -662,6 +690,40 @@ class OrdenController extends Controller
             ->save($path);
 
         return $filename;
+    }
+
+    private function registrarEgresoAnulacionOrden(Request $request, Orden $orden, float $monto, ?string $metodo = null): void
+    {
+        Egreso::create([
+            'fecha' => now()->toDateString(),
+            'descripcion' => 'ANULACION ORDEN '.$orden->numero,
+            'metodo' => $this->normalizarMetodoCaja($metodo),
+            'monto' => round($monto, 2),
+            'estado' => 'Activo',
+            'user_id' => $request->user()?->id,
+            'nota' => 'Reversion automatica de ingresos al cancelar la orden',
+        ]);
+    }
+
+    private function resolverMetodoAnulacionOrden(Orden $orden, array $metodosPagos = []): string
+    {
+        $metodos = collect($metodosPagos)
+            ->prepend($orden->tipo_pago)
+            ->filter(fn ($metodo) => filled($metodo))
+            ->values();
+
+        return (string) ($metodos->first() ?: 'EFECTIVO');
+    }
+
+    private function normalizarMetodoCaja(?string $metodo): string
+    {
+        $valor = strtoupper(trim((string) $metodo));
+
+        return match ($valor) {
+            'QR' => 'QR',
+            'EFECTIVO' => 'EFECTIVO',
+            default => 'EFECTIVO',
+        };
     }
 
     private function authorizeVentasAccess(Request $request): void

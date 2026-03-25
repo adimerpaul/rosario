@@ -4,149 +4,141 @@
     <meta charset="utf-8">
     <title>Orden de Trabajo</title>
     <style>
-        /* Página y tipografía (compacto) */
-        @page { margin: 15mm; }               /* margen chico */
-        body { font-family: DejaVu Sans, sans-serif; color:#111; }
+        @page { margin: 9mm 10mm; }
+        body { font-family: DejaVu Sans, sans-serif; color: #111; font-size: 11px; }
         .wrap { width: 100%; }
-
-        /* Paleta/utilidades */
-        .brand{ color:#FF0000; }
-        .xs{font-size:13px} .sm{font-size:12px} .md{font-size:11px} .lg{font-size:12px} .xl{font-size:16px}
-        .bold{font-weight:700} .center{text-align:center} .right{text-align:right}
-        .mt2{margin-top:2px} .mt4{margin:4px} .mt6{margin-top:6px}
-        .w100{width:100%}
-
-        /* Marco general */
-        .sheet{ border:2.5px solid #FF0000; border-radius:13px; padding:10px; }
-
-        /* Encabezado */
-        table.head{ width:100%; border-collapse:collapse }
-        table.head td{ vertical-align:middle }
-        .logo{ width:58px; height:auto }
-        .rings{ width:60px; height:auto }
-        .orden-photo{
-            width: 88px;
-            height: 88px;
-            border:1.5px solid #FF0000;
-            border-radius:10px;
-            padding:2px;
+        .sheet {
+            border: 1.8px solid #e56b7d;
+            border-radius: 16px;
+            padding: 8px 10px 9px;
+            margin-bottom: 10px;
         }
-        .title{ font-weight:800; font-size:17px; letter-spacing:.2px; }
-        .sub{ font-size:12px; color:#000; margin-top:-2px }
-
-        .pill-badge{               /* Bs. en pastilla */
-            display:inline-block; min-width:110px; text-align:center;
-            border:2px solid #FF0000; border-radius:12px; padding:2px 2px;
-            font-size:10px; line-height:1.1;
+        .brand { color: #e56b7d; }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .bold { font-weight: 700; }
+        .muted { color: #444; }
+        .head { width: 100%; border-collapse: collapse; }
+        .head td { vertical-align: top; }
+        .logo { width: 54px; }
+        .rings { width: 48px; height: auto; }
+        .orden-photo {
+            width: 62px;
+            height: 62px;
+            border: 1px solid #e56b7d;
+            border-radius: 8px;
+            padding: 2px;
+            object-fit: cover;
         }
-        .pill-nro{
-            display:inline-block; margin-top:4px; border:1.5px solid #FF0000;
-            border-radius:10px; padding:1px 4px; font-size:10px;
+        .title { font-size: 17px; font-weight: 800; letter-spacing: .3px; }
+        .sub { font-size: 10.2px; line-height: 1.18; }
+        .pill {
+            display: inline-block;
+            min-width: 96px;
+            border: 1.5px solid #e56b7d;
+            border-radius: 12px;
+            padding: 5px 8px;
+            text-align: center;
+            font-size: 10.5px;
+            line-height: 1.15;
+            margin-bottom: 4px;
         }
-
-        /* Grillas de cajas (muy compacto) */
-        table.grid{ width:100%; border-collapse:separate; border-spacing:5px; }
-        .cell{ border:1.5px solid #FF0000; border-radius:12px; padding:3px 4px; position:relative; }
-
-        /* Etiqueta flotante (El Señor, Trabajo…) */
-        .label-float{
-            position:absolute; top:-8px; left:12px; background:#fff; padding:0 4px;
-            font-size:8px; color:#FF0000; font-weight:700; border-radius:8px;
+        .grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 4px;
         }
-
-        /* Fecha en cajitas (Día Mes Año) */
-        .date-line{ margin-top:4px }
-        .date-box{
-            display:inline-block; border:1.6px solid #FF0000; border-radius:6px;
-            padding:2px 6px; font-weight:700; font-size:10px; margin:0 2px;
+        .cell {
+            border: 1.4px solid #e56b7d;
+            border-radius: 12px;
+            padding: 7px 8px 6px;
+            position: relative;
+            vertical-align: top;
         }
-
-        /* Fila Por/A cuenta/Saldo */
-        .resume{ display:flex; gap:6px; }
-        .resume .item{
-            border:2px solid #FF0000; border-radius:12px; padding:5px 8px;
-            font-size:11px; font-weight:700; text-align:center; flex:1;
+        .label-float {
+            position: absolute;
+            top: -7px;
+            left: 12px;
+            background: #fff;
+            color: #e56b7d;
+            padding: 0 4px;
+            font-size: 9px;
+            font-weight: 700;
         }
-
-        /* Tabla de montos/estado */
-        .kv{ width:100%; border-collapse:collapse }
-        .kv td{ padding:2px 0; }
-        .kv .k{ font-weight:700; }
-        .kv .v{ text-align:right }
-
-        /* Chip estado */
-        .chip{ display:inline-block; padding:1px 9px; border-radius:12px; color:#fff; font-size:9.5px; }
-        .orange{ background:#f0ad4e } .green{ background:#5cb85c } .red{ background:#d9534f }
-
-        /* Línea/firmas compactas */
-        .dot{ border-top:1px dashed #bbb; margin:6px 0 }
-        .sign{ width:48%; text-align:center }
-        .sign-line{ border-top:1px solid #000; width:75%; height:1px; margin:18px auto 2px }
+        .value-lg { font-size: 12.5px; }
+        .value-xl { font-size: 14px; }
+        .money-row td {
+            width: 33.33%;
+            border: 1.4px solid #e56b7d;
+            border-radius: 12px;
+            padding: 8px 8px 6px;
+            position: relative;
+            text-align: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        .sketch-box {
+            min-height: 88px;
+        }
+        .sketch-guide {
+            margin-top: 8px;
+            height: 54px;
+            border-top: 1px dashed #d9b1b8;
+            border-bottom: 1px dashed #d9b1b8;
+        }
+        .nota {
+            min-height: 40px;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+        .spacer-top { margin-top: 4px; }
     </style>
 </head>
 <body>
 <div class="wrap">
     @php
-        $estado = $orden->estado ?? 'Pendiente';
-        $chip = $estado === 'Pendiente' ? 'orange' : ($estado === 'Entregado' ? 'green' : 'red');
-        $fc = \Carbon\Carbon::parse($orden->fecha_creacion);
-        $dia = $fc->format('d'); $mes = $fc->format('m'); $ano = $fc->format('Y');
-        $entrega = $orden->fecha_entrega ? \Carbon\Carbon::parse($orden->fecha_entrega)->format('d-m-Y') : '—';
+        $entrega = $orden->fecha_entrega ? \Carbon\Carbon::parse($orden->fecha_entrega)->format('d/m/Y') : '—';
+        $clienteNombre = mb_strtoupper($orden->cliente->name ?? 'N/A');
+        $telefono = $orden->cliente->cellphone ?? $orden->celular ?? 'N/A';
+        $detalleTrabajo = trim((string) ($orden->detalle ?? ''));
+        $kilates = trim((string) ($orden->kilates18 ?? ''));
+        $nota = $orden->nota ?: 'Ningun trabajo sera entregado sin la presente orden. Importante: en caso de no recojo se espera un maximo de 90 dias antes de proceder a la fundicion de la joya.';
     @endphp
-{{--    for por 2--}}
-    @for($i=0; $i<2; $i++)
-        <div class="sheet" style="padding-top:12px; margin-bottom:12px">
-            <!-- Encabezado -->
+
+    @for($i = 0; $i < 2; $i++)
+        <div class="sheet">
             <table class="head">
                 <tr>
-                    <td style="width:180px;vertical-align: top;text-align: center">
-{{--                        <div style="display:flex; justify-content: center; align-items: center; height: 70px;">--}}
-                            <img class="logo" src="{{ public_path('images/logo.png') }}" style="left: 100px">
-                        <span style="font-size: 9px; color: #000; margin-top: 4px; display: block; margin-left: -10px;">
-                        Calidad y garantia <br>
-                        Oro 18 Klts <br>
-                        Plata 925 decimos <br>
-                        </span>
-
-{{--                        </div>--}}
-                    </td>
-                    <td class="center">
-{{--                        <div class="brand bold lg">{{ $empresa['nombre'] ?? 'JOYERIA ROSARIO' }}</div>--}}
-{{--                        <div class="xs">{{ $empresa['direccion'] ?? 'Calle Junín entre La Plata y Soria — Frente a mercado' }}</div>--}}
-{{--                        <div class="xs">Cel: {{ $empresa['cel'] ?? '704-12345' }} — {{ strtoupper($empresa['sucursal'] ?? 'ORURO') }}</div>--}}
-                        <span class="xs">{{ $hoy->format('d/m/Y') }}</span>
-
-                        <br>
-                        <br>
-                        <div class="brand title mt4">ORDEN DE TRABAJO</div>
-                        <div class="sub">
-                            DIR. ADOLFO MIER, POTOSÍ Y PAGADOR <br>
-                            (LADO PALACE HOTEL) <br>
-                            CEL. 73800584 TELF. 52-55713<br>
-                            Oruro - Bolivia<br>
-
-                            <br>
-                            <br>
+                    <td style="width: 110px;" class="center">
+                        <img class="logo" src="{{ public_path('images/logo.png') }}">
+                        <div class="muted" style="font-size: 8.8px; line-height: 1.18; margin-top: 3px;">
+                            Calidad y garantia<br>
+                            Oro 18 Klts<br>
+                            Plata 925 decimos
                         </div>
                     </td>
-                    <td class="right" style="width:150px;vertical-align: top;">
-{{--                        colocar aca la fecha--}}
-{{--                        <div>--}}
-{{--                            <span class="sm bold">Fecha:</span><br>--}}
-{{--                            <span class="md">{{ $hoy->format('d/m/Y') }}</span>--}}
-{{--                        </div>--}}
-                        <table>
+                    <td class="center">
+                        <div class="muted" style="font-size: 9px;">{{ $hoy->format('d/m/Y') }}</div>
+                        <div class="brand title spacer-top">ORDEN DE TRABAJO</div>
+                        <div class="sub">
+                            DIR. ADOLFO MIER, POTOSI Y PAGADOR (LADO PALACE HOTEL)<br>
+                            CEL. 73800584 TELF. 52-55713<br>
+                            ORURO - BOLIVIA
+                        </div>
+                    </td>
+                    <td style="width: 170px;" class="right">
+                        <table style="width: 100%; border-collapse: collapse;">
                             <tr>
-                                <td>
+                                <td class="right" style="padding-right: 6px; width: 70px;">
                                     @if(!empty($orden->foto_modelo) && file_exists(public_path('images/'.$orden->foto_modelo)))
-                                        <div class="mt4"><img class="orden-photo" src="{{ public_path('images/'.$orden->foto_modelo) }}"></div>
+                                        <img class="orden-photo" src="{{ public_path('images/'.$orden->foto_modelo) }}">
                                     @elseif(file_exists(public_path('images/rings.png')))
-                                        <div class="mt4"><img class="rings" src="{{ public_path('images/rings.png') }}"></div>
+                                        <img class="rings" src="{{ public_path('images/rings.png') }}">
                                     @endif
                                 </td>
-                                <td>
-                                    <div class="pill-badge" style="font-size: 11px"><b>Nro: {{ $orden->numero }}</b></div>
-                                    <div class="pill-badge" style="font-size: 12px"><b>Bs.</b> {{ number_format($orden->costo_total,2) }}<br></div>
+                                <td class="right">
+                                    <div class="pill"><span class="bold">Nro:</span> {{ $orden->numero }}</div>
+                                    <div class="pill"><span class="bold">Bs.</span> {{ number_format($orden->costo_total, 2) }}</div>
                                 </td>
                             </tr>
                         </table>
@@ -154,106 +146,77 @@
                 </tr>
             </table>
 
-            <!-- N° + Fecha (cajitas) y Cliente -->
-            <table class="grid mt6">
+            <table class="grid" style="margin-top: 2px;">
                 <tr>
-{{--                    <td class="cell" style="width:50%">--}}
-{{--                        <span class="label-float">N°</span>--}}
-{{--                        <div class="md"><b>N°:</b> {{ $orden->numero }}</div>--}}
-{{--                        <div class="date-line">--}}
-{{--                            <span class="sm bold">Día</span> <span class="date-box">{{ $dia }}</span>--}}
-{{--                            <span class="sm bold">Mes</span> <span class="date-box">{{ $mes }}</span>--}}
-{{--                            <span class="sm bold">Año</span> <span class="date-box">{{ $ano }}</span>--}}
-{{--                        </div>--}}
-{{--                    </td>--}}
-                    <td class="cell" style="width:50%">
-                        <span class="label-float">El Señor:</span>
-                        <div class="md" style="margin-top:2px;text-align: center;font-size: 13px">{{ mb_strtoupper($orden->cliente->name ?? 'N/A') }}</div>
+                    <td class="cell" style="width: 58%;">
+                        <span class="label-float">El Señor</span>
+                        <div class="value-xl center">{{ $clienteNombre }}</div>
                     </td>
-{{--                    <td> telefono</td>--}}
-                    <td class="cell" style="width:50%">
-                        <span class="label-float">Teléfono:</span>
-                        <div class="md" style="margin-top:2px;text-align: center;font-size: 13px">{{ $orden->cliente->cellphone ?? 'N/A' }}</div>
+                    <td class="cell" style="width: 42%;">
+                        <span class="label-float">Telefono</span>
+                        <div class="value-xl center">{{ $telefono }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="cell" style="width: 64%;">
+                        <span class="label-float">Trabajo de Joya</span>
+                        <div class="value-lg" style="line-height: 1.25;">
+                            {{ $detalleTrabajo }}
+                            @if($orden->peso)
+                                / Peso: {{ number_format((float) $orden->peso, 2) }} gr.
+                            @endif
+                            @if($kilates !== '')
+                                / Oro: {{ $kilates }}
+                            @endif
+                        </div>
+                    </td>
+                    <td class="cell sketch-box" style="width: 36%;">
+                        <span class="label-float">Grafico / Referencia</span>
+                        <div class="muted" style="font-size: 8.8px;">Espacio para dibujo o detalle del cliente</div>
+                        <div class="sketch-guide"></div>
                     </td>
                 </tr>
             </table>
 
-            <!-- Trabajo de Joya -->
-            <div class="cell">
-                <span class="label-float">Trabajo de Joya:</span>
-                <div class="md" style="margin-top:2px;font-size: 13px">
+            <table class="grid money-row" style="margin-top: 0;">
+                <tr>
+                    <td>
+                        <span class="label-float">Costo Total</span>
+                        {{ number_format($orden->costo_total, 2) }}
+                    </td>
+                    <td>
+                        <span class="label-float">A cuenta</span>
+                        {{ number_format($orden->adelanto, 2) }}
+                    </td>
+                    <td>
+                        <span class="label-float">Saldo</span>
+                        {{ number_format($orden->saldo, 2) }}
+                    </td>
+                </tr>
+            </table>
 
-                    {{ $orden->detalle }} /
-                    Peso: {{ $orden->peso }} gr.
-                    Oro: {{ $orden->kilates18 }}
-                </div>
-            </div>
+            <table class="grid" style="margin-top: 0;">
+                <tr>
+                    <td class="cell" style="width: 40%;">
+                        <span class="label-float">Fecha de Entrega</span>
+                        <div class="value-xl center">{{ $entrega }}</div>
+                    </td>
+                    <td class="cell" style="width: 60%;">
+                        <span class="label-float">Observaciones</span>
+                        <div style="height: 24px;"></div>
+                    </td>
+                </tr>
+            </table>
 
-            <div class="cell mt6">
-                <span class="label-float">Montos</span>
-                <table class="grid mt6">
-                    <tr>
-                        <td class="label-float" style="font-size: 10px">Costo Total</td><td class="v sm">{{ number_format($orden->costo_total,2) }}</td>
-                        <td class="label-float" style="font-size: 10px">A cuenta</td><td class="v sm">{{ number_format($orden->adelanto,2) }}</td>
-                        <td class="label-float" style="font-size: 10px">Saldo</td><td class="v sm">{{ number_format($orden->saldo,2) }}</td>
-                    </tr>
-                    {{--                <tr>--}}
-                    {{--                    <td class="cell" style="width:50%">--}}
-                    {{--                        <table class="kv">--}}
-                    {{--                            <tr><td class="k sm">Peso fin. (gr)</td><td class="v sm">{{ number_format($orden->peso,3) }}</td></tr>--}}
-                    {{--                            --}}{{--                        <tr><td class="k sm">Precio Oro</td><td class="v sm">{{ number_format($precioOro,2) }}</td></tr>--}}
-                    {{--                            <tr><td class="k sm">Costo Total</td><td class="v sm">{{ number_format($orden->costo_total,2) }}</td></tr>--}}
-                    {{--                        </table>--}}
-                    {{--                    </td>--}}
-                    {{--                    <td class="cell" style="width:50%">--}}
-                    {{--                        <table class="kv">--}}
-                    {{--                            <tr><td class="k sm">A cuenta</td><td class="v sm">{{ number_format($orden->adelanto,2) }}</td></tr>--}}
-                    {{--                            <tr><td class="k sm">Saldo</td><td class="v sm">{{ number_format($orden->saldo,2) }}</td></tr>--}}
-                    {{--                            --}}{{--                        <tr>--}}
-                    {{--                            --}}{{--                            <td class="k sm">Estado</td>--}}
-                    {{--                            --}}{{--                            <td class="v sm"><span class="chip {{ $chip }}">{{ $estado }}</span></td>--}}
-                    {{--                            --}}{{--                        </tr>--}}
-                    {{--                        </table>--}}
-                    {{--                    </td>--}}
-                    {{--                </tr>--}}
-                </table>
-            </div>
-            <!-- Montos + Estado -->
-            <!-- Fecha de Entrega -->
-            <div class="cell mt6">
-                <span class="label-float">Fecha de Entrega:</span>
-                <div class="md bold" style="margin-left:4px;text-align: center">{{ $entrega }}</div>
-            </div>
-
-            <!-- Nota -->
-            <div class="cell mt6">
+            <div class="cell nota" style="margin: 4px;">
                 <span class="label-float">NOTA</span>
-                <div class="xs" style="margin-top:2px;font-size: 10px">
-                    {{ $orden->nota ?: 'Ningun trabajo será entregado sin la presente orden. Importante en caso de no recojo se espera un maximo de 90 dias antes de proceder a la fundicion de la joya' }}
-                </div>
+                <div>{{ $nota }}</div>
             </div>
-
-            <!-- Firmas compactas -->
-            <div class="dot"></div>
-{{--            <table class="w100" style="border-collapse:collapse">--}}
-{{--                <tr>--}}
-{{--                    <td class="sign">--}}
-{{--                        <div class="sign-line"></div>--}}
-{{--                        <div class="xs">Firma Cliente</div>--}}
-{{--                    </td>--}}
-{{--                    <td class="sign" style="text-align:right">--}}
-{{--                        <div class="sign-line"></div>--}}
-{{--                        <div class="xs" style="text-align: center">Firma Joyería</div>--}}
-{{--                    </td>--}}
-{{--                </tr>--}}
-{{--            </table>--}}
-{{--            <div class="xs center mt6">--}}
-{{--                Pasado los 30 días, se procederá a la reutilizacion del material , la casa no se hace responsable--}}
-{{--            </div>--}}
         </div>
-    @if($i==0)
-        <br>
-    @endif
+
+        @if($i === 0)
+            <div style="height: 6px;"></div>
+        @endif
     @endfor
 </div>
 </body>
