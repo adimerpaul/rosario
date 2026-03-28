@@ -249,70 +249,12 @@ class DailyCashController extends Controller
         $yesterday = Carbon::parse($date)->subDay()->toDateString();
         $opening = (float) (DailyCash::where('date', $yesterday)->value('opening_amount') ?? 0);
 
-        $ingresos = 0.0;
-        $egresos = 0.0;
-
-        $ingresos += (float) \App\Models\Orden::query()
-            ->whereDate('fecha_creacion', $yesterday)
-            ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', '!=', 'Cancelada')
-            ->where(function ($q) {
-                $q->where('tipo_pago', 'Efectivo')->orWhere('tipo_pago', 'EFECTIVO');
-            })
-            ->sum('adelanto');
-
-        $ingresos += (float) \App\Models\OrdenPago::query()
-            ->whereDate('fecha', $yesterday)
-            ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', 'Activo')
-            ->where(function ($q) {
-                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
-            })
+        $sumActivos = fn ($items) => (float) collect($items)
+            ->filter(fn ($item) => ($item['estado'] ?? 'Activo') === 'Activo')
             ->sum('monto');
 
-        $ingresos += (float) \App\Models\PrestamoPago::query()
-            ->whereDate('fecha', $yesterday)
-            ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', 'Activo')
-            ->where(function ($q) {
-                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
-            })
-            ->sum('monto');
-
-        $ingresos += (float) \App\Models\Ingreso::query()
-            ->whereDate('fecha', $yesterday)
-            ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', 'Activo')
-            ->where(function ($q) {
-                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
-            })
-            ->sum('monto');
-
-        $prestamoMetodoColumn = $this->prestamoMetodoColumn();
-
-        $prestamosQuery = \App\Models\Prestamo::query()
-            ->whereDate('created_at', $yesterday)
-            ->when($user, fn ($q) => $q->where('user_id', $user->id));
-
-        if ($prestamoMetodoColumn) {
-            $prestamosQuery->where(function ($q) use ($prestamoMetodoColumn) {
-                $q->where($prestamoMetodoColumn, 'Efectivo')
-                    ->orWhere($prestamoMetodoColumn, 'EFECTIVO')
-                    ->orWhere($prestamoMetodoColumn, 'Cash')
-                    ->orWhere($prestamoMetodoColumn, 'CASH');
-            });
-        }
-
-        $egresos += (float) $prestamosQuery->sum('valor_prestado');
-
-        $egresos += (float) \App\Models\Egreso::query()
-            ->whereDate('fecha', $yesterday)
-            ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', 'Activo')
-            ->where(function ($q) {
-                $q->where('metodo', 'Efectivo')->orWhere('metodo', 'EFECTIVO')->orWhere('metodo', 'Cash')->orWhere('metodo', 'CASH');
-            })
-            ->sum('monto');
+        $ingresos = $sumActivos($this->buildItemsIngresos($yesterday, $user));
+        $egresos = $sumActivos($this->buildItemsEgresos($yesterday, $user));
 
         return round($opening + $ingresos - $egresos, 2);
     }

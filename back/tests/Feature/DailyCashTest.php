@@ -5,6 +5,7 @@ use App\Models\Client;
 use App\Models\Egreso;
 use App\Models\Ingreso;
 use App\Models\Orden;
+use App\Models\OrdenPago;
 use App\Models\Prestamo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -124,4 +125,97 @@ it('keeps global totals when filtering libro diario by usuario', function () {
         ->assertJsonPath('total_caja', 320)
         ->assertJsonCount(1, 'items_ingresos')
         ->assertJsonCount(0, 'items_egresos');
+});
+
+it('uses the previous day net total as opening amount for the next day', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    Sanctum::actingAs($admin);
+
+    $yesterday = Carbon::today()->subDay()->toDateString();
+    $today = Carbon::today()->toDateString();
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE ARRASTRE',
+        'ci' => '778899',
+        'status' => 'Confiable',
+        'cellphone' => '77779999',
+        'address' => 'ORURO',
+    ]);
+
+    $orden = Orden::create([
+        'numero' => 'O0999-2026',
+        'tipo' => 'Orden',
+        'fecha_creacion' => $yesterday,
+        'fecha_entrega' => $yesterday,
+        'detalle' => 'ORDEN PARA ARRASTRE',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 1000,
+        'adelanto' => 200,
+        'saldo' => 800,
+        'estado' => 'Pendiente',
+        'peso' => 1,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $admin->id,
+        'cliente_id' => $cliente->id,
+    ]);
+
+    DailyCash::create([
+        'date' => $yesterday,
+        'opening_amount' => 1000,
+        'user_id' => $admin->id,
+    ]);
+
+    OrdenPago::create([
+        'orden_id' => $orden->id,
+        'fecha' => $yesterday,
+        'monto' => 300,
+        'metodo' => 'QR',
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+    ]);
+
+    Ingreso::create([
+        'fecha' => $yesterday,
+        'descripcion' => 'INGRESO QR',
+        'metodo' => 'QR',
+        'monto' => 400,
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+    ]);
+
+    Prestamo::create([
+        'numero' => 'PR-000900-2026',
+        'fecha_creacion' => $yesterday,
+        'fecha_limite' => $today,
+        'fecha_cancelacion' => Carbon::today()->addMonth()->toDateString(),
+        'cliente_id' => $cliente->id,
+        'user_id' => $admin->id,
+        'peso' => 5,
+        'merma' => 0,
+        'peso_neto' => 5,
+        'precio_oro' => 1000,
+        'valor_total' => 5000,
+        'valor_prestado' => 250,
+        'interes' => 3,
+        'almacen' => 2,
+        'celular' => '77772222',
+        'detalle' => 'PRESTAMO QR',
+        'estado' => 'Activo',
+    ]);
+
+    Egreso::create([
+        'fecha' => $yesterday,
+        'descripcion' => 'EGRESO EFECTIVO',
+        'metodo' => 'EFECTIVO',
+        'monto' => 100,
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+    ]);
+
+    $expectedNet = 1000 + 200 + 300 + 400 - 100;
+
+    $this->getJson('/api/daily-cash?date='.$today)
+        ->assertOk()
+        ->assertJsonPath('suggested_opening_amount', $expectedNet)
+        ->assertJsonPath('daily_cash.opening_amount', $expectedNet);
 });
