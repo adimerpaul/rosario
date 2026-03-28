@@ -219,3 +219,67 @@ it('uses the previous day net total as opening amount for the next day', functio
         ->assertJsonPath('suggested_opening_amount', $expectedNet)
         ->assertJsonPath('daily_cash.opening_amount', $expectedNet);
 });
+
+it('carries forward the last available cash total across days without daily cash records', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    Sanctum::actingAs($admin);
+
+    $baseDate = Carbon::today()->subDays(3)->toDateString();
+    $targetDate = Carbon::today()->toDateString();
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE SALTO',
+        'ci' => '112233',
+        'status' => 'Confiable',
+        'cellphone' => '70001122',
+        'address' => 'ORURO',
+    ]);
+
+    DailyCash::create([
+        'date' => $baseDate,
+        'opening_amount' => 500,
+        'user_id' => $admin->id,
+    ]);
+
+    Ingreso::create([
+        'fecha' => $baseDate,
+        'descripcion' => 'INGRESO BASE',
+        'metodo' => 'EFECTIVO',
+        'monto' => 120,
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+    ]);
+
+    Egreso::create([
+        'fecha' => Carbon::parse($baseDate)->addDay()->toDateString(),
+        'descripcion' => 'EGRESO INTERMEDIO',
+        'metodo' => 'EFECTIVO',
+        'monto' => 20,
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+    ]);
+
+    Orden::create([
+        'numero' => 'O0800-2026',
+        'tipo' => 'Orden',
+        'fecha_creacion' => Carbon::parse($baseDate)->addDays(2)->toDateString(),
+        'fecha_entrega' => Carbon::parse($baseDate)->addDays(2)->toDateString(),
+        'detalle' => 'ORDEN INTERMEDIA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 500,
+        'adelanto' => 200,
+        'saldo' => 300,
+        'estado' => 'Pendiente',
+        'peso' => 1,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $admin->id,
+        'cliente_id' => $cliente->id,
+    ]);
+
+    $expectedNet = 500 + 120 - 20 + 200;
+
+    $this->getJson('/api/daily-cash?date='.$targetDate)
+        ->assertOk()
+        ->assertJsonPath('suggested_opening_amount', $expectedNet)
+        ->assertJsonPath('daily_cash.opening_amount', $expectedNet);
+});

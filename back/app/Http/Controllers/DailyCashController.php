@@ -246,17 +246,34 @@ class DailyCashController extends Controller
 
     private function calculateSuggestedOpeningAmount(string $date, ?User $user = null): float
     {
-        $yesterday = Carbon::parse($date)->subDay()->toDateString();
-        $opening = (float) (DailyCash::where('date', $yesterday)->value('opening_amount') ?? 0);
-
         $sumActivos = fn ($items) => (float) collect($items)
             ->filter(fn ($item) => ($item['estado'] ?? 'Activo') === 'Activo')
             ->sum('monto');
 
-        $ingresos = $sumActivos($this->buildItemsIngresos($yesterday, $user));
-        $egresos = $sumActivos($this->buildItemsEgresos($yesterday, $user));
+        $targetDate = Carbon::parse($date)->startOfDay();
+        $lastDailyCash = DailyCash::query()
+            ->where('date', '<', $targetDate->toDateString())
+            ->orderByDesc('date')
+            ->first();
 
-        return round($opening + $ingresos - $egresos, 2);
+        if (! $lastDailyCash) {
+            $runningTotal = 0.0;
+            $cursor = $targetDate->copy()->subDay();
+        } else {
+            $runningTotal = (float) $lastDailyCash->opening_amount;
+            $cursor = Carbon::parse($lastDailyCash->date)->startOfDay();
+        }
+
+        $lastDayToInclude = $targetDate->copy()->subDay();
+
+        while ($cursor->lte($lastDayToInclude)) {
+            $currentDate = $cursor->toDateString();
+            $runningTotal += $sumActivos($this->buildItemsIngresos($currentDate, $user));
+            $runningTotal -= $sumActivos($this->buildItemsEgresos($currentDate, $user));
+            $cursor->addDay();
+        }
+
+        return round($runningTotal, 2);
     }
 
     private function buildItemsIngresos(string $date, ?User $user = null)
