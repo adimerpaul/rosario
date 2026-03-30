@@ -60,6 +60,11 @@ class Orden extends Model implements AuditableContract
         return $this->belongsTo(Joya::class, 'joya_id');
     }
 
+    public function joyas()
+    {
+        return $this->belongsToMany(Joya::class, 'orden_joyas', 'orden_id', 'joya_id');
+    }
+
     public function pagos()
     {
         return $this->hasMany(OrdenPago::class, 'orden_id');

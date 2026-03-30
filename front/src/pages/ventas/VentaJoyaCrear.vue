@@ -6,8 +6,8 @@
           <q-card flat bordered class="panel-card">
             <q-card-section class="row items-center q-col-gutter-sm">
               <div class="col-12 col-md">
-                <div class="text-h5 text-weight-bold">Vender joya</div>
-                <div class="text-caption text-grey-7">Selecciona una joya disponible por vitrina, estuche, linea o nombre.</div>
+                <div class="text-h5 text-weight-bold">Vender joyas</div>
+                <div class="text-caption text-grey-7">Selecciona una o varias joyas disponibles por vitrina, estuche, linea o nombre.</div>
               </div>
               <div class="col-12 col-md-auto">
                 <div class="row q-gutter-sm">
@@ -104,12 +104,13 @@
                   flat
                   bordered
                   class="joya-card cursor-pointer"
-                  :class="{ 'joya-card--active': form.joya_id === joya.id }"
+                  :class="{ 'joya-card--active': form.joya_ids.includes(joya.id) }"
                   @click="selectJoya(joya)"
                 >
                   <q-img :src="imagenUrl(joya.imagen)" class="joya-card__image" fit="cover" />
                   <q-card-section class="q-pa-sm">
                     <div class="text-body2 text-weight-bold ellipsis-2-lines">{{ joya.nombre }}</div>
+                    <div class="text-caption text-primary">Cod. {{ joya.codigo || '-' }}</div>
                     <div class="text-caption text-grey-7">{{ joya.tipo }}  {{ lineaLabel(joya.linea) }}</div>
                     <div class="text-caption text-grey-7">{{ joya.peso }} gr</div>
                     <div class="text-caption text-grey-7 ellipsis">{{ joya.vitrina_nombre || 'Sin vitrina' }} / {{ joya.estuche_nombre || 'Sin estuche' }}</div>
@@ -133,20 +134,31 @@
             </q-card-section>
             <q-separator />
 
-            <q-card-section v-if="selectedJoya" class="q-pb-none">
-              <div class="selected-joya">
-                <q-img :src="imagenUrl(selectedJoya.imagen)" class="selected-joya__image" fit="cover" />
-                <div>
-                  <div class="text-subtitle1 text-weight-bold">{{ selectedJoya.nombre }}</div>
-                  <div class="text-caption text-grey-7">{{ selectedJoya.tipo }}  {{ lineaLabel(selectedJoya.linea) }}</div>
-                  <div class="text-caption text-grey-7">{{ selectedJoya.vitrina_nombre || 'Sin vitrina' }} / {{ selectedJoya.estuche_nombre || 'Sin estuche' }}</div>
+            <q-card-section v-if="selectedJoyas.length" class="q-pb-none">
+              <div class="row items-center q-mb-sm">
+                <div class="text-subtitle1 text-weight-bold">Joyas seleccionadas</div>
+                <q-space />
+                <q-chip dense color="primary" text-color="white">{{ selectedJoyas.length }}</q-chip>
+              </div>
+              <div class="selected-joyas-list">
+                <div v-for="joya in selectedJoyas" :key="`sel-${joya.id}`" class="selected-joya">
+                  <q-img :src="imagenUrl(joya.imagen)" class="selected-joya__image" fit="cover" />
+                  <div class="col">
+                    <div class="text-subtitle2 text-weight-bold">{{ joya.nombre }}</div>
+                    <div class="text-caption text-primary">Cod. {{ joya.codigo || '-' }}</div>
+                    <div class="text-caption text-grey-7">{{ joya.tipo }}  {{ lineaLabel(joya.linea) }}</div>
+                    <div class="text-caption text-grey-7">{{ joya.vitrina_nombre || 'Sin vitrina' }} / {{ joya.estuche_nombre || 'Sin estuche' }}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-caption text-grey-7">{{ joya.peso }} gr</div>
+                    <div class="text-subtitle2 text-primary text-weight-bold">{{ money(joya.precio_referencial) }} Bs</div>
+                  </div>
                 </div>
               </div>
               <q-banner class="bg-blue-1 text-blue-10 q-mt-sm rounded-borders">
-                <div class="text-body2 text-weight-bold">{{ selectedJoya.precio_configuracion_nombre }}</div>
+                <div class="text-body2 text-weight-bold">Resumen automatico</div>
                 <div class="text-caption">
-                  Precio base: {{ money(selectedJoya.precio_configuracion_valor) }} Bs por gramo.
-                  Calculo actual: {{ selectedJoya.peso }} gr x {{ money(selectedJoya.precio_configuracion_valor) }} = {{ money(selectedJoya.precio_referencial) }} Bs
+                  {{ selectedJoyas.length }} joya(s), peso total {{ money(form.peso) }} gr y precio referencial {{ money(referentialTotal) }} Bs.
                 </div>
               </q-banner>
             </q-card-section>
@@ -340,6 +352,7 @@ export default {
       },
       form: {
         joya_id: null,
+        joya_ids: [],
         cliente_id: null,
         cliente: null,
         fecha_entrega: moment().format('YYYY-MM-DD'),
@@ -410,8 +423,11 @@ export default {
     reportUsesEstuche () {
       return this.reportForm.type === 'inventario_movimientos' || this.reportForm.type === 'inventario_existencias'
     },
-    selectedJoya () {
-      return this.joyas.find(joya => joya.id === this.form.joya_id) || null
+    selectedJoyas () {
+      return this.joyas.filter(joya => this.form.joya_ids.includes(joya.id))
+    },
+    referentialTotal () {
+      return this.selectedJoyas.reduce((sum, joya) => sum + Number(joya.precio_referencial || 0), 0)
     },
     estadoPrevisto () {
       return Number(this.form.saldo || 0) <= 0 ? 'Entregado' : 'Pendiente'
@@ -450,8 +466,11 @@ export default {
         params: this.filters
       }).then(({ data }) => {
         this.joyas = data || []
-        if (this.form.joya_id && !this.joyas.some(joya => joya.id === this.form.joya_id)) {
-          this.form.joya_id = null
+        const disponibles = new Set(this.joyas.map(joya => joya.id))
+        this.form.joya_ids = this.form.joya_ids.filter(id => disponibles.has(id))
+        this.form.joya_id = this.form.joya_ids[0] || null
+        if (this.form.joya_ids.length) {
+          this.syncSelectedJoyas()
         }
       }).catch(err => {
         this.$alert.error(err.response?.data?.message || 'Error al cargar joyas')
@@ -460,11 +479,29 @@ export default {
       })
     },
     selectJoya (joya) {
-      this.form.joya_id = joya.id
-      this.form.peso = Number(joya.peso || 0)
-      this.form.costo_total = Number(joya.precio_referencial || 0)
-      this.form.adelanto = Number(joya.precio_referencial || 0)
-      this.form.detalle = `VENTA DIRECTA: ${joya.nombre} | ${joya.tipo} | ${joya.peso} GR`
+      if (this.form.joya_ids.includes(joya.id)) {
+        this.form.joya_ids = this.form.joya_ids.filter(id => id !== joya.id)
+      } else {
+        this.form.joya_ids = [...this.form.joya_ids, joya.id]
+      }
+      this.form.joya_id = this.form.joya_ids[0] || null
+      this.syncSelectedJoyas()
+    },
+    syncSelectedJoyas () {
+      if (!this.selectedJoyas.length) {
+        this.form.peso = 0
+        this.form.costo_total = 0
+        this.form.adelanto = 0
+        this.form.detalle = ''
+        this.updateSaldo()
+        return
+      }
+      const pesoTotal = this.selectedJoyas.reduce((sum, joya) => sum + Number(joya.peso || 0), 0)
+      const costoTotal = this.selectedJoyas.reduce((sum, joya) => sum + Number(joya.precio_referencial || 0), 0)
+      this.form.peso = Number(pesoTotal.toFixed(2))
+      this.form.costo_total = Number(costoTotal.toFixed(2))
+      this.form.adelanto = Number(costoTotal.toFixed(2))
+      this.form.detalle = `VENTA DIRECTA: ${this.selectedJoyas.map(joya => `${joya.nombre} | ${joya.tipo} | ${joya.peso} GR`).join(' || ')}`
       this.updateSaldo()
     },
     updateSaldo () {
@@ -554,8 +591,8 @@ export default {
       }
     },
     guardarVenta () {
-      if (!this.form.joya_id) {
-        this.$alert.error('Debe seleccionar una joya')
+      if (!this.form.joya_ids.length) {
+        this.$alert.error('Debe seleccionar al menos una joya')
         return
       }
 
@@ -567,6 +604,8 @@ export default {
       this.saving = true
       this.$axios.post('ordenes', {
         ...this.form,
+        joya_id: this.form.joya_ids[0],
+        joya_ids: this.form.joya_ids,
         tipo: 'Venta directa'
       }).then(() => {
         this.$alert.success('Venta registrada correctamente')
@@ -638,11 +677,19 @@ export default {
   height: 118px;
 }
 
+.selected-joyas-list {
+  display: grid;
+  gap: 10px;
+}
+
 .selected-joya {
   display: grid;
-  grid-template-columns: 92px 1fr;
+  grid-template-columns: 92px 1fr auto;
   gap: 12px;
   align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f7fafc;
 }
 
 .selected-joya__image {
@@ -678,3 +725,6 @@ export default {
   overflow: hidden;
 }
 </style>
+
+
+

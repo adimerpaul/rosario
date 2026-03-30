@@ -64,6 +64,10 @@ class OrdenController extends Controller
                 $q->where('tipo', 'Venta directa')
                     ->where('estado', '!=', 'Cancelada');
             })
+            ->whereDoesntHave('ventasItems', function ($q) {
+                $q->where('tipo', 'Venta directa')
+                    ->where('estado', '!=', 'Cancelada');
+            })
             ->orderByDesc('created_at')
             ->orderByDesc('id');
 
@@ -133,6 +137,11 @@ class OrdenController extends Controller
             'user:id,name',
             'estucheItem.columna.vitrina',
             'ventas' => function ($query) {
+                $query->where('tipo', 'Venta directa')
+                    ->with(['cliente:id,name,ci', 'user:id,name'])
+                    ->orderByDesc('id');
+            },
+            'ventasItems' => function ($query) {
                 $query->where('tipo', 'Venta directa')
                     ->with(['cliente:id,name,ci', 'user:id,name'])
                     ->orderByDesc('id');
@@ -280,7 +289,7 @@ class OrdenController extends Controller
             }
         });
 
-        return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina']));
+        return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']));
     }
 
     public function show(Orden $orden)
@@ -289,12 +298,13 @@ class OrdenController extends Controller
             'cliente:id,name,ci,status,cellphone',
             'user:id,name',
             'joya.estucheItem.columna.vitrina',
+            'joyas.estucheItem.columna.vitrina',
         ])->findOrFail($orden->id);
     }
 
     public function index(Request $request)
     {
-        $query = Orden::with(['user:id,name', 'cliente:id,name,ci', 'joya.estucheItem.columna.vitrina'])
+        $query = Orden::with(['user:id,name', 'cliente:id,name,ci', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina'])
             ->orderByDesc('fecha_creacion');
 
         if ($request->filled('tipo')) {
@@ -333,10 +343,14 @@ class OrdenController extends Controller
 
         if ($request->filled('linea') && $request->input('linea') !== 'Todos') {
             $linea = (string) $request->input('linea');
-            $query->whereHas('joya', function ($q) use ($linea) {
-                $q->where('linea', $linea);
-            });
-        }
+                $query->where(function ($lineaQuery) use ($linea) {
+                    $lineaQuery->whereHas('joya', function ($q) use ($linea) {
+                        $q->where('linea', $linea);
+                    })->orWhereHas('joyas', function ($q) use ($linea) {
+                        $q->where('linea', $linea);
+                    });
+                });
+            }
 
         if ($request->filled('search')) {
             $s = trim((string) $request->search);
@@ -344,6 +358,9 @@ class OrdenController extends Controller
                 $q->where('numero', 'like', "%{$s}%")
                     ->orWhere('detalle', 'like', "%{$s}%")
                     ->orWhereHas('joya', function ($qj) use ($s) {
+                        $qj->where('nombre', 'like', "%{$s}%");
+                    })
+                    ->orWhereHas('joyas', function ($qj) use ($s) {
                         $qj->where('nombre', 'like', "%{$s}%");
                     })
                     ->orWhereHas('cliente', function ($qc) use ($s) {
@@ -364,12 +381,12 @@ class OrdenController extends Controller
         $this->authorizeVentasAccess($request);
 
         $tipoReporte = (string) $request->input('tipo_reporte', 'detalle');
-        $ventas = Orden::with(['joya.estucheItem.columna.vitrina', 'user:id,name', 'cliente:id,name,ci'])
+        $ventas = Orden::with(['joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina', 'user:id,name', 'cliente:id,name,ci'])
             ->where('tipo', 'Venta directa')
             ->where('estado', '!=', 'Cancelada')
             ->when($request->filled('linea') && $request->input('linea') !== 'Todos', function ($query) use ($request) {
                 $linea = (string) $request->input('linea');
-                $query->whereHas('joya', function ($joyaQuery) use ($linea) {
+                $query->whereHas('joyas', function ($joyaQuery) use ($linea) {
                     $joyaQuery->where('linea', $linea);
                 });
             })
@@ -388,14 +405,15 @@ class OrdenController extends Controller
             ->orderBy('id')
             ->get()
             ->map(function (Orden $venta) {
+                $joyas = $venta->joyas->isNotEmpty() ? $venta->joyas : collect([$venta->joya])->filter();
                 return [
                     'fecha' => $venta->fecha_creacion ? Carbon::parse($venta->fecha_creacion)->format('d/m/Y') : '',
                     'codigo' => $venta->numero,
-                    'detalle' => $venta->joya?->nombre ?: $venta->detalle,
-                    'peso' => (float) ($venta->joya?->peso ?? $venta->peso ?? 0),
+                    'detalle' => $joyas->pluck('nombre')->filter()->join(', ') ?: $venta->detalle,
+                    'peso' => (float) ($joyas->sum('peso') ?: ($venta->peso ?? 0)),
                     'monto' => (float) ($venta->costo_total ?? 0),
                     'usuario' => $venta->user?->name ?: 'SIN USUARIO',
-                    'linea' => $this->lineaLabel($venta->joya?->linea),
+                    'linea' => $joyas->pluck('linea')->filter()->map(fn ($linea) => $this->lineaLabel($linea))->unique()->join(', '),
                 ];
             })
             ->values();
@@ -469,6 +487,8 @@ class OrdenController extends Controller
             'saldo' => 'nullable|numeric|min:0',
             'tipo_pago' => 'nullable|in:Efectivo,QR',
             'joya_id' => $isVentaDirecta ? 'required|exists:joyas,id' : 'nullable|exists:joyas,id',
+            'joya_ids' => $isVentaDirecta ? 'nullable|array|min:1' : 'nullable|array',
+            'joya_ids.*' => 'exists:joyas,id',
             'foto_modelo' => 'nullable|image|max:5120',
         ]);
 
@@ -490,30 +510,47 @@ class OrdenController extends Controller
             $payload['foto_modelo'] = $this->storeOrdenImage($request->file('foto_modelo'));
         }
 
-        if ($isVentaDirecta) {
-            $joya = Joya::with(['estucheItem.columna.vitrina'])->findOrFail($request->integer('joya_id'));
-            $ocupada = Orden::where('joya_id', $joya->id)
-                ->where('tipo', 'Venta directa')
-                ->where('estado', '!=', 'Cancelada')
-                ->exists();
+        $joyaIds = collect();
 
-            if ($ocupada) {
-                return response()->json(['message' => 'La joya seleccionada ya tiene una venta registrada'], 422);
+        if ($isVentaDirecta) {
+            $joyaIds = collect($request->input('joya_ids', []))
+                ->push($request->input('joya_id'))
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values();
+
+            if ($joyaIds->isEmpty()) {
+                return response()->json(['message' => 'Debe seleccionar al menos una joya'], 422);
             }
 
-            $costoTotal = (float) ($request->input('costo_total') ?: $this->precioVentaJoya($joya));
+            $joyas = Joya::with(['estucheItem.columna.vitrina'])
+                ->whereIn('id', $joyaIds)
+                ->get()
+                ->keyBy('id');
+
+            if ($joyas->count() !== $joyaIds->count()) {
+                return response()->json(['message' => 'Una o mas joyas seleccionadas no existen'], 422);
+            }
+
+            foreach ($joyaIds as $joyaId) {
+                if ($this->joyaTieneVentaActiva($joyaId)) {
+                    return response()->json(['message' => 'Una de las joyas seleccionadas ya tiene una venta registrada'], 422);
+                }
+            }
+
+            $joyasSeleccionadas = $joyaIds->map(fn ($id) => $joyas->get($id))->filter()->values();
+            $pesoTotal = (float) $joyasSeleccionadas->sum(fn ($joya) => (float) ($joya->peso ?? 0));
+            $precioReferencial = (float) $joyasSeleccionadas->sum(fn ($joya) => $this->precioVentaJoya($joya));
+            $joyaPrincipal = $joyasSeleccionadas->first();
+            $costoTotal = (float) ($request->input('costo_total') ?: $precioReferencial);
             $adelanto = (float) $request->input('adelanto', 0);
 
             $payload = array_merge($payload, [
-                'joya_id' => $joya->id,
+                'joya_id' => $joyaPrincipal?->id,
                 'fecha_entrega' => $request->input('fecha_entrega') ?: now()->toDateString(),
-                'detalle' => $request->input('detalle') ?: sprintf(
-                    'VENTA DIRECTA: %s | %s | %s GR',
-                    $joya->nombre,
-                    $joya->tipo,
-                    number_format((float) $joya->peso, 2, '.', '')
-                ),
-                'peso' => $request->input('peso', $joya->peso),
+                'detalle' => $request->input('detalle') ?: $this->buildVentaDirectaDetalle($joyasSeleccionadas),
+                'peso' => $request->input('peso', $pesoTotal),
                 'costo_total' => $costoTotal,
                 'adelanto' => $adelanto,
                 'saldo' => max(0, $costoTotal - $adelanto),
@@ -533,7 +570,20 @@ class OrdenController extends Controller
             ]);
         }
 
-        return Orden::create($payload)->load(['cliente:id,name,ci,status,cellphone', 'user:id,name', 'joya.estucheItem.columna.vitrina']);
+        return DB::transaction(function () use ($payload, $joyaIds) {
+            $orden = Orden::create($payload);
+
+            if (! empty($joyaIds) && collect($joyaIds)->filter()->isNotEmpty()) {
+                $orden->joyas()->sync(collect($joyaIds)->map(fn ($id) => (int) $id)->unique()->values());
+            }
+
+            return $orden->load([
+                'cliente:id,name,ci,status,cellphone',
+                'user:id,name',
+                'joya.estucheItem.columna.vitrina',
+                'joyas.estucheItem.columna.vitrina',
+            ]);
+        });
     }
 
     public function pagarTodo(Request $request, Orden $orden)
@@ -557,7 +607,7 @@ class OrdenController extends Controller
             $orden->save();
         }
 
-        return $orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina']);
+        return $orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']);
     }
 
     public function toggleMetodo(Request $request, Orden $orden)
@@ -580,7 +630,7 @@ class OrdenController extends Controller
 
         $orden->update(['tipo_pago' => $nuevoMetodo]);
 
-        return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina']));
+        return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']));
     }
 
     public function update(Request $request, Orden $orden)
@@ -619,7 +669,7 @@ class OrdenController extends Controller
 
         $orden->save();
 
-        return $orden->load(['cliente', 'user', 'joya.estucheItem.columna.vitrina']);
+        return $orden->load(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']);
     }
 
     public function destroy(Orden $orden)
@@ -756,6 +806,10 @@ class OrdenController extends Controller
                 $query->where('tipo', 'Venta directa')
                     ->where('estado', '!=', 'Cancelada');
             })
+            ->whereDoesntHave('ventasItems', function ($query) {
+                $query->where('tipo', 'Venta directa')
+                    ->where('estado', '!=', 'Cancelada');
+            })
             ->when($request->filled('linea') && $request->input('linea') !== 'Todos', function ($query) use ($request) {
                 $query->where('linea', $request->input('linea'));
             })
@@ -825,16 +879,20 @@ class OrdenController extends Controller
             ];
         })->filter();
 
-        $movimientosVentas = Orden::with(['joya' => fn ($query) => $query->withTrashed()->with(['estucheItem.columna.vitrina']), 'user:id,name'])
+        $movimientosVentas = Orden::with([
+            'joya' => fn ($query) => $query->withTrashed()->with(['estucheItem.columna.vitrina']),
+            'joyas' => fn ($query) => $query->withTrashed()->with(['estucheItem.columna.vitrina']),
+            'user:id,name',
+        ])
             ->where('tipo', 'Venta directa')
             ->where('estado', '!=', 'Cancelada')
             ->when($request->filled('linea') && $request->input('linea') !== 'Todos', function ($query) use ($request) {
-                $query->whereHas('joya', function ($joyaQuery) use ($request) {
+                $query->whereHas('joyas', function ($joyaQuery) use ($request) {
                     $joyaQuery->where('linea', $request->input('linea'));
                 });
             })
             ->when($request->filled('estuche_id'), function ($query) use ($request) {
-                $query->whereHas('joya', function ($joyaQuery) use ($request) {
+                $query->whereHas('joyas', function ($joyaQuery) use ($request) {
                     $joyaQuery->where('estuche_id', $request->integer('estuche_id'));
                 });
             })
@@ -842,19 +900,22 @@ class OrdenController extends Controller
             ->filter(function (Orden $venta) use ($request) {
                 return $this->matchesDateFilter(Carbon::parse($venta->fecha_creacion), $request);
             })
-            ->map(function (Orden $venta) {
+            ->flatMap(function (Orden $venta) {
                 $fecha = Carbon::parse($venta->fecha_creacion);
+                $joyas = $venta->joyas->isNotEmpty() ? $venta->joyas : collect([$venta->joya])->filter();
 
-                return [
+                return $joyas->map(function (Joya $joya) use ($venta, $fecha) {
+                    return [
                     'fecha' => $fecha->format('d/m/Y'),
-                    'codigo' => $this->joyaCodigo((int) $venta->joya_id),
-                    'detalle' => $venta->joya?->nombre ?: $venta->detalle,
-                    'peso' => (float) ($venta->joya?->peso ?? $venta->peso ?? 0),
-                    'linea' => $this->lineaLabel($venta->joya?->linea),
+                    'codigo' => $this->joyaCodigo((int) $joya->id),
+                    'detalle' => $joya->nombre ?: $venta->detalle,
+                    'peso' => (float) ($joya->peso ?? 0),
+                    'linea' => $this->lineaLabel($joya->linea),
                     'estado' => 'VENDIDO',
                     'usuario' => $venta->user?->name ?: 'SIN USUARIO',
                     'timestamp' => $fecha->timestamp,
-                ];
+                    ];
+                });
             });
 
         return $movimientosJoyas
@@ -984,7 +1045,12 @@ class OrdenController extends Controller
     private function mapJoyaVitrina(Joya $joya): array
     {
         /** @var \App\Models\Orden|null $ultimaVenta */
-        $ultimaVenta = $joya->ventas->first();
+        $ultimaVenta = collect()
+            ->merge($joya->ventas ?? collect())
+            ->merge($joya->ventasItems ?? collect())
+            ->unique('id')
+            ->sortByDesc('id')
+            ->first();
         $estadoJoya = $this->estadoJoyaVitrina($ultimaVenta);
         $precioReferencial = $this->precioVentaJoya($joya);
         $fechaReferencia = $ultimaVenta?->fecha_creacion ?: $joya->created_at;
@@ -1028,6 +1094,40 @@ class OrdenController extends Controller
             'fecha_vitrina' => $joya->created_at,
             'totalPagos' => (float) ($ultimaVenta?->totalPagos ?? 0),
         ];
+    }
+
+    private function joyaTieneVentaActiva(int $joyaId): bool
+    {
+        $ventaLegacy = Orden::query()
+            ->where('joya_id', $joyaId)
+            ->where('tipo', 'Venta directa')
+            ->where('estado', '!=', 'Cancelada')
+            ->exists();
+
+        if ($ventaLegacy) {
+            return true;
+        }
+
+        return DB::table('orden_joyas')
+            ->join('ordenes', 'ordenes.id', '=', 'orden_joyas.orden_id')
+            ->where('orden_joyas.joya_id', $joyaId)
+            ->where('ordenes.tipo', 'Venta directa')
+            ->where('ordenes.estado', '!=', 'Cancelada')
+            ->exists();
+    }
+
+    private function buildVentaDirectaDetalle(Collection $joyas): string
+    {
+        $detalle = $joyas->map(function (Joya $joya) {
+            return sprintf(
+                '%s | %s | %s GR',
+                $joya->nombre,
+                $joya->tipo,
+                number_format((float) $joya->peso, 2, '.', '')
+            );
+        })->join(' || ');
+
+        return 'VENTA DIRECTA: '.$detalle;
     }
 
     private function estadoJoyaVitrina(?Orden $venta): string
