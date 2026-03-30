@@ -36,7 +36,7 @@
                 </q-item>
               </q-list>
             </q-btn-dropdown>
-            <q-btn color="primary" icon="save" label="Actualizar" no-caps dense :loading="loading" @click="actualizarPrestamo" />
+            <q-btn v-if="isAdmin" color="primary" icon="save" label="Actualizar" no-caps dense :loading="loading" @click="actualizarPrestamo" />
             <q-btn color="positive" icon="payments" label="Registrar pago" no-caps dense :loading="loading" @click="openPagoDialog" />
           </div>
         </div>
@@ -113,13 +113,13 @@
               <q-card-section class="q-pa-sm">
                 <div class="row q-col-gutter-sm">
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-input dense outlined label="Fecha creación" type="date" v-model="prestamo.fecha_creacion" readonly />
+                    <q-input dense outlined label="Fecha interes" type="date" v-model="prestamo.fecha_creacion" :readonly="!isAdmin" />
                   </div>
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-input dense outlined label="Mes cancelado" type="date" v-model="prestamo.fecha_limite" readonly />
+                    <q-input dense outlined label="Fecha pago" type="date" v-model="prestamo.fecha_limite" :readonly="!isAdmin" />
                   </div>
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-input dense outlined label="Prestado (Bs)" type="number" v-model.number="prestamo.valor_prestado" min="0.01" step="0.01" :readonly="!isAdmin" @update:model-value="recalcular" />
+                    <q-input dense outlined label="Prestado (Bs)" type="number" v-model.number="prestamo.valor_prestado" min="0.01" step="0.01" readonly />
                   </div>
 
                   <div class="col-12 col-sm-6 col-md-4">
@@ -133,7 +133,7 @@
                   </div>
 
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-select dense outlined label="Interés (%)" v-model.number="prestamo.interes" :options="[1,2,3]" readonly @update:model-value="recalcular" />
+                    <q-select dense outlined label="Interes (%)" v-model.number="prestamo.interes" :options="[1,2,3]" :readonly="!isAdmin" @update:model-value="recalcular" />
                   </div>
                   <div class="col-12 col-sm-6 col-md-4">
                     <q-select dense outlined label="Almacén (%)" v-model.number="prestamo.almacen" :options="[2,3]" readonly @update:model-value="recalcular" />
@@ -153,7 +153,7 @@
                   </div>
 
                   <div class="col-12">
-                    <q-input dense outlined label="Detalle" v-model="prestamo.detalle" type="textarea" autogrow />
+                    <q-input dense outlined label="Detalle" v-model="prestamo.detalle" type="textarea" autogrow readonly />
                   </div>
                 </div>
               </q-card-section>
@@ -390,18 +390,16 @@ export default {
       this.totalPagar = +(vp + this.interesMonto + this.almacenMonto).toFixed(2)
     },
     async actualizarPrestamo () {
+      if (!this.isAdmin) {
+        this.$alert.error('Solo el administrador puede modificar este prestamo')
+        return
+      }
       this.loading = true
       try {
         const payload = {
           fecha_creacion: this.prestamo.fecha_creacion,
           fecha_limite: this.prestamo.fecha_limite,
-          celular: this.prestamo.celular,
-          detalle: this.prestamo.detalle,
-          peso: this.prestamo.peso,
-          merma: this.prestamo.merma,
-          valor_prestado: this.prestamo.valor_prestado,
           interes: this.prestamo.interes,
-          almacen: this.prestamo.almacen,
         }
         const { data } = await this.$axios.put(`prestamos/${this.prestamo.id}`, payload)
         if (data.fecha_creacion) data.fecha_creacion = String(data.fecha_creacion).substring(0, 10)
@@ -504,3 +502,6 @@ export default {
   }
 }
 </script>
+
+
+

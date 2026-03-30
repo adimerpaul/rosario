@@ -124,7 +124,7 @@ it('registers an egreso when an order payment is annulled', function () {
     ]);
 });
 
-it('keeps loan interest unchanged even for admin updates', function () {
+it('allows admin to update loan interest and dates', function () {
     $admin = User::factory()->create(['role' => 'Administrador']);
     Sanctum::actingAs($admin);
 
@@ -156,15 +156,59 @@ it('keeps loan interest unchanged even for admin updates', function () {
     ]);
 
     $this->putJson("/api/prestamos/{$prestamo->id}", [
+        'fecha_creacion' => '2026-01-15',
+        'fecha_limite' => '2026-02-15',
         'interes' => 3,
-        'almacen' => 2,
-        'detalle' => 'PRESTAMO EDITADO',
     ])->assertOk();
 
     $prestamo->refresh();
 
+    expect((float) $prestamo->interes)->toBe(3.0);
+    expect($prestamo->fecha_creacion)->toBe('2026-01-15');
+    expect($prestamo->fecha_limite)->toBe('2026-02-15');
+    expect((float) $prestamo->almacen)->toBe(1.0);
+});
+
+it('forbids non admin from updating loan interest and dates', function () {
+    $vendedor = User::factory()->create(['role' => 'Vendedor']);
+    Sanctum::actingAs($vendedor);
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE PRESTAMO BLOQUEADO',
+        'ci' => '500601',
+        'status' => 'Confiable',
+        'cellphone' => '70050061',
+        'address' => 'ORURO',
+    ]);
+
+    $prestamo = Prestamo::create([
+        'numero' => 'P0101-2026',
+        'fecha_creacion' => now(),
+        'fecha_limite' => now()->addMonth()->toDateString(),
+        'cliente_id' => $cliente->id,
+        'user_id' => $vendedor->id,
+        'peso' => 10,
+        'merma' => 1,
+        'peso_neto' => 9,
+        'precio_oro' => 100,
+        'valor_total' => 900,
+        'valor_prestado' => 500,
+        'interes' => 2,
+        'almacen' => 1,
+        'celular' => $cliente->cellphone,
+        'detalle' => 'PRESTAMO PRUEBA',
+        'estado' => 'Pendiente',
+    ]);
+
+    $this->putJson("/api/prestamos/{$prestamo->id}", [
+        'fecha_creacion' => '2026-01-20',
+        'fecha_limite' => '2026-02-20',
+        'interes' => 3,
+    ])->assertForbidden();
+
+    $prestamo->refresh();
+
     expect((float) $prestamo->interes)->toBe(2.0);
-    expect((float) $prestamo->almacen)->toBe(2.0);
 });
 
 it('recalculates order saldo without changing adelanto when admin updates price', function () {
