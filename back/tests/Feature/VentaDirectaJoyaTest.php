@@ -140,6 +140,20 @@ it('filters available direct-sale joyas by linea', function () {
         ->assertJsonMissing(['linea' => 'Papa']);
 });
 
+it('finds available direct-sale joyas by codigo', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Vendedor']));
+
+    $joya = Joya::firstOrFail();
+    $codigo = 'J'.str_pad((string) $joya->id, 4, '0', STR_PAD_LEFT);
+
+    $this->getJson('/api/ordenes/joyas-disponibles?search='.$codigo)
+        ->assertOk()
+        ->assertJsonFragment([
+            'id' => $joya->id,
+            'codigo' => $codigo,
+        ]);
+});
+
 it('filters direct sales by exact fecha and linea', function () {
     $user = User::factory()->create(['role' => 'Administrador']);
     Sanctum::actingAs($user);
@@ -257,5 +271,19 @@ it('lists jewel showcase statuses for ventas joyas filtering', function () {
         ->assertJsonMissing([
             'id' => $joyaVendida->id,
             'estado_joya' => 'VENDIDO',
+        ]);
+});
+
+it('finds joyas in vitrina by codigo', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
+
+    $joya = Joya::firstOrFail();
+    $codigo = 'J'.str_pad((string) $joya->id, 4, '0', STR_PAD_LEFT);
+
+    $this->getJson('/api/ordenes/joyas-vitrina?search='.$codigo)
+        ->assertOk()
+        ->assertJsonFragment([
+            'id' => $joya->id,
+            'codigo' => $codigo,
         ]);
 });

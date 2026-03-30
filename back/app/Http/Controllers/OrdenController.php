@@ -83,10 +83,15 @@ class OrdenController extends Controller
 
         if ($request->filled('search')) {
             $search = trim((string) $request->input('search'));
-            $query->where(function ($q) use ($search) {
+            $codigoId = $this->joyaIdFromCodigo($search);
+            $query->where(function ($q) use ($search, $codigoId) {
                 $q->where('nombre', 'like', "%{$search}%")
                     ->orWhere('tipo', 'like', "%{$search}%")
                     ->orWhere('linea', 'like', "%{$search}%");
+
+                if ($codigoId !== null) {
+                    $q->orWhere('id', $codigoId);
+                }
             });
         }
 
@@ -96,6 +101,7 @@ class OrdenController extends Controller
 
             return [
                 'id' => $joya->id,
+                'codigo' => $this->joyaCodigo($joya->id),
                 'nombre' => $joya->nombre,
                 'tipo' => $joya->tipo,
                 'linea' => $joya->linea,
@@ -110,7 +116,8 @@ class OrdenController extends Controller
                 'precio_configuracion_valor' => $valorCog,
                 'precio_referencial' => $this->precioVentaJoya($joya),
             ];
-        });
+        })->filter(fn (array $joya) => $this->matchesJoyaSearch($joya, (string) $request->input('search', '')))
+            ->values();
     }
 
     public function joyasVitrina(Request $request)
@@ -143,18 +150,27 @@ class OrdenController extends Controller
                 $query->where('estuche_id', $request->integer('estuche_id'));
             })
             ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($subQuery) use ($search) {
+                $codigoId = $this->joyaIdFromCodigo($search);
+                $query->where(function ($subQuery) use ($search, $codigoId) {
                     $subQuery->where('nombre', 'like', "%{$search}%")
                         ->orWhere('tipo', 'like', "%{$search}%")
                         ->orWhere('linea', 'like', "%{$search}%")
                         ->orWhere('estuche', 'like', "%{$search}%");
+
+                    if ($codigoId !== null) {
+                        $subQuery->orWhere('id', $codigoId);
+                    }
                 });
             })
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get()
             ->map(fn (Joya $joya) => $this->mapJoyaVitrina($joya))
-            ->filter(function (array $joya) use ($estadoJoya, $request) {
+            ->filter(function (array $joya) use ($estadoJoya, $request, $search) {
+                if (! $this->matchesJoyaSearch($joya, $search)) {
+                    return false;
+                }
+
                 if ($request->has('user_id') && $request->input('user_id') !== null && $request->input('user_id') !== 'null') {
                     if ((int) ($joya['user_id'] ?? 0) !== (int) $request->input('user_id')) {
                         return false;
@@ -924,6 +940,47 @@ class OrdenController extends Controller
         return 'J'.str_pad((string) $id, 4, '0', STR_PAD_LEFT);
     }
 
+    private function joyaIdFromCodigo(string $search): ?int
+    {
+        $search = strtoupper(trim($search));
+
+        if (preg_match('/^J0*(\d+)$/', $search, $matches) !== 1) {
+            return null;
+        }
+
+        return (int) $matches[1];
+    }
+
+    private function matchesJoyaSearch(array $joya, string $search): bool
+    {
+        $search = trim($search);
+
+        if ($search === '') {
+            return true;
+        }
+
+        $needle = mb_strtoupper($search);
+        $haystacks = [
+            $joya['codigo'] ?? null,
+            $joya['nombre'] ?? null,
+            $joya['tipo'] ?? null,
+            $joya['linea'] ?? null,
+            $joya['estuche'] ?? null,
+            data_get($joya, 'estuche_nombre'),
+            data_get($joya, 'columna_codigo'),
+            data_get($joya, 'vitrina_nombre'),
+            data_get($joya, 'cliente.name'),
+        ];
+
+        foreach ($haystacks as $value) {
+            if ($value !== null && str_contains(mb_strtoupper((string) $value), $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function mapJoyaVitrina(Joya $joya): array
     {
         /** @var \App\Models\Orden|null $ultimaVenta */
@@ -934,6 +991,7 @@ class OrdenController extends Controller
 
         return [
             'id' => $joya->id,
+            'codigo' => $this->joyaCodigo($joya->id),
             'venta_id' => $ultimaVenta?->id,
             'numero' => $ultimaVenta?->numero ?: $this->joyaCodigo($joya->id),
             'estado_joya' => $estadoJoya,
