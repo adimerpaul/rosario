@@ -89,8 +89,8 @@
                   <div>Caja inicial del dia</div>
                   <div class="text-caption text-grey-7">Usuario: -</div>
                 </td>
-                <td class="text-right">{{ currency(openingAmount) }}</td>
-                <td class="text-left">-</td>
+                <td class="text-right">{{ openingAmount > 0 ? currency(openingAmount) : '-' }}</td>
+                <td class="text-left">EFECTIVO</td>
                 <td class="text-left">CAJA</td>
                 <td class="text-left">
                   <q-chip dense color="blue-6" text-color="white">Fijo</q-chip>
@@ -404,7 +404,10 @@ export default {
         .then(({ data }) => {
           const opening = Number(data.daily_cash?.opening_amount || 0)
           const suggested = Number(data.suggested_opening_amount || 0)
-          this.openingAmount = opening > 0 ? opening : suggested
+          const filteredOpening = Number(
+            data.filtered_opening_amount ?? (opening > 0 ? opening : suggested)
+          )
+          this.openingAmount = filteredOpening > 0 ? filteredOpening : 0
 
           this.items_ingresos = data.items_ingresos || []
           this.items_egresos = data.items_egresos || []
