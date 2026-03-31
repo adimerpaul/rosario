@@ -40,12 +40,12 @@
 
       <q-card-section class="row q-col-gutter-sm">
         <div class="col-12 col-md-3">
-          <div class="text-caption text-grey-7">TOTAL CAJA (neto)</div>
+          <div class="text-caption text-grey-7">{{ isUserFiltered ? 'NETO DEL USUARIO' : 'TOTAL CAJA (neto)' }}</div>
           <div class="text-h6">{{ currency(totalCaja) }}</div>
         </div>
 
         <div class="col-12 col-md-3 bg-green text-white">
-          <div class="text-caption text-white">TOTAL INGRESOS (incluye caja)</div>
+          <div class="text-caption text-white">{{ isUserFiltered ? 'TOTAL INGRESOS DEL USUARIO' : 'TOTAL INGRESOS (incluye caja)' }}</div>
           <div class="text-h6">{{ currency(totalIngresos) }}</div>
         </div>
 
@@ -83,7 +83,7 @@
               </thead>
 
               <tbody>
-              <tr>
+              <tr v-if="!isUserFiltered">
                 <td class="text-left">-</td>
                 <td class="text-left">
                   <div>Caja inicial del dia</div>
@@ -132,7 +132,7 @@
 
               <tr v-if="!ingresosActivos.length">
                 <td :colspan="$store.user?.role === 'Administrador' ? 7 : 6" class="text-center text-grey">
-                  Sin ingresos (solo caja inicial)
+                  {{ isUserFiltered ? 'Sin ingresos' : 'Sin ingresos (solo caja inicial)' }}
                 </td>
               </tr>
               </tbody>
@@ -334,6 +334,7 @@ export default {
       totalIngresos: 0,
       totalEgresos: 0,
       totalCaja: 0,
+      isUserFiltered: false,
 
       loading: false,
       loadingSave: false,
@@ -408,6 +409,7 @@ export default {
             data.filtered_opening_amount ?? (opening > 0 ? opening : suggested)
           )
           this.openingAmount = filteredOpening > 0 ? filteredOpening : 0
+          this.isUserFiltered = Boolean(data.is_user_filtered)
 
           this.items_ingresos = data.items_ingresos || []
           this.items_egresos = data.items_egresos || []

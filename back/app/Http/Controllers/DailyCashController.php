@@ -21,6 +21,7 @@ class DailyCashController extends Controller
         $auth = $request->user();
         $user = null;
         $userForTotals = null;
+        $isAdminFilteringByUser = false;
 
         if ($auth && ($auth->role ?? '') !== 'Administrador') {
             $user = $auth;
@@ -31,6 +32,7 @@ class DailyCashController extends Controller
                 $user = new User(['id' => 0]);
             }
             $userForTotals = $user;
+            $isAdminFilteringByUser = true;
         }
 
         $suggested = $this->calculateSuggestedOpeningAmount($date, $userForTotals);
@@ -202,7 +204,9 @@ class DailyCashController extends Controller
 
         $ingresosSinCaja = $sumActivos($itemsIngresosTotales);
         $egresosTotal = $sumActivos($itemsEgresosTotales);
-        $openingAmountFiltered = $this->filterOpeningAmount((float) $daily->opening_amount, $metodoPago);
+        $openingAmountFiltered = $isAdminFilteringByUser
+            ? 0.0
+            : $this->filterOpeningAmount((float) $daily->opening_amount, $metodoPago);
 
         $totalIngresos = $openingAmountFiltered + $ingresosSinCaja;
         $totalEgresos = $egresosTotal;
@@ -213,6 +217,7 @@ class DailyCashController extends Controller
             'daily_cash' => $daily,
             'suggested_opening_amount' => round($suggested, 2),
             'filtered_opening_amount' => round($openingAmountFiltered, 2),
+            'is_user_filtered' => $isAdminFilteringByUser,
             'items_ingresos' => $itemsIngresos,
             'items_egresos' => $itemsEgresos,
             'total_ingresos' => round($totalIngresos, 2),

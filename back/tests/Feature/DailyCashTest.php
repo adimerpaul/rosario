@@ -61,7 +61,7 @@ it('shows daily cash without querying missing metodo_entrega column on prestamos
         ->assertJsonPath('daily_cash.opening_amount', -2000);
 });
 
-it('keeps global totals when filtering libro diario by usuario', function () {
+it('shows only the selected user totals when filtering libro diario by usuario', function () {
     $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
     $userA = User::factory()->create(['role' => 'Vendedor', 'username' => 'roger']);
     $userB = User::factory()->create(['role' => 'Vendedor', 'username' => 'jimmy']);
@@ -120,9 +120,11 @@ it('keeps global totals when filtering libro diario by usuario', function () {
 
     $this->getJson('/api/daily-cash?date='.$today.'&usuario=roger')
         ->assertOk()
-        ->assertJsonPath('total_ingresos', 350)
-        ->assertJsonPath('total_egresos', 30)
-        ->assertJsonPath('total_caja', 320)
+        ->assertJsonPath('filtered_opening_amount', 0)
+        ->assertJsonPath('is_user_filtered', true)
+        ->assertJsonPath('total_ingresos', 200)
+        ->assertJsonPath('total_egresos', 0)
+        ->assertJsonPath('total_caja', 200)
         ->assertJsonCount(1, 'items_ingresos')
         ->assertJsonCount(0, 'items_egresos');
 });

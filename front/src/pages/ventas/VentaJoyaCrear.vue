@@ -134,31 +134,77 @@
             </q-card-section>
             <q-separator />
 
-            <q-card-section v-if="selectedJoyas.length" class="q-pb-none">
+            <q-card-section v-if="selectedVentaJoyas.length" class="q-pb-none">
               <div class="row items-center q-mb-sm">
                 <div class="text-subtitle1 text-weight-bold">Joyas seleccionadas</div>
                 <q-space />
-                <q-chip dense color="primary" text-color="white">{{ selectedJoyas.length }}</q-chip>
+                <q-chip dense color="primary" text-color="white">{{ selectedVentaJoyas.length }}</q-chip>
               </div>
               <div class="selected-joyas-list">
-                <div v-for="joya in selectedJoyas" :key="`sel-${joya.id}`" class="selected-joya">
-                  <q-img :src="imagenUrl(joya.imagen)" class="selected-joya__image" fit="cover" />
-                  <div class="col">
-                    <div class="text-subtitle2 text-weight-bold">{{ joya.nombre }}</div>
-                    <div class="text-caption text-primary">Cod. {{ joya.codigo || '-' }}</div>
-                    <div class="text-caption text-grey-7">{{ joya.tipo }}  {{ lineaLabel(joya.linea) }}</div>
-                    <div class="text-caption text-grey-7">{{ joya.vitrina_nombre || 'Sin vitrina' }} / {{ joya.estuche_nombre || 'Sin estuche' }}</div>
+                <div v-for="item in selectedVentaJoyas" :key="`sel-${item.joya.id}`" class="selected-joya selected-joya--stacked">
+                  <div class="selected-joya__top">
+                    <q-img :src="imagenUrl(item.joya.imagen)" class="selected-joya__image" fit="cover" />
+                    <div class="col">
+                      <div class="text-subtitle2 text-weight-bold">{{ item.joya.nombre }}</div>
+                      <div class="text-caption text-primary">Cod. {{ item.joya.codigo || '-' }}</div>
+                      <div class="text-caption text-grey-7">{{ item.joya.tipo }}  {{ lineaLabel(item.joya.linea) }}</div>
+                      <div class="text-caption text-grey-7">{{ item.joya.vitrina_nombre || 'Sin vitrina' }} / {{ item.joya.estuche_nombre || 'Sin estuche' }}</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-caption text-grey-7">{{ item.joya.peso }} gr</div>
+                      <div class="text-subtitle2 text-primary text-weight-bold">{{ money(item.joya.precio_referencial) }} Bs</div>
+                    </div>
                   </div>
-                  <div class="text-right">
-                    <div class="text-caption text-grey-7">{{ joya.peso }} gr</div>
-                    <div class="text-subtitle2 text-primary text-weight-bold">{{ money(joya.precio_referencial) }} Bs</div>
+                  <div class="row q-col-gutter-sm q-mt-sm">
+                    <div class="col-12 col-md-4">
+                      <q-input :model-value="item.venta.costo_total" label="Monto" type="number" outlined dense bg-color="white" @update:model-value="updateVentaItem(item.joya.id, 'costo_total', $event)">
+                        <template #append>
+                          <q-btn flat round dense icon="restart_alt" @click="restoreVentaItemReferential(item.joya.id)">
+                            <q-tooltip>Usar precio referencial</q-tooltip>
+                          </q-btn>
+                        </template>
+                      </q-input>
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <q-input :model-value="item.venta.adelanto" label="Adelanto" type="number" outlined dense bg-color="white" @update:model-value="updateVentaItem(item.joya.id, 'adelanto', $event)" />
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <q-select :model-value="item.venta.tipo_pago" :options="['Efectivo', 'QR']" label="Pago" outlined dense bg-color="white" @update:model-value="updateVentaItem(item.joya.id, 'tipo_pago', $event)" />
+                    </div>
+                    <div class="col-12 col-md-2">
+                      <div class="selected-joya__saldo">
+                        <div class="text-caption text-grey-7">Saldo</div>
+                        <div class="text-weight-bold">{{ money(itemSaldo(item.venta)) }}</div>
+                        <div class="text-caption">{{ itemEstado(item.venta) }}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
               <q-banner class="bg-blue-1 text-blue-10 q-mt-sm rounded-borders">
-                <div class="text-body2 text-weight-bold">Resumen automatico</div>
-                <div class="text-caption">
-                  {{ selectedJoyas.length }} joya(s), peso total {{ money(form.peso) }} gr y precio referencial {{ money(referentialTotal) }} Bs.
+                <div class="text-body2 text-weight-bold">Resumen general</div>
+                <div class="text-caption q-mb-sm">
+                  {{ selectedVentaJoyas.length }} joya(s), peso total {{ money(form.peso) }} gr y precio referencial {{ money(referentialTotal) }} Bs.
+                </div>
+                <div class="row q-col-gutter-sm">
+                  <div class="col-12 col-md-4">
+                    <div class="summary-total-card">
+                      <div class="text-caption text-blue-8">Total venta</div>
+                      <div class="text-h6 text-weight-bold">{{ money(totalVenta) }} Bs</div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="summary-total-card">
+                      <div class="text-caption text-blue-8">Total adelanto</div>
+                      <div class="text-h6 text-weight-bold">{{ money(totalAdelanto) }} Bs</div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="summary-total-card">
+                      <div class="text-caption text-blue-8">Saldo total</div>
+                      <div class="text-h6 text-weight-bold">{{ money(totalSaldo) }} Bs</div>
+                    </div>
+                  </div>
                 </div>
               </q-banner>
             </q-card-section>
@@ -212,25 +258,10 @@
                     <q-input v-model="form.celular" label="Celular" outlined dense />
                   </div>
                   <div class="col-12 col-md-4">
-                    <q-input v-model.number="form.peso" label="Peso" type="number" outlined dense readonly />
-                  </div>
-                  <div class="col-12 col-md-4">
-                    <q-input v-model.number="form.costo_total" label="Costo total" type="number" outlined dense @update:model-value="updateSaldo" />
-                  </div>
-                  <div class="col-12 col-md-4">
-                    <q-input v-model.number="form.adelanto" label="Adelanto" type="number" outlined dense @update:model-value="updateSaldo" />
-                  </div>
-                  <div class="col-12 col-md-4">
-                    <q-input :model-value="money(form.saldo)" label="Saldo" outlined dense readonly />
-                  </div>
-                  <div class="col-12 col-md-4">
-                    <q-input :model-value="estadoPrevisto" label="Estado" outlined dense readonly />
-                  </div>
-                  <div class="col-12 col-md-4">
-                    <q-select v-model="form.tipo_pago" :options="['Efectivo', 'QR']" label="Tipo pago" outlined dense />
+                    <q-input :model-value="money(form.peso)" label="Peso total" outlined dense readonly />
                   </div>
                   <div class="col-12">
-                    <q-input v-model="form.detalle" type="textarea" label="Detalle" outlined dense autogrow />
+                    <q-input v-model="form.detalle" type="textarea" label="Detalle base" outlined dense autogrow />
                   </div>
                 </div>
 
@@ -358,12 +389,9 @@ export default {
         fecha_entrega: moment().format('YYYY-MM-DD'),
         celular: '',
         peso: 0,
-        costo_total: 0,
-        adelanto: 0,
-        saldo: 0,
-        tipo_pago: 'Efectivo',
         detalle: ''
       },
+      ventaItems: [],
       reportForm: {
         type: 'ventas_detalle',
         fecha_inicio: moment().startOf('month').format('YYYY-MM-DD'),
@@ -424,13 +452,27 @@ export default {
       return this.reportForm.type === 'inventario_movimientos' || this.reportForm.type === 'inventario_existencias'
     },
     selectedJoyas () {
-      return this.joyas.filter(joya => this.form.joya_ids.includes(joya.id))
+      return this.form.joya_ids
+        .map(id => this.joyas.find(joya => joya.id === id))
+        .filter(Boolean)
+    },
+    selectedVentaJoyas () {
+      return this.selectedJoyas.map(joya => ({
+        joya,
+        venta: this.getVentaItem(joya.id)
+      })).filter(item => item.venta)
     },
     referentialTotal () {
       return this.selectedJoyas.reduce((sum, joya) => sum + Number(joya.precio_referencial || 0), 0)
     },
-    estadoPrevisto () {
-      return Number(this.form.saldo || 0) <= 0 ? 'Entregado' : 'Pendiente'
+    totalVenta () {
+      return this.ventaItems.reduce((sum, item) => sum + Number(item.costo_total || 0), 0)
+    },
+    totalAdelanto () {
+      return this.ventaItems.reduce((sum, item) => sum + Number(item.adelanto || 0), 0)
+    },
+    totalSaldo () {
+      return this.ventaItems.reduce((sum, item) => sum + this.itemSaldo(item), 0)
     }
   },
   mounted () {
@@ -445,11 +487,33 @@ export default {
     money (value) {
       return Number(value || 0).toFixed(2)
     },
+    toNumber (value) {
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : 0
+    },
     imagenUrl (imagen) {
       return `${this.$url}/../images/${imagen || 'joya.png'}`
     },
     lineaLabel (value) {
       return value === 'Andreina' ? 'Reina' : (value || 'Sin linea')
+    },
+    itemSaldo (venta) {
+      return Math.max(0, this.toNumber(venta?.costo_total) - this.toNumber(venta?.adelanto))
+    },
+    itemEstado (venta) {
+      return this.itemSaldo(venta) <= 0 ? 'Entregado' : 'Pendiente'
+    },
+    buildVentaItem (joya, previous = null) {
+      const referencia = this.toNumber(joya?.precio_referencial)
+      return {
+        joya_id: joya.id,
+        costo_total: previous ? this.toNumber(previous.costo_total) : referencia,
+        adelanto: previous ? this.toNumber(previous.adelanto) : referencia,
+        tipo_pago: previous?.tipo_pago || 'Efectivo'
+      }
+    },
+    getVentaItem (joyaId) {
+      return this.ventaItems.find(item => item.joya_id === joyaId) || null
     },
     openReportDialog (type) {
       this.reportForm.type = type
@@ -469,9 +533,7 @@ export default {
         const disponibles = new Set(this.joyas.map(joya => joya.id))
         this.form.joya_ids = this.form.joya_ids.filter(id => disponibles.has(id))
         this.form.joya_id = this.form.joya_ids[0] || null
-        if (this.form.joya_ids.length) {
-          this.syncSelectedJoyas()
-        }
+        this.syncSelectedJoyas()
       }).catch(err => {
         this.$alert.error(err.response?.data?.message || 'Error al cargar joyas')
       }).finally(() => {
@@ -490,22 +552,42 @@ export default {
     syncSelectedJoyas () {
       if (!this.selectedJoyas.length) {
         this.form.peso = 0
-        this.form.costo_total = 0
-        this.form.adelanto = 0
         this.form.detalle = ''
-        this.updateSaldo()
+        this.ventaItems = []
         return
       }
+      const existentes = new Map(this.ventaItems.map(item => [item.joya_id, item]))
+      this.ventaItems = this.selectedJoyas.map(joya => this.buildVentaItem(joya, existentes.get(joya.id)))
       const pesoTotal = this.selectedJoyas.reduce((sum, joya) => sum + Number(joya.peso || 0), 0)
-      const costoTotal = this.selectedJoyas.reduce((sum, joya) => sum + Number(joya.precio_referencial || 0), 0)
       this.form.peso = Number(pesoTotal.toFixed(2))
-      this.form.costo_total = Number(costoTotal.toFixed(2))
-      this.form.adelanto = Number(costoTotal.toFixed(2))
       this.form.detalle = `VENTA DIRECTA: ${this.selectedJoyas.map(joya => `${joya.nombre} | ${joya.tipo} | ${joya.peso} GR`).join(' || ')}`
-      this.updateSaldo()
     },
-    updateSaldo () {
-      this.form.saldo = Math.max(0, Number(this.form.costo_total || 0) - Number(this.form.adelanto || 0))
+    updateVentaItem (joyaId, field, value) {
+      this.ventaItems = this.ventaItems.map(item => {
+        if (item.joya_id !== joyaId) return item
+
+        if (field === 'costo_total') {
+          const monto = this.toNumber(value)
+          return {
+            ...item,
+            costo_total: monto,
+            adelanto: monto
+          }
+        }
+
+        return {
+          ...item,
+          [field]: field === 'tipo_pago' ? (value || 'Efectivo') : this.toNumber(value)
+        }
+      })
+    },
+    restoreVentaItemReferential (joyaId) {
+      const joya = this.selectedJoyas.find(item => item.id === joyaId)
+      if (!joya) return
+      const referencia = this.toNumber(joya.precio_referencial)
+      this.ventaItems = this.ventaItems.map(item => item.joya_id === joyaId
+        ? { ...item, costo_total: referencia, adelanto: referencia }
+        : item)
     },
     getClientes () {
       this.$axios.get('clients', {
@@ -601,12 +683,24 @@ export default {
         return
       }
 
+      if (this.ventaItems.some(item => this.toNumber(item.costo_total) <= 0)) {
+        this.$alert.error('Cada joya debe tener un monto mayor a cero')
+        return
+      }
+
       this.saving = true
       this.$axios.post('ordenes', {
-        ...this.form,
-        joya_id: this.form.joya_ids[0],
-        joya_ids: this.form.joya_ids,
-        tipo: 'Venta directa'
+        cliente_id: this.form.cliente_id,
+        celular: this.form.celular,
+        fecha_entrega: this.form.fecha_entrega,
+        detalle: this.form.detalle,
+        tipo: 'Venta directa',
+        ventas: this.ventaItems.map(item => ({
+          joya_id: item.joya_id,
+          costo_total: this.toNumber(item.costo_total),
+          adelanto: this.toNumber(item.adelanto),
+          tipo_pago: item.tipo_pago || 'Efectivo'
+        }))
       }).then(() => {
         this.$alert.success('Venta registrada correctamente')
         this.$router.push('/ventas-joyas')
@@ -683,13 +777,21 @@ export default {
 }
 
 .selected-joya {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f7fafc;
+}
+
+.selected-joya--stacked {
+  display: grid;
+  gap: 8px;
+}
+
+.selected-joya__top {
   display: grid;
   grid-template-columns: 92px 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: #f7fafc;
 }
 
 .selected-joya__image {
@@ -697,10 +799,24 @@ export default {
   height: 92px;
 }
 
+.selected-joya__saldo {
+  height: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(25, 118, 210, 0.12);
+}
 .selected-client {
   padding: 10px 12px;
   border-radius: 12px;
   background: #f3f7f9;
+}
+
+.summary-total-card {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(25, 118, 210, 0.18);
 }
 
 .client-list {
@@ -725,6 +841,9 @@ export default {
   overflow: hidden;
 }
 </style>
+
+
+
 
 
 

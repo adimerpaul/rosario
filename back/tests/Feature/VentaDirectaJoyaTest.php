@@ -84,7 +84,7 @@ it('marks a direct jewel sale as entregado when fully paid at creation', functio
         ]);
 });
 
-it('creates a direct jewel sale with multiple joyas', function () {
+it('creates one direct jewel sale per selected joya', function () {
     $user = User::factory()->create(['role' => 'Vendedor']);
     Sanctum::actingAs($user);
 
@@ -96,26 +96,25 @@ it('creates a direct jewel sale with multiple joyas', function () {
         'address' => 'ORURO',
     ]);
 
-    $joyas = Joya::query()->take(2)->get();
+    $joyas = Joya::query()->take(2)->get()->values();
 
     $this->postJson('/api/ordenes', [
         'tipo' => 'Venta directa',
-        'joya_id' => $joyas[0]->id,
-        'joya_ids' => $joyas->pluck('id')->all(),
         'cliente_id' => $cliente->id,
         'celular' => $cliente->cellphone,
-        'costo_total' => 9000,
-        'adelanto' => 1000,
-        'tipo_pago' => 'QR',
+        'ventas' => [
+            ['joya_id' => $joyas[0]->id, 'costo_total' => 5000, 'adelanto' => 500, 'tipo_pago' => 'QR'],
+            ['joya_id' => $joyas[1]->id, 'costo_total' => 4000, 'adelanto' => 250, 'tipo_pago' => 'Efectivo'],
+        ],
     ])->assertCreated()
-        ->assertJsonFragment([
-            'tipo' => 'Venta directa',
-            'joya_id' => $joyas[0]->id,
-        ]);
+        ->assertJsonCount(2, 'ventas');
 
-    $orden = Orden::where('tipo', 'Venta directa')->latest('id')->firstOrFail();
+    $ventas = Orden::where('tipo', 'Venta directa')->orderBy('id')->get();
 
-    expect($orden->joyas()->pluck('joyas.id')->all())->toBe($joyas->pluck('id')->all());
+    expect($ventas)->toHaveCount(2)
+        ->and($ventas->pluck('joya_id')->all())->toBe($joyas->pluck('id')->all())
+        ->and((float) $ventas[0]->costo_total)->toBe(5000.0)
+        ->and((float) $ventas[1]->costo_total)->toBe(4000.0);
 });
 
 it('excludes already sold joyas from available sale list until cancellation', function () {
@@ -177,24 +176,25 @@ it('excludes every joya from a multi-jewel sale from available sale list until c
 
     $joyas = Joya::query()->take(2)->get();
 
-    $venta = $this->postJson('/api/ordenes', [
+    $ventas = $this->postJson('/api/ordenes', [
         'tipo' => 'Venta directa',
-        'joya_id' => $joyas[0]->id,
-        'joya_ids' => $joyas->pluck('id')->all(),
         'cliente_id' => $cliente->id,
-        'costo_total' => 4000,
-        'adelanto' => 500,
-        'tipo_pago' => 'Efectivo',
-    ])->assertCreated()->json();
+        'ventas' => [
+            ['joya_id' => $joyas[0]->id, 'costo_total' => 2200, 'adelanto' => 500, 'tipo_pago' => 'Efectivo'],
+            ['joya_id' => $joyas[1]->id, 'costo_total' => 1800, 'adelanto' => 0, 'tipo_pago' => 'Efectivo'],
+        ],
+    ])->assertCreated()->json('ventas');
 
     $this->getJson('/api/ordenes/joyas-disponibles')
         ->assertOk()
         ->assertJsonMissing(['id' => $joyas[0]->id])
         ->assertJsonMissing(['id' => $joyas[1]->id]);
 
-    $this->postJson('/api/ordenes/'.$venta['id'].'/cancelar', [
-        'anular_pagos' => true,
-    ])->assertOk();
+    foreach ($ventas as $venta) {
+        $this->postJson('/api/ordenes/'.$venta['id'].'/cancelar', [
+            'anular_pagos' => true,
+        ])->assertOk();
+    }
 
     $this->getJson('/api/ordenes/joyas-disponibles')
         ->assertOk()
@@ -363,12 +363,11 @@ it('marks every joya in a multi-jewel sale as reservada in vitrina', function ()
 
     $this->postJson('/api/ordenes', [
         'tipo' => 'Venta directa',
-        'joya_id' => $joyas[0]->id,
-        'joya_ids' => $joyas->pluck('id')->all(),
         'cliente_id' => $cliente->id,
-        'costo_total' => 4500,
-        'adelanto' => 500,
-        'tipo_pago' => 'Efectivo',
+        'ventas' => [
+            ['joya_id' => $joyas[0]->id, 'costo_total' => 2500, 'adelanto' => 500, 'tipo_pago' => 'Efectivo'],
+            ['joya_id' => $joyas[1]->id, 'costo_total' => 2000, 'adelanto' => 0, 'tipo_pago' => 'Efectivo'],
+        ],
     ])->assertCreated();
 
     $this->getJson('/api/ordenes/joyas-vitrina?estado_joya=RESERVADO')
@@ -376,6 +375,7 @@ it('marks every joya in a multi-jewel sale as reservada in vitrina', function ()
         ->assertJsonFragment(['id' => $joyas[0]->id, 'estado_joya' => 'RESERVADO'])
         ->assertJsonFragment(['id' => $joyas[1]->id, 'estado_joya' => 'RESERVADO']);
 });
+
 
 it('finds joyas in vitrina by codigo', function () {
     Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
