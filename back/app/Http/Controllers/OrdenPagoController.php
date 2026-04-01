@@ -27,8 +27,7 @@ class OrdenPagoController extends Controller
 
             $orden = $pago->orden()->first();
             $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
-            $orden->adelanto = $pagado;
-            $orden->saldo = max(0, ($orden->costo_total ?? 0) - $pagado);
+            $orden->saldo = max(0, ($orden->costo_total ?? 0) - ($pagado + ($orden->adelanto ?? 0)));
             if ($orden->saldo > 0 && $orden->estado === 'Entregado') {
                 $orden->estado = 'Pendiente';
             }
@@ -36,12 +35,12 @@ class OrdenPagoController extends Controller
 
             Egreso::create([
                 'fecha' => now()->toDateString(),
-                'descripcion' => 'ANULACION ADELANTO ORDEN '.$orden->numero,
+                'descripcion' => 'ANULACION PAGO ORDEN '.$orden->numero,
                 'metodo' => $this->normalizarMetodoCaja($pago->metodo),
                 'monto' => round((float) $pago->monto, 2),
                 'estado' => 'Activo',
                 'user_id' => $request->user()?->id,
-                'nota' => 'Reversion automatica de adelanto anulado',
+                'nota' => 'Reversion automatica de pago anulado',
             ]);
 
             return response()->json(['message' => 'Pago anulado']);

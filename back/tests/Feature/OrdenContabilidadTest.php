@@ -110,18 +110,80 @@ it('registers an egreso when an order payment is annulled', function () {
         ->assertOk()
         ->assertJsonFragment(['message' => 'Pago anulado']);
 
+    $orden->refresh();
+
     $this->assertDatabaseHas('orden_pagos', [
         'id' => $pago->id,
         'estado' => 'Anulado',
     ]);
 
+    expect((float) $orden->adelanto)->toBe(150.0);
+    expect((float) $orden->saldo)->toBe(750.0);
+
     $this->assertDatabaseHas('egresos', [
-        'descripcion' => 'ANULACION ADELANTO ORDEN O0101-2026',
+        'descripcion' => 'ANULACION PAGO ORDEN O0101-2026',
         'monto' => 150,
         'metodo' => 'QR',
         'estado' => 'Activo',
         'user_id' => $admin->id,
     ]);
+});
+
+it('keeps adelanto and only reverses the extra payment when annulling one of multiple order payments', function () {
+    $admin = User::factory()->create(['role' => 'Administrador']);
+    Sanctum::actingAs($admin);
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE ORDEN MULTIPAGO',
+        'ci' => '300401',
+        'status' => 'Confiable',
+        'cellphone' => '70030041',
+        'address' => 'ORURO',
+    ]);
+
+    $orden = Orden::create([
+        'numero' => 'O0102-2026',
+        'tipo' => 'Orden',
+        'fecha_creacion' => now(),
+        'fecha_entrega' => now()->toDateString(),
+        'detalle' => 'ORDEN CON PAGO EXTRA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 1000,
+        'adelanto' => 100,
+        'saldo' => 900,
+        'estado' => 'Pendiente',
+        'peso' => 1,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $admin->id,
+        'cliente_id' => $cliente->id,
+    ]);
+
+    OrdenPago::create([
+        'fecha' => now(),
+        'monto' => 50,
+        'metodo' => 'EFECTIVO',
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+        'orden_id' => $orden->id,
+    ]);
+
+    $pago = OrdenPago::create([
+        'fecha' => now(),
+        'monto' => 100,
+        'metodo' => 'QR',
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+        'orden_id' => $orden->id,
+    ]);
+
+    $this->postJson("/api/ordenes/pagos/{$pago->id}/anular")
+        ->assertOk()
+        ->assertJsonFragment(['message' => 'Pago anulado']);
+
+    $orden->refresh();
+
+    expect((float) $orden->adelanto)->toBe(100.0);
+    expect((float) $orden->saldo)->toBe(850.0);
 });
 
 it('allows admin to update loan interest and dates', function () {
