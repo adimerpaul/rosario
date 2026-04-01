@@ -266,6 +266,49 @@
         </div>
       </q-card-section>
     </q-card>
+
+    <q-dialog v-model="dlgPagarTodo">
+      <q-card class="pago-total-dialog">
+        <q-card-section class="q-pb-sm">
+          <div class="text-subtitle1 text-weight-bold">Registrar pago total</div>
+          <div class="text-caption text-grey-7">
+            Orden #{{ pagoTodoOrden?.numero || '-' }}
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none q-gutter-md">
+          <div class="pago-total-resumen">
+            <div class="text-caption text-grey-7">Monto pendiente</div>
+            <div class="text-h5 text-weight-bold text-green-8">
+              {{ money(pagoTodoOrden?.saldo) }} Bs
+            </div>
+          </div>
+
+          <q-select
+            v-model="pagoTodoForm.metodo"
+            :options="metodosPagoDialog"
+            option-label="label"
+            option-value="value"
+            emit-value
+            map-options
+            label="Método de pago"
+            outlined
+            dense
+          />
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md q-pt-none">
+          <q-btn flat label="Cancelar" v-close-popup no-caps />
+          <q-btn
+            color="green"
+            label="Registrar pago"
+            no-caps
+            :loading="savingPagoTodo"
+            @click="confirmarPagarTodo"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -289,6 +332,14 @@ export default {
       },
       resumen: { total: 0, adelanto: 0, saldo: 0 },
       loading: false,
+      dlgPagarTodo: false,
+      savingPagoTodo: false,
+      pagoTodoOrden: null,
+      pagoTodoForm: { metodo: 'EFECTIVO' },
+      metodosPagoDialog: [
+        { label: 'Efectivo', value: 'EFECTIVO' },
+        { label: 'Pago QR', value: 'QR' }
+      ],
 
       // Paginación
       pagination: {
@@ -327,7 +378,7 @@ export default {
   methods: {
     resetToFirst () { this.pagination.page = 1 },
 
-    pagarTodo(orden) {
+    pagarTodoLegacy (orden) {
       const saldo = Number(orden.saldo || 0)
       this.$q.dialog({
         title: 'Confirmar Pago',
@@ -471,6 +522,35 @@ export default {
         default:           return 'work'
       }
     },
+    pagarTodo (orden) {
+      const saldo = Number(orden.saldo || 0)
+      if (saldo <= 0) {
+        this.$alert?.error('La orden no tiene saldo pendiente')
+        return
+      }
+      this.pagoTodoOrden = orden
+      this.pagoTodoForm = { metodo: 'EFECTIVO' }
+      this.dlgPagarTodo = true
+    },
+    confirmarPagarTodo () {
+      if (!this.pagoTodoOrden) return
+      this.savingPagoTodo = true
+      this.$axios.post(`/ordenes/${this.pagoTodoOrden.id}/pagar-todo`, {
+        metodo: this.pagoTodoForm.metodo
+      })
+        .then(() => {
+          this.$alert?.success('Pago registrado correctamente')
+          this.dlgPagarTodo = false
+          this.pagoTodoOrden = null
+          this.getOrdenes()
+        })
+        .catch(err => {
+          this.$alert?.error(err.response?.data?.message || 'Error al registrar el pago')
+        })
+        .finally(() => {
+          this.savingPagoTodo = false
+        })
+    },
     money (v) { return Number(v || 0).toFixed(2) },
     formatDateTime (v) {
       if (!v) return '—'
@@ -513,4 +593,13 @@ export default {
   overflow: hidden;
 }
 .muted { font-size: .8em; color: #666; }
+.pago-total-dialog {
+  min-width: 360px;
+}
+.pago-total-resumen {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e9 100%);
+  border: 1px solid #c8e6c9;
+}
 </style>
