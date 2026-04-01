@@ -104,9 +104,9 @@
                             type="number"
                             outlined
                             dense
-                            min="0"
+                            min="0.01"
                             step="0.01"
-                            :rules="[val => val >= 0 || 'El peso debe ser positivo']"
+                            :rules="[val => Number(val) > 0 || 'El peso debe ser mayor a 0']"
                             @update:model-value="calcularTotal"
                           />
                         </div>
@@ -384,6 +384,10 @@ export default {
     guardarOrden () {
       if (!this.orden.cliente_id) {
         this.$alert.error('Debe seleccionar un cliente')
+        return
+      }
+      if (Number(this.orden.peso || 0) <= 0) {
+        this.$alert.error('El peso debe ser mayor a 0')
         return
       }
 
