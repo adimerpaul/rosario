@@ -389,10 +389,13 @@ export default {
       window.open(url, '_blank')
     },
     async imprimirOrdenDirecto (id) {
+      this.$q.loading.show({ message: 'Generando impresion...' })
       try {
         await printOrdenTrabajoDirecto(this.$axios, id)
       } catch (err) {
         this.$alert?.error(err.response?.data?.message || 'Error al imprimir directo la orden')
+      } finally {
+        this.$q.loading.hide()
       }
     },
     async imprimirGarantiaDirecto (id) {

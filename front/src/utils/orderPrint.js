@@ -10,94 +10,93 @@ const COMPANY = {
 }
 
 const DIRECT_PRINT_STYLES = `
-  @page { size: letter portrait; margin: 10mm; }
+  @page { size: letter portrait; margin: 6mm; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body { font-family: Arial, Helvetica, sans-serif; color: #111; }
   .print-root { width: 100%; color: #111; }
   .sheet {
-    border: 2px solid #d50000;
-    border-radius: 14px;
-    padding: 10px;
-    margin-bottom: 10px;
+    border: 1.6px solid #d50000;
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 12px;
     page-break-inside: avoid;
   }
-  .page-break { page-break-after: always; }
   .head { width: 100%; border-collapse: collapse; }
   .head td { vertical-align: top; }
   .center { text-align: center; }
   .right { text-align: right; }
   .brand { color: #d50000; }
-  .title { font-size: 21px; font-weight: 800; letter-spacing: .3px; }
-  .sub { font-size: 11px; line-height: 1.25; }
-  .small { font-size: 10px; }
-  .medium { font-size: 12px; }
-  .large { font-size: 14px; }
+  .title { font-size: 18px; font-weight: 800; letter-spacing: .1px; }
+  .sub { font-size: 8.5px; line-height: 1.1; }
+  .small { font-size: 8.5px; }
+  .medium { font-size: 10.5px; }
+  .large { font-size: 10.5px; }
   .bold { font-weight: 700; }
-  .logo-box { width: 148px; text-align: center; }
-  .logo-box img { max-width: 62px; max-height: 62px; display: block; margin: 0 auto 4px; object-fit: contain; }
+  .logo-box { width: 112px; text-align: center; }
+  .logo-box img { max-width: 46px; max-height: 46px; display: block; margin: 0 auto 2px; object-fit: contain; }
   .side-image {
-    width: 92px;
-    height: 92px;
-    border: 1.5px solid #d50000;
-    border-radius: 10px;
+    width: 64px;
+    height: 64px;
+    border: 1.2px solid #d50000;
+    border-radius: 6px;
     object-fit: cover;
     display: inline-block;
   }
   .fallback-image {
-    width: 64px;
-    height: 64px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
     display: inline-block;
   }
   .badge {
     display: inline-block;
-    min-width: 112px;
+    min-width: 72px;
     text-align: center;
-    border: 1.7px solid #d50000;
-    border-radius: 12px;
-    padding: 4px 8px;
-    font-size: 12px;
-    line-height: 1.2;
-    margin-bottom: 6px;
+    border: 1.3px solid #d50000;
+    border-radius: 8px;
+    padding: 2px 5px;
+    font-size: 9.5px;
+    line-height: 1.05;
+    margin-bottom: 3px;
   }
   .grid {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 6px;
-    margin-top: 6px;
+    border-spacing: 3px;
+    margin-top: 3px;
   }
   .cell {
     border: 1.7px solid #d50000;
     border-radius: 12px;
-    padding: 10px 10px 8px;
+    padding: 6px 6px 5px;
     position: relative;
   }
   .label {
     position: absolute;
-    top: -8px;
-    left: 12px;
+    top: -6px;
+    left: 8px;
     background: #fff;
-    padding: 0 6px;
+    padding: 0 4px;
     color: #d50000;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
   }
-  .note-text, .justify { text-align: justify; line-height: 1.35; }
+  .note-text, .justify { text-align: justify; line-height: 1.05; }
   .info-pills {
     display: table;
     width: 100%;
-    border-spacing: 6px 0;
-    margin-top: 6px;
+    border-spacing: 3px 0;
+    margin-top: 4px;
   }
   .info-pills .item {
     display: table-cell;
     width: 50%;
     border: 1.7px solid #d50000;
     border-radius: 12px;
-    padding: 8px;
+    padding: 6px;
     text-align: center;
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 700;
   }
   .date-box {
@@ -110,12 +109,17 @@ const DIRECT_PRINT_STYLES = `
     font-weight: 700;
     margin: 0 2px;
   }
-  .dot { border-top: 1px dashed #bbb; margin: 8px 0; }
-  .signature-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-  .signature-table td { width: 50%; text-align: center; font-size: 10px; }
-  .signature-line { border-top: 1px solid #333; width: 75%; margin: 20px auto 4px; }
+  .dot { border-top: 1px dashed #bbb; margin: 4px 0; }
+  .signature-table { width: 100%; border-collapse: collapse; margin-top: 3px; }
+  .signature-table td { width: 50%; text-align: center; font-size: 9.5px; }
+  .signature-line { border-top: 1px solid #333; width: 75%; margin: 12px auto 3px; }
   .muted { color: #666; }
-  .mt-6 { margin-top: 6px; }
+  .mt-6 { margin-top: 3px; }
+  .half-separator {
+    height: 34px;
+    border-top: 1px dashed #999;
+    margin: 4px 0 6px;
+  }
 `
 
 function escapeHtml (value) {
@@ -132,7 +136,7 @@ function money (value) {
 }
 
 function formatDate (value, format = 'DD/MM/YYYY') {
-  if (!value) return '—'
+  if (!value) return '-'
   return moment(value).format(format)
 }
 
@@ -166,14 +170,14 @@ function buildOrderPrintModel (order, precioOro, axiosInstance) {
     cliente: order?.cliente?.name || 'N/A',
     telefono: formatPhone(order),
     detalle: [
-      order?.detalle || '—',
+      order?.detalle || '-',
       `Peso: ${order?.peso || 0} gr.`,
-      `Oro: ${order?.kilates18 || '—'}`
+      `Oro: ${order?.kilates18 || '-'}`
     ].join(' / '),
     costoTotal: money(order?.costo_total),
     adelanto: money(Number(order?.adelanto || 0) + Number(order?.totalPagos || 0)),
     saldo: money(order?.saldo),
-    entrega: order?.fecha_entrega ? formatDate(order.fecha_entrega) : '—',
+    entrega: order?.fecha_entrega ? formatDate(order.fecha_entrega) : '-',
     nota: order?.nota || 'Ningun trabajo sera entregado sin la presente orden. Importante en caso de no recojo se espera un maximo de 90 dias antes de proceder a la fundicion de la joya',
     garantia: {
       codigo: order?.numero || '-',
@@ -184,7 +188,7 @@ function buildOrderPrintModel (order, precioOro, axiosInstance) {
       cliente: order?.cliente?.name || 'N/A',
       tipo: 'Joya',
       periodo: '1 ano',
-      detalle: order?.detalle || '—',
+      detalle: order?.detalle || '-',
       mantenimientoMeses: 12,
       precioOro: money(precioOro)
     },
@@ -216,7 +220,7 @@ function renderOrderWorkSheet (model) {
           </td>
           <td class="center">
             <div class="small">${escapeHtml(model.fechaTrabajo.hoy)}</div>
-            <div style="height:16px"></div>
+            <div style="height:6px"></div>
             <div class="brand title">ORDEN DE TRABAJO</div>
             <div class="sub">
               ${escapeHtml(model.company.direccion)}<br>
@@ -224,11 +228,11 @@ function renderOrderWorkSheet (model) {
               ${escapeHtml(model.company.sucursal)} - Bolivia
             </div>
           </td>
-          <td class="right" style="width:170px">
+          <td class="right" style="width:116px">
             <table style="width:100%">
               <tr>
                 <td class="right">${photoHtml}</td>
-                <td class="right" style="width:88px">
+                <td class="right" style="width:62px">
                   <div class="badge"><b>Nro: ${escapeHtml(model.numero)}</b></div>
                   <div class="badge"><b>Bs.</b> ${escapeHtml(model.costoTotal)}</div>
                 </td>
@@ -241,11 +245,11 @@ function renderOrderWorkSheet (model) {
       <table class="grid">
         <tr>
           <td class="cell" style="width:50%">
-            <span class="label">El Señor:</span>
+            <span class="label">El Senor:</span>
             <div class="large center">${escapeHtml(String(model.cliente).toUpperCase())}</div>
           </td>
           <td class="cell" style="width:50%">
-            <span class="label">Teléfono:</span>
+            <span class="label">Telefono:</span>
             <div class="large center">${escapeHtml(model.telefono)}</div>
           </td>
         </tr>
@@ -301,14 +305,14 @@ function renderWarrantySheet (model) {
             <div class="small">${escapeHtml(model.company.direccion)}</div>
             <div class="small">Cel: ${escapeHtml(model.company.cel)} - ${escapeHtml(model.company.sucursal)}</div>
             <div class="brand title" style="margin-top:6px">GARANTIA</div>
-            <div class="small muted">Cobertura por defectos de fabricación según condiciones indicadas</div>
+            <div class="small muted">Cobertura por defectos de fabricacion segun condiciones indicadas</div>
           </td>
-          <td class="right" style="width:170px">
+          <td class="right" style="width:138px">
             <div class="badge">
               <b>Bs.</b> ${escapeHtml(model.garantia.precioOro)}<br>
               <span class="small muted">${escapeHtml(model.garantia.fecha)}</span>
             </div>
-            <div class="badge">Código: ${escapeHtml(model.garantia.codigo)}</div>
+            <div class="badge">Codigo: ${escapeHtml(model.garantia.codigo)}</div>
             <img class="fallback-image" src="${escapeHtml(model.fallbackRings)}" alt="Rings">
           </td>
         </tr>
@@ -323,9 +327,9 @@ function renderWarrantySheet (model) {
           <td class="cell" style="width:45%">
             <span class="label">Fecha</span>
             <div class="medium">
-              Día <span class="date-box">${escapeHtml(model.garantia.dia)}</span>
+              Dia <span class="date-box">${escapeHtml(model.garantia.dia)}</span>
               Mes <span class="date-box">${escapeHtml(model.garantia.mes)}</span>
-              Año <span class="date-box">${escapeHtml(model.garantia.ano)}</span>
+              Ano <span class="date-box">${escapeHtml(model.garantia.ano)}</span>
             </div>
           </td>
         </tr>
@@ -336,7 +340,7 @@ function renderWarrantySheet (model) {
         <div class="medium">${escapeHtml(model.garantia.detalle)}</div>
         <div class="small muted mt-6">
           <b>Tipo:</b> ${escapeHtml(model.garantia.tipo)}
-          &nbsp;&nbsp;•&nbsp;&nbsp;
+          &nbsp;&nbsp;|&nbsp;&nbsp;
           <b>Periodo:</b> ${escapeHtml(model.garantia.periodo)}
         </div>
       </div>
@@ -347,12 +351,12 @@ function renderWarrantySheet (model) {
       </div>
 
       <div class="cell mt-6">
-        <span class="label">Condiciones de Garantía</span>
+        <span class="label">Condiciones de Garantia</span>
         <div class="small justify">
-          La garantía cubre <b>defectos de fabricación</b> del metal y soldaduras durante el periodo indicado.
-          No cubre golpes, rayones, deformaciones por uso, exposición a químicos, humedad o temperaturas extremas,
-          pérdida de piedras por impacto ni intervenciones de terceros. Es indispensable presentar este documento
-          para hacer válida la garantía.
+          La garantia cubre <b>defectos de fabricacion</b> del metal y soldaduras durante el periodo indicado.
+          No cubre golpes, rayones, deformaciones por uso, exposicion a quimicos, humedad o temperaturas extremas,
+          perdida de piedras por impacto ni intervenciones de terceros. Es indispensable presentar este documento
+          para hacer valida la garantia.
         </div>
         <div class="center small mt-6">Gracias por su preferencia</div>
       </div>
@@ -425,13 +429,11 @@ export async function printOrdenTrabajoDirecto (axiosInstance, orderId, orderDat
   ])
 
   const model = buildOrderPrintModel(orden, precioOro, axiosInstance)
-  const html = `
+  return printHtml(`
     ${renderOrderWorkSheet(model)}
-    <div class="page-break"></div>
+    <div class="half-separator"></div>
     ${renderOrderWorkSheet(model)}
-  `
-
-  return printHtml(html)
+  `)
 }
 
 export async function printGarantiaDirecta (axiosInstance, orderId, orderData = null) {
