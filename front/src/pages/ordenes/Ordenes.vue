@@ -149,6 +149,8 @@
                     <div class="row items-center">
                       <q-icon name="person" size="18px" class="q-mr-xs"/>
                       <div class="text-body2 ellipsis-2-lines">{{ orden.cliente?.name || 'N/A' }}</div>
+                      <q-icon name="phone" size="18px" class="q-mr-xs q-ml-md"/>
+                      <div class="text-body2 ellipsis-2-lines">{{ orden.cliente?.cellphone || 'N/A' }}</div>
                     </div>
                     <div>
                     <span class="text-bold">Detalle: </span>{{orden.detalle}} <br>
@@ -191,14 +193,14 @@
                       <q-btn dense flat no-caps icon="payment" @click="pagarTodo(orden)" />
                       <q-btn-dropdown dense flat no-caps dropdown-icon="arrow_drop_down" icon="print">
                         <q-list dense style="min-width: 220px">
-                          <q-item clickable v-close-popup @click="imprimirOrdenPdf(orden.id)">
-                            <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
-                            <q-item-section>Orden de trabajo PDF</q-item-section>
-                          </q-item>
-                          <q-item clickable v-close-popup @click="imprimirGarantiaPdf(orden.id)">
-                            <q-item-section avatar><q-icon name="assignment" /></q-item-section>
-                            <q-item-section>Garantia PDF</q-item-section>
-                          </q-item>
+<!--                          <q-item clickable v-close-popup @click="imprimirOrdenPdf(orden.id)">-->
+<!--                            <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>-->
+<!--                            <q-item-section>Orden de trabajo PDF</q-item-section>-->
+<!--                          </q-item>-->
+<!--                          <q-item clickable v-close-popup @click="imprimirGarantiaPdf(orden.id)">-->
+<!--                            <q-item-section avatar><q-icon name="assignment" /></q-item-section>-->
+<!--                            <q-item-section>Garantia PDF</q-item-section>-->
+<!--                          </q-item>-->
                           <q-item clickable v-close-popup @click="imprimirOrdenDirecto(orden.id)">
                             <q-item-section avatar><q-icon name="print" /></q-item-section>
                             <q-item-section>Orden de trabajo directo</q-item-section>
@@ -216,7 +218,7 @@
                         no-caps
                         color="negative"
                         icon="block"
-                        label="Anular"
+                        label=""
                         @click="anularOrden(orden)"
                       />
                     </div>

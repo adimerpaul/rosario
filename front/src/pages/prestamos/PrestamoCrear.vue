@@ -123,7 +123,8 @@
                       <q-input
                         label="Prestado (Bs)" v-model.number="prestamo.valor_prestado"
                         type="number" outlined dense
-                        @update:model-value="calcularSaldo"
+                        :min="0" :max="prestamo.valor_total"
+                        @update:model-value="calcularSaldo;"
                       />
                     </div>
                     <div class="col-6 col-md-2 ">

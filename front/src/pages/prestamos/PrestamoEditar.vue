@@ -133,10 +133,10 @@
                   </div>
 
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-select dense outlined label="Interes (%)" v-model.number="prestamo.interes" :options="[1,2,3]" :readonly="!isAdmin" @update:model-value="recalcular" />
+                    <q-select dense outlined label="Interes (%)" v-model.number="prestamo.interes" :options="[1,2,3]"  @update:model-value="recalcular" readonly />
                   </div>
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-select dense outlined label="Almacén (%)" v-model.number="prestamo.almacen" :options="[2,3]" readonly @update:model-value="recalcular" />
+                    <q-select dense outlined label="Almacén (%)" v-model.number="prestamo.almacen" :options="[1,1.5,2,2.5,3]" :readonly="!isAdmin" readonly @update:model-value="recalcular" />
                   </div>
                   <div class="col-12 col-sm-6 col-md-4">
                     <q-input dense outlined label="Valor total ref." :model-value="money(prestamo.valor_total)" readonly />
@@ -306,7 +306,7 @@ export default {
       },
       pagos: [],
       metodosPago: ['EFECTIVO', 'QR'],
-      tiposPago: ['INTERES', 'SALDO', 'ADICIONAR CAPITAL'],
+      tiposPago: ['SALDO', 'ADICIONAR CAPITAL'],
       nuevoPago: { monto: null, metodo: 'EFECTIVO', tipo_pago: 'INTERES' },
       pesoNeto: 0,
       interesMonto: 0,
@@ -415,7 +415,7 @@ export default {
       }
     },
     openPagoDialog () {
-      this.nuevoPago = { monto: null, metodo: 'EFECTIVO', tipo_pago: 'INTERES' }
+      this.nuevoPago = { monto: null, metodo: 'EFECTIVO', tipo_pago: 'SALDO' }
       this.pagoDialog = true
     },
     async agregarPago () {

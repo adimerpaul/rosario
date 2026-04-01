@@ -148,14 +148,14 @@
 
             <table class="grid" style="margin-top: 2px;">
                 <tr>
-                    <td class="cell" style="width: 58%;">
+                    <td class="cell" style="width: 58%;" colspan="2">
                         <span class="label-float">El Señor</span>
                         <div class="value-xl center">{{ $clienteNombre }}</div>
                     </td>
-                    <td class="cell" style="width: 42%;">
-                        <span class="label-float">Telefono</span>
-                        <div class="value-xl center">{{ $telefono }}</div>
-                    </td>
+{{--                    <td class="cell" style="width: 42%;">--}}
+{{--                        <span class="label-float">Telefono</span>--}}
+{{--                        <div class="value-xl center">{{ $telefono }}</div>--}}
+{{--                    </td>--}}
                 </tr>
                 <tr>
                     <td class="cell" style="width: 64%;">

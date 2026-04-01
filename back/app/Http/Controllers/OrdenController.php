@@ -337,7 +337,7 @@ class OrdenController extends Controller
 
     public function index(Request $request)
     {
-        $query = Orden::with(['user:id,name', 'cliente:id,name,ci', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina'])
+        $query = Orden::with(['user:id,name', 'cliente:id,name,ci,cellphone', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina'])
             ->orderByDesc('fecha_creacion');
 
         if ($request->filled('tipo')) {
