@@ -15,23 +15,35 @@ const DIRECT_PRINT_STYLES = `
   html, body { margin: 0; padding: 0; }
   body { font-family: Arial, Helvetica, sans-serif; color: #111; }
   .print-root { width: 100%; color: #111; }
+  .order-double-sheet {
+    height: calc(279.4mm - 12mm);
+    position: relative;
+  }
   .sheet {
     border: 1.6px solid #d50000;
     border-radius: 12px;
-    padding: 6px;
+    padding: 7px 8px;
     margin-bottom: 12px;
     page-break-inside: avoid;
+  }
+  .sheet.order-copy-top { margin-bottom: 0; }
+  .sheet.order-copy-bottom {
+    position: absolute;
+    top: calc(50% + 3mm);
+    left: 0;
+    right: 0;
+    margin-bottom: 0;
   }
   .head { width: 100%; border-collapse: collapse; }
   .head td { vertical-align: top; }
   .center { text-align: center; }
   .right { text-align: right; }
   .brand { color: #d50000; }
-  .title { font-size: 18px; font-weight: 800; letter-spacing: .1px; }
-  .sub { font-size: 8.5px; line-height: 1.1; }
-  .small { font-size: 8.5px; }
-  .medium { font-size: 10.5px; }
-  .large { font-size: 10.5px; }
+  .title { font-size: 19px; font-weight: 800; letter-spacing: .15px; }
+  .sub { font-size: 9.2px; line-height: 1.15; }
+  .small { font-size: 9.2px; line-height: 1.15; }
+  .medium { font-size: 11.2px; line-height: 1.2; }
+  .large { font-size: 11.4px; line-height: 1.2; }
   .bold { font-weight: 700; }
   .logo-box { width: 112px; text-align: center; }
   .logo-box img { max-width: 46px; max-height: 46px; display: block; margin: 0 auto 2px; object-fit: contain; }
@@ -55,21 +67,21 @@ const DIRECT_PRINT_STYLES = `
     text-align: center;
     border: 1.3px solid #d50000;
     border-radius: 8px;
-    padding: 2px 5px;
-    font-size: 9.5px;
-    line-height: 1.05;
+    padding: 3px 5px;
+    font-size: 10px;
+    line-height: 1.12;
     margin-bottom: 3px;
   }
   .grid {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 3px;
-    margin-top: 3px;
+    border-spacing: 4px;
+    margin-top: 4px;
   }
   .cell {
     border: 1.7px solid #d50000;
     border-radius: 12px;
-    padding: 6px 6px 5px;
+    padding: 7px 7px 6px;
     position: relative;
   }
   .label {
@@ -79,24 +91,24 @@ const DIRECT_PRINT_STYLES = `
     background: #fff;
     padding: 0 4px;
     color: #d50000;
-    font-size: 9px;
+    font-size: 9.4px;
     font-weight: 700;
   }
-  .note-text, .justify { text-align: justify; line-height: 1.05; }
+  .note-text, .justify { text-align: justify; line-height: 1.15; }
   .info-pills {
     display: table;
     width: 100%;
-    border-spacing: 3px 0;
-    margin-top: 4px;
+    border-spacing: 4px 0;
+    margin-top: 5px;
   }
   .info-pills .item {
     display: table-cell;
     width: 50%;
     border: 1.7px solid #d50000;
     border-radius: 12px;
-    padding: 6px;
+    padding: 7px 6px;
     text-align: center;
-    font-size: 9px;
+    font-size: 9.6px;
     font-weight: 700;
   }
   .date-box {
@@ -109,16 +121,23 @@ const DIRECT_PRINT_STYLES = `
     font-weight: 700;
     margin: 0 2px;
   }
-  .dot { border-top: 1px dashed #bbb; margin: 4px 0; }
+  .dot { border-top: 1px dashed #bbb; margin: 5px 0 2px; }
   .signature-table { width: 100%; border-collapse: collapse; margin-top: 3px; }
-  .signature-table td { width: 50%; text-align: center; font-size: 9.5px; }
+  .signature-table td { width: 50%; text-align: center; font-size: 9.8px; }
   .signature-line { border-top: 1px solid #333; width: 75%; margin: 12px auto 3px; }
   .muted { color: #666; }
-  .mt-6 { margin-top: 3px; }
+  .mt-6 { margin-top: 5px; }
+  .order-copy-top .head { margin-bottom: 1px; }
+  .order-copy-top .cell { padding-top: 8px; padding-bottom: 7px; }
+  .order-copy-top .grid { margin-top: 5px; }
   .half-separator {
-    height: 34px;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 12px;
     border-top: 1px dashed #999;
-    margin: 4px 0 6px;
+    margin: 6px 0 0;
   }
 `
 
@@ -201,13 +220,13 @@ function buildOrderPrintModel (order, precioOro, axiosInstance) {
   }
 }
 
-function renderOrderWorkSheet (model) {
+function renderOrderWorkSheet (model, variant = 'top') {
   const photoHtml = model.photo
     ? `<img class="side-image" src="${escapeHtml(model.photo)}" alt="Foto de modelo">`
     : `<img class="fallback-image" src="${escapeHtml(model.fallbackRings)}" alt="Rings">`
 
   return `
-    <div class="sheet">
+    <div class="sheet order-copy-${escapeHtml(variant)}">
       <table class="head">
         <tr>
           <td class="logo-box">
@@ -430,9 +449,11 @@ export async function printOrdenTrabajoDirecto (axiosInstance, orderId, orderDat
 
   const model = buildOrderPrintModel(orden, precioOro, axiosInstance)
   return printHtml(`
-    ${renderOrderWorkSheet(model)}
-    <div class="half-separator"></div>
-    ${renderOrderWorkSheet(model)}
+    <div class="order-double-sheet">
+      ${renderOrderWorkSheet(model, 'top')}
+      <div class="half-separator"></div>
+      ${renderOrderWorkSheet(model, 'bottom')}
+    </div>
   `)
 }
 
