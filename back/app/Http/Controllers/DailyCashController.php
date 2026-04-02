@@ -281,8 +281,14 @@ class DailyCashController extends Controller
 
         while ($cursor->lte($lastDayToInclude)) {
             $currentDate = $cursor->toDateString();
-            $runningTotal += $sumActivos($this->buildItemsIngresos($currentDate, $user));
-            $runningTotal -= $sumActivos($this->buildItemsEgresos($currentDate, $user));
+            $runningTotal += $sumActivos($this->filterItemsByMetodo(
+                $this->buildItemsIngresos($currentDate, $user),
+                'EFECTIVO'
+            ));
+            $runningTotal -= $sumActivos($this->filterItemsByMetodo(
+                $this->buildItemsEgresos($currentDate, $user),
+                'EFECTIVO'
+            ));
             $cursor->addDay();
         }
 

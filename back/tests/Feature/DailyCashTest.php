@@ -214,7 +214,7 @@ it('uses the previous day net total as opening amount for the next day', functio
         'user_id' => $admin->id,
     ]);
 
-    $expectedNet = 1000 + 200 + 300 + 400 - 100;
+    $expectedNet = 1000 + 200 - 100;
 
     $this->getJson('/api/daily-cash?date='.$today)
         ->assertOk()
