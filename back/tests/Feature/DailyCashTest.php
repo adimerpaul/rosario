@@ -285,3 +285,145 @@ it('carries forward the last available cash total across days without daily cash
         ->assertJsonPath('suggested_opening_amount', $expectedNet)
         ->assertJsonPath('daily_cash.opening_amount', $expectedNet);
 });
+
+it('refreshes an existing opening amount when the next day has no movements yet', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    Sanctum::actingAs($admin);
+
+    $yesterday = Carbon::create(2026, 4, 1)->toDateString();
+    $today = Carbon::create(2026, 4, 2)->toDateString();
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE CAJA SIGUIENTE',
+        'ci' => '556677',
+        'status' => 'Confiable',
+        'cellphone' => '77770000',
+        'address' => 'ORURO',
+    ]);
+
+    DailyCash::create([
+        'date' => $yesterday,
+        'opening_amount' => 14631.44,
+        'user_id' => $admin->id,
+    ]);
+
+    DailyCash::create([
+        'date' => $today,
+        'opening_amount' => 17270.82,
+        'user_id' => $admin->id,
+    ]);
+
+    foreach ([
+        ['fecha' => $yesterday, 'descripcion' => 'aspel', 'monto' => 4300],
+        ['fecha' => $yesterday, 'descripcion' => 'r martes', 'monto' => 3285],
+    ] as $ingreso) {
+        Ingreso::create([
+            'fecha' => $ingreso['fecha'],
+            'descripcion' => $ingreso['descripcion'],
+            'metodo' => 'EFECTIVO',
+            'monto' => $ingreso['monto'],
+            'estado' => 'Activo',
+            'user_id' => $admin->id,
+        ]);
+    }
+
+    foreach ([
+        ['numero' => 'PR-000394-2026', 'monto' => 1200, 'usuario' => $admin->id],
+        ['numero' => 'PR-000395-2026', 'monto' => 1200, 'usuario' => $admin->id],
+        ['numero' => 'PR-000396-2026', 'monto' => 1700, 'usuario' => $admin->id],
+    ] as $index => $prestamoData) {
+        $prestamo = Prestamo::create([
+            'numero' => $prestamoData['numero'],
+            'fecha_creacion' => $yesterday,
+            'fecha_limite' => $today,
+            'fecha_cancelacion' => Carbon::parse($today)->addMonth()->toDateString(),
+            'cliente_id' => $cliente->id,
+            'user_id' => $prestamoData['usuario'],
+            'peso' => 5 + $index,
+            'merma' => 0,
+            'peso_neto' => 5 + $index,
+            'precio_oro' => 1000,
+            'valor_total' => 5000,
+            'valor_prestado' => $prestamoData['monto'],
+            'interes' => 3,
+            'almacen' => 2,
+            'celular' => '77770000',
+            'detalle' => 'PRESTAMO CAJA',
+            'estado' => 'Activo',
+        ]);
+
+        $prestamo->timestamps = false;
+        $prestamo->forceFill([
+            'created_at' => Carbon::parse($yesterday)->setTime(9 + $index, 0, 0),
+            'updated_at' => Carbon::parse($yesterday)->setTime(9 + $index, 0, 0),
+        ])->save();
+    }
+
+    foreach ([
+        ['monto' => 1620, 'descripcion' => 'C anillo cuadrado'],
+        ['monto' => 2050, 'descripcion' => 'C anillo jorge obligas'],
+        ['monto' => 3772, 'descripcion' => 'Anillo infanteria y aretes cisne'],
+        ['monto' => 2300, 'descripcion' => 'C ARETE MOSCA'],
+        ['monto' => 1970, 'descripcion' => 'C ANILLO POLICIA OVAL'],
+        ['monto' => 321, 'descripcion' => 'R LIBRO DIARIO INICIO CAJA'],
+    ] as $egreso) {
+        Egreso::create([
+            'fecha' => $yesterday,
+            'descripcion' => $egreso['descripcion'],
+            'metodo' => 'EFECTIVO',
+            'monto' => $egreso['monto'],
+            'estado' => 'Activo',
+            'user_id' => $admin->id,
+        ]);
+    }
+
+    foreach ([
+        ['numero' => 'PR-000155-2026', 'monto' => 152.38],
+        ['numero' => 'PR-000155-2026', 'monto' => 1000],
+        ['numero' => 'PR-000332-2026', 'monto' => 100],
+        ['numero' => 'PR-000365-2026', 'monto' => 75],
+    ] as $index => $pagoData) {
+        $prestamo = Prestamo::create([
+            'numero' => $pagoData['numero'],
+            'fecha_creacion' => Carbon::parse($yesterday)->subDays(10)->toDateString(),
+            'fecha_limite' => $yesterday,
+            'fecha_cancelacion' => Carbon::parse($today)->addMonth()->toDateString(),
+            'cliente_id' => $cliente->id,
+            'user_id' => $admin->id,
+            'peso' => 10 + $index,
+            'merma' => 0,
+            'peso_neto' => 10 + $index,
+            'precio_oro' => 1000,
+            'valor_total' => 5000,
+            'valor_prestado' => 2000,
+            'interes' => 3,
+            'almacen' => 2,
+            'celular' => '77770000',
+            'detalle' => 'PRESTAMO PAGO',
+            'estado' => 'Activo',
+        ]);
+
+        $prestamo->timestamps = false;
+        $prestamo->forceFill([
+            'created_at' => Carbon::parse($yesterday)->subDays(10)->setTime(10 + $index, 0, 0),
+            'updated_at' => Carbon::parse($yesterday)->subDays(10)->setTime(10 + $index, 0, 0),
+        ])->save();
+
+        \App\Models\PrestamoPago::create([
+            'prestamo_id' => $prestamo->id,
+            'fecha' => $yesterday,
+            'monto' => $pagoData['monto'],
+            'metodo' => 'EFECTIVO',
+            'estado' => 'Activo',
+            'user_id' => $admin->id,
+        ]);
+    }
+
+    $expectedNet = 7410.82;
+
+    $this->getJson('/api/daily-cash?date='.$today)
+        ->assertOk()
+        ->assertJsonPath('suggested_opening_amount', $expectedNet)
+        ->assertJsonPath('daily_cash.opening_amount', $expectedNet)
+        ->assertJsonPath('total_caja', $expectedNet);
+});
