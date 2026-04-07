@@ -734,6 +734,11 @@ class OrdenController extends Controller
             $request->user()?->id,
             'SALIDA AUTOMATICA POR PAGO TOTAL DE VENTA'
         );
+        $this->syncOrdenTrabajoAlmacen(
+            $orden->fresh(),
+            $request->user()?->id,
+            'SALIDA AUTOMATICA POR PAGO TOTAL DE ORDEN'
+        );
 
         return $orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']);
     }
@@ -1347,5 +1352,33 @@ class OrdenController extends Controller
                 'observacion' => $observacion ?: 'SALIDA AUTOMATICA POR ENTREGA DE VENTA',
             ]);
         }
+    }
+
+    private function syncOrdenTrabajoAlmacen(Orden $orden, ?int $userId, ?string $observacion = null): void
+    {
+        if ($orden->tipo !== 'Orden') {
+            return;
+        }
+
+        if ((float) ($orden->saldo ?? 0) > 0 || $orden->estado === 'Cancelada') {
+            return;
+        }
+
+        $latestMovement = AlmacenMovimiento::where('orden_id', $orden->id)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($latestMovement?->tipo_movimiento !== 'ENTRADA') {
+            return;
+        }
+
+        AlmacenMovimiento::create([
+            'orden_id' => $orden->id,
+            'prestamo_id' => $latestMovement?->prestamo_id,
+            'user_id' => $userId ?: $orden->user_id,
+            'tipo_movimiento' => 'SALIDA',
+            'fecha_movimiento' => now(),
+            'observacion' => $observacion ?: 'SALIDA AUTOMATICA POR ENTREGA DE ORDEN',
+        ]);
     }
 }

@@ -1,7 +1,7 @@
 <?php
 
+use App\Models\AlmacenMovimiento;
 use App\Models\Client;
-use App\Models\Egreso;
 use App\Models\Orden;
 use App\Models\OrdenPago;
 use App\Models\Prestamo;
@@ -321,4 +321,57 @@ it('recalculates order saldo without changing adelanto when admin updates price'
     expect((float) $orden->adelanto)->toBe(300.0);
     expect((float) $orden->saldo)->toBe(1100.0);
     expect($orden->estado)->toBe('Pendiente');
+});
+
+it('registers warehouse history خروج when paying all an order that is in almacen', function () {
+    $admin = User::factory()->create(['role' => 'Administrador']);
+    Sanctum::actingAs($admin);
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE ALMACEN PAGO TOTAL',
+        'ci' => '701000',
+        'status' => 'Confiable',
+        'cellphone' => '70070100',
+        'address' => 'ORURO',
+    ]);
+
+    $orden = Orden::create([
+        'numero' => 'O0200-2026',
+        'tipo' => 'Orden',
+        'fecha_creacion' => now(),
+        'fecha_entrega' => now()->toDateString(),
+        'detalle' => 'ORDEN EN ALMACEN',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 1000,
+        'adelanto' => 100,
+        'saldo' => 900,
+        'estado' => 'Pendiente',
+        'peso' => 1,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $admin->id,
+        'cliente_id' => $cliente->id,
+    ]);
+
+    AlmacenMovimiento::create([
+        'orden_id' => $orden->id,
+        'prestamo_id' => null,
+        'user_id' => $admin->id,
+        'tipo_movimiento' => 'ENTRADA',
+        'fecha_movimiento' => now()->subDay(),
+        'observacion' => 'INGRESO PREVIO A ALMACEN',
+    ]);
+
+    $this->postJson("/api/ordenes/{$orden->id}/pagar-todo", [
+        'metodo' => 'EFECTIVO',
+    ])->assertOk()
+        ->assertJsonFragment([
+            'estado' => 'Entregado',
+            'saldo' => 0,
+        ]);
+
+    $this->assertDatabaseHas('almacen_movimientos', [
+        'orden_id' => $orden->id,
+        'tipo_movimiento' => 'SALIDA',
+        'observacion' => 'SALIDA AUTOMATICA POR PAGO TOTAL DE ORDEN',
+    ]);
 });
