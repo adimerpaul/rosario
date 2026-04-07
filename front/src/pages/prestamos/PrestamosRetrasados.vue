@@ -152,6 +152,18 @@
             </q-td>
           </template>
 
+          <template #body-cell-peso="props">
+            <q-td :props="props">
+              {{ money(props.row.peso) }}
+            </q-td>
+          </template>
+
+          <template #body-cell-precio_oro="props">
+            <q-td :props="props">
+              {{ money(props.row.precio_oro) }}
+            </q-td>
+          </template>
+
           <template #body-cell-saldo="props">
             <q-td :props="props">
               <span class="text-weight-bold text-red-9">{{ money(props.row.saldo) }}</span>
@@ -197,21 +209,21 @@
                     <q-item-section>WhatsApp fundición</q-item-section>
                   </q-item>
 
-                  <q-item clickable v-close-popup @click="confirmFundir(props.row)">
-                    <q-item-section avatar>
-                      <q-icon name="local_fire_department" color="negative" />
-                    </q-item-section>
-                    <q-item-section>Fundir</q-item-section>
-                  </q-item>
+<!--                  <q-item clickable v-close-popup @click="confirmFundir(props.row)">-->
+<!--                    <q-item-section avatar>-->
+<!--                      <q-icon name="local_fire_department" color="negative" />-->
+<!--                    </q-item-section>-->
+<!--                    <q-item-section>Fundir</q-item-section>-->
+<!--                  </q-item>-->
 
-                  <q-separator />
+<!--                  <q-separator />-->
 
-                  <q-item clickable v-close-popup @click="$router.push('/prestamos/editar/' + props.row.id)">
-                    <q-item-section avatar>
-                      <q-icon name="edit" color="primary" />
-                    </q-item-section>
-                    <q-item-section>Editar / pagar</q-item-section>
-                  </q-item>
+<!--                  <q-item clickable v-close-popup @click="$router.push('/prestamos/editar/' + props.row.id)">-->
+<!--                    <q-item-section avatar>-->
+<!--                      <q-icon name="edit" color="primary" />-->
+<!--                    </q-item-section>-->
+<!--                    <q-item-section>Editar / pagar</q-item-section>-->
+<!--                  </q-item>-->
                 </q-list>
               </q-btn-dropdown>
             </q-td>
@@ -263,6 +275,8 @@ export default {
         { name: 'cliente', label: 'Cliente', field: row => row.cliente?.name || '', align: 'left' },
         { name: 'celular', label: 'Celular', field: 'celular', align: 'left' },
         { name: 'fecha_limite', label: 'Vencimiento', field: 'fecha_limite', align: 'left' },
+        { name: 'peso', label: 'Peso', field: 'peso', align: 'right' },
+        { name: 'precio_oro', label: 'Precio oro', field: 'precio_oro', align: 'right' },
         { name: 'valor_prestado', label: 'Prestado', field: 'valor_prestado', align: 'right' },
         { name: 'saldo', label: 'Saldo', field: 'saldo', align: 'right' },
         { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
@@ -330,11 +344,11 @@ export default {
           responseType: 'blob'
         })
 
-        const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+        const blob = new Blob([response.data], { type: 'application/vnd.ms-excel;charset=utf-8;' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `prestamos-retrasados-${moment().format('YYYYMMDD-HHmmss')}.csv`
+        link.download = `prestamos-retrasados-${moment().format('YYYYMMDD-HHmmss')}.xls`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)

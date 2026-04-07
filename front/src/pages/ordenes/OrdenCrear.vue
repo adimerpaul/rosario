@@ -82,7 +82,7 @@
               <q-card-section class="text-bold q-pa-xs">
                 Crear Nueva Orden
                 <span class="text-grey text-caption">
-                  (Precio oro: {{ precioOro.value }})
+                  (Precio oro: {{ money(precioOro.value) }})
                 </span>
               </q-card-section>
 
@@ -98,6 +98,9 @@
                           <q-input label="Celular" v-model="orden.celular" outlined dense />
                         </div>
                         <div class="col-12 col-md-4">
+                          <q-input label="Precio oro" :model-value="money(precioOro.value)" outlined dense readonly />
+                        </div>
+                        <div class="col-12 col-md-4">
                           <q-input
                             label="Peso (kg)"
                             v-model.number="orden.peso"
@@ -109,6 +112,9 @@
                             :rules="[val => Number(val) > 0 || 'El peso debe ser mayor a 0']"
                             @update:model-value="calcularTotal"
                           />
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <q-input label="Costo oro" :model-value="money(costoOro)" outlined dense readonly />
                         </div>
                         <div class="col-12 col-md-4">
                           <q-input label="Costo Total" v-model.number="orden.costo_total" type="number" outlined dense @update:model-value="validarCostoTotal" />
@@ -259,6 +265,11 @@ export default {
       statuses: ['Confiable', 'No Confiable', 'VIP'],
     }
   },
+  computed: {
+    costoOro () {
+      return Number(this.orden.peso || 0) * Number(this.precioOro.value || 0)
+    }
+  },
   async mounted () {
     this.getClientes()
     const res = await this.$axios.get('cogs/2')
@@ -359,7 +370,7 @@ export default {
       this.calcularSaldo()
     },
     calcularTotal () {
-      const total = (this.orden.peso || 0) * (this.precioOro.value || 0)
+      const total = this.costoOro
       this.costoBase = total
       this.orden.costo_total = total
       this.calcularSaldo()
@@ -414,6 +425,9 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    money (value) {
+      return `${Number(value || 0).toFixed(2)} Bs.`
     }
   }
 }

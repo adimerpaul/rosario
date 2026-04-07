@@ -75,6 +75,10 @@
                 <q-input label="Costo" outlined dense v-model.number="form.costo_total" type="number" :readonly="!isAdmin" />
               </div>
 
+              <div v-if="form.tipo === 'Orden'" class="col-6 col-sm-3">
+                <q-input label="Precio oro" outlined dense :model-value="money(form.precio_oro_historico)" readonly />
+              </div>
+
               <div class="col-6 col-sm-3">
                 <q-input
                   label="Peso"
@@ -84,6 +88,10 @@
                   :readonly="!isAdmin"
                   @update:model-value="val => syncCostByWeight(val)"
                 />
+              </div>
+
+              <div v-if="form.tipo === 'Orden'" class="col-6 col-sm-3">
+                <q-input label="Costo oro" outlined dense :model-value="money(form.costo_total_oro)" readonly />
               </div>
 
               <div class="col-6 col-sm-3">
@@ -227,8 +235,7 @@ export default {
       loading: false,
       saving: false,
       savingPago: false,
-      savingPagoTodo: false,
-      precioOro: 0
+      savingPagoTodo: false
     }
   },
   computed: {
@@ -239,8 +246,6 @@ export default {
   },
   async mounted () {
     await this.fetch()
-    const res = await this.$axios.get('cogs/2')
-    this.precioOro = res.data
   },
   methods: {
     updatePhotoPreview () {
@@ -257,7 +262,7 @@ export default {
     },
     syncCostByWeight (val) {
       if (!this.isAdmin) return
-      const precio = Number(this.precioOro?.value || 0)
+      const precio = Number(this.form.precio_oro_historico || this.form.precio_oro || 0)
       this.form.costo_total = Number(val || 0) * precio
     },
     async imprimirOrdenPdf () {

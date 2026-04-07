@@ -18,6 +18,8 @@ use Intervention\Image\ImageManager;
 
 class OrdenController extends Controller
 {
+    private const DEFAULT_ORDEN_PRECIO_ORO = 1080.0;
+
     public function atrasadas(Request $request)
     {
         $hoy = now()->toDateString();
@@ -556,6 +558,7 @@ class OrdenController extends Controller
                 'numero' => $this->numeroGet('O'),
                 'fecha_entrega' => $request->input('fecha_entrega'),
                 'peso' => $request->input('peso', 0),
+                'precio_oro' => $this->precioOroOrdenActual(),
                 'costo_total' => $costoTotal,
                 'adelanto' => $adelanto,
                 'saldo' => max(0, (float) $request->input('saldo', $costoTotal - $adelanto)),
@@ -751,11 +754,15 @@ class OrdenController extends Controller
         $isAdmin = in_array(strtolower($user->role ?? ''), ['admin', 'administrador', 'administrator'], true);
 
         if (! $isAdmin) {
-            unset($data['costo_total'], $data['peso'], $data['estado'], $data['joya_id'], $data['tipo']);
+            unset($data['costo_total'], $data['peso'], $data['estado'], $data['joya_id'], $data['tipo'], $data['precio_oro']);
         }
 
         if (! $isAdmin || $request->has('costo_total')) {
             unset($data['adelanto']);
+        }
+
+        if ($orden->tipo === 'Orden' && empty($orden->precio_oro)) {
+            $data['precio_oro'] = $this->precioOroResolvido($orden);
         }
 
         if ($request->hasFile('foto_modelo')) {
@@ -836,6 +843,29 @@ class OrdenController extends Controller
         }
 
         return $prefix.'0001-'.$year;
+    }
+
+    private function precioOroOrdenActual(): float
+    {
+        try {
+            $cog = DB::table('cogs')->where('id', 2)->first();
+            $value = (float) ($cog->value ?? $cog->valor ?? 0);
+
+            return $value > 0 ? $value : self::DEFAULT_ORDEN_PRECIO_ORO;
+        } catch (\Throwable $e) {
+            return self::DEFAULT_ORDEN_PRECIO_ORO;
+        }
+    }
+
+    private function precioOroResolvido(Orden $orden): float
+    {
+        if ((float) ($orden->precio_oro ?? 0) > 0) {
+            return (float) $orden->precio_oro;
+        }
+
+        return $orden->tipo === 'Orden'
+            ? self::DEFAULT_ORDEN_PRECIO_ORO
+            : 0.0;
     }
 
     private function precioVentaJoya(Joya $joya): float

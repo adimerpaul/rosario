@@ -51,7 +51,7 @@ it('lists overdue loans with summary and pagination metadata', function () {
         ]);
 });
 
-it('exports overdue loans as csv', function () {
+it('exports overdue loans as excel-compatible file with weight and gold price', function () {
     $admin = User::factory()->create(['role' => 'Administrador']);
     Sanctum::actingAs($admin);
 
@@ -86,7 +86,9 @@ it('exports overdue loans as csv', function () {
     $response = $this->get('/api/prestamosRetrasados/export?dias=1');
 
     $response->assertOk();
-    expect($response->headers->get('content-type'))->toContain('text/csv');
+    expect($response->headers->get('content-type'))->toContain('application/vnd.ms-excel');
     expect($response->streamedContent())->toContain('P0002-2026');
     expect($response->streamedContent())->toContain('CLIENTE CSV');
+    expect($response->streamedContent())->toContain('4.00');
+    expect($response->streamedContent())->toContain('1000.00');
 });

@@ -20,6 +20,7 @@ class Orden extends Model implements AuditableContract
         'detalle',
         'celular',
         'costo_total',
+        'precio_oro',
         'tipo_pago',
         'adelanto',
         'saldo',
@@ -75,11 +76,29 @@ class Orden extends Model implements AuditableContract
         return $this->hasMany(AlmacenMovimiento::class, 'orden_id');
     }
 
-    protected $appends = ['totalPagos'];
+    protected $appends = ['totalPagos', 'precio_oro_historico', 'costo_total_oro'];
 
     public function getTotalPagosAttribute()
     {
         return $this->pagos()->where('estado', 'Activo')->sum('monto');
+    }
+
+    public function getPrecioOroHistoricoAttribute()
+    {
+        if ($this->tipo !== 'Orden') {
+            return $this->precio_oro !== null ? (float) $this->precio_oro : null;
+        }
+
+        return (float) ($this->precio_oro ?? 1080);
+    }
+
+    public function getCostoTotalOroAttribute(): float
+    {
+        if ($this->tipo !== 'Orden') {
+            return (float) ($this->costo_total ?? 0);
+        }
+
+        return round(((float) ($this->peso ?? 0)) * ((float) $this->precio_oro_historico), 2);
     }
     //    public function syncMontosYEstado(){
     //        // NO recalcules 'adelanto' aquí

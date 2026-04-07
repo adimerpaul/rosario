@@ -544,46 +544,69 @@ class PrestamoController extends Controller
     public function retrasadosExport(Request $request): StreamedResponse
     {
         $rows = $this->retrasadosQuery($request)->get();
-        $fileName = 'prestamos-retrasados-'.now()->format('Ymd-His').'.csv';
+        $fileName = 'prestamos-retrasados-'.now()->format('Ymd-His').'.xls';
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'w');
+            fwrite($handle, "<html><head><meta charset=\"UTF-8\"></head><body>");
+            fwrite($handle, '<table border="1">');
+            fwrite($handle, '<thead><tr>');
 
-            fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, [
+            foreach ([
                 'Numero',
                 'Cliente',
                 'CI',
                 'Celular',
                 'Fecha limite',
                 'Dias retraso',
+                'Peso',
+                'Precio oro',
                 'Capital prestado',
                 'Saldo actual',
                 'Estado',
                 'Usuario',
                 'Detalle',
-            ]);
+            ] as $header) {
+                fwrite($handle, '<th>'.$this->escapeExcelCell($header).'</th>');
+            }
+
+            fwrite($handle, '</tr></thead><tbody>');
 
             foreach ($rows as $prestamo) {
-                fputcsv($handle, [
+                fwrite($handle, '<tr>');
+
+                foreach ([
                     $prestamo->numero,
                     $prestamo->cliente?->name,
                     $prestamo->cliente?->ci,
                     $prestamo->celular,
                     $prestamo->fecha_limite,
                     $prestamo->dias_retraso,
+                    number_format((float) ($prestamo->peso ?? 0), 2, '.', ''),
+                    number_format((float) ($prestamo->precio_oro ?? 0), 2, '.', ''),
                     number_format((float) ($prestamo->valor_prestado ?? 0), 2, '.', ''),
                     number_format((float) ($prestamo->saldo ?? 0), 2, '.', ''),
                     $prestamo->estado,
                     $prestamo->user?->name,
                     $prestamo->detalle,
-                ]);
+                ] as $value) {
+                    fwrite($handle, '<td>'.$this->escapeExcelCell((string) $value).'</td>');
+                }
+
+                fwrite($handle, '</tr>');
             }
+
+            fwrite($handle, '</tbody></table></body></html>');
 
             fclose($handle);
         }, $fileName, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
         ]);
+    }
+
+    private function escapeExcelCell(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
     public function index(Request $request)

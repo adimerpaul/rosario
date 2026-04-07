@@ -119,16 +119,12 @@
                   <!-- franja de color por estado -->
                   <div class="status-strip" :style="{ backgroundColor: getEstadoColor(orden.estado) }"></div>
 
-                  <q-card-section class="q-pb-xs">
-                    <div class="row items-center no-wrap">
-                      <q-avatar :icon="getEstadoIcon(orden.estado)" :color="getEstadoColor(orden.estado)" text-color="white" size="32px"/>
-                      <div class="q-ml-sm">
-                        <div class="text-weight-bold">#{{ orden.numero }}</div>
-                        <div class="text-caption ">
-<!--                          {{ orden.fecha_creacion?.substring(0,10) }}-->
-                          <span class="">Creado: {{ formatDateTime(orden.fecha_creacion) }}</span>
-<!--                          <pre>{{// orden}}</pre>-->
-<!--                          fecha_entrega-->
+                  <q-card-section class="q-pb-xs card-head-section">
+                    <div class="row items-center no-wrap order-card-header">
+                      <div class="order-main-meta">
+                        <div class="text-weight-bold order-number-line">#{{ orden.numero }}</div>
+                        <div class="text-caption order-date-lines">
+                          <div>Creado: {{ formatDateTime(orden.fecha_creacion) }}</div>
                           <div>
                             Entrega:
                             <span v-if="orden.fecha_entrega">
@@ -139,25 +135,36 @@
                         </div>
                       </div>
                       <q-space/>
-                      <q-chip dense square text-color="white" :style="{backgroundColor: getEstadoColor(orden.estado)}">
-                        {{ orden.estado }}
-                      </q-chip>
+                      <div class="text-right">
+                        <template v-if="orden.tipo === 'Orden'">
+                          <div class="text-caption text-grey-7">Costo oro</div>
+                          <div class="text-weight-bold">{{ money(orden.costo_total_oro) }}</div>
+                          <div class="text-caption text-grey-7">P. oro: {{ money(orden.precio_oro_historico) }}</div>
+                        </template>
+                        <q-chip dense square text-color="white" :style="{backgroundColor: getEstadoColor(orden.estado)}" class="q-mt-xs">
+                          {{ orden.estado }}
+                        </q-chip>
+                      </div>
                     </div>
                   </q-card-section>
 
-                  <q-card-section class="q-pt-none">
-                    <div class="row items-center">
-                      <q-icon name="person" size="18px" class="q-mr-xs"/>
-                      <div class="text-body2 ellipsis-2-lines">{{ orden.cliente?.name || 'N/A' }}</div>
-                      <q-icon name="phone" size="18px" class="q-mr-xs q-ml-md"/>
-                      <div class="text-body2 ellipsis-2-lines">{{ orden.cliente?.cellphone || 'N/A' }}</div>
+                  <q-card-section class="q-pt-none card-body-section">
+                    <div class="client-line">
+                      <div class="client-line__item client-line__item--name">
+                        <q-icon name="person" size="16px" class="q-mr-xs"/>
+                        <div class="text-body2 single-line-text">{{ orden.cliente?.name || 'N/A' }}</div>
+                      </div>
+                      <div class="client-line__item client-line__item--phone">
+                        <q-icon name="phone" size="16px" class="q-mr-xs"/>
+                        <div class="text-body2 single-line-text">{{ orden.cliente?.cellphone || 'N/A' }}</div>
+                      </div>
                     </div>
-                    <div>
-                    <span class="text-bold">Detalle: </span>{{orden.detalle}} <br>
-                      <span class="text-bold">Peso: </span>{{orden.peso}} g
+                    <div class="order-detail-block">
+                      <div><span class="text-bold">Detalle:</span> {{ orden.detalle }}</div>
+                      <div><span class="text-bold">Peso:</span> {{ orden.peso }} g</div>
                     </div>
 
-                    <div class="row q-mt-sm">
+                    <div class="row q-mt-xs">
                       <div class="col-4">
                         <div class="text-caption text-grey-7">Total</div>
                         <div class="text-weight-medium">{{ money(orden.costo_total) }}</div>
@@ -577,6 +584,28 @@ export default {
   overflow: hidden;
   transition: transform .12s ease, box-shadow .12s ease;
 }
+.card-head-section {
+  padding: 8px 10px 4px 10px;
+}
+.card-body-section {
+  padding: 2px 10px 8px 10px !important;
+}
+.order-card-header {
+  gap: 0;
+}
+.order-main-meta {
+  min-width: 0;
+  line-height: 1.05;
+  padding-left: 0;
+  margin-left: 0 !important;
+}
+.order-number-line {
+  margin-bottom: 1px;
+  line-height: 1.05;
+}
+.order-date-lines {
+  line-height: 1.1;
+}
 .order-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 22px rgba(0,0,0,.08);
@@ -591,6 +620,36 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.client-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-bottom: 4px;
+  flex-wrap: nowrap;
+}
+.client-line__item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.client-line__item--name {
+  flex: 1 1 auto;
+}
+.client-line__item--phone {
+  flex: 0 0 auto;
+  max-width: 42%;
+}
+.single-line-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+.order-detail-block {
+  line-height: 1.18;
+  margin-bottom: 2px;
 }
 .muted { font-size: .8em; color: #666; }
 .pago-total-dialog {
