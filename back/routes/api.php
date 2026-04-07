@@ -9,6 +9,7 @@ use App\Http\Controllers\EgresoController;
 use App\Http\Controllers\EstucheController;
 use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\JoyaController;
+use App\Http\Controllers\MensajePlantillaController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\OrdenPagoController;
 use App\Http\Controllers\PrestamoController;
@@ -102,6 +103,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('ordenesRetrasadas', [OrdenController::class, 'atrasadas']);
     Route::get('prestamosRetrasados', [PrestamoController::class, 'retrasados']);
     Route::get('prestamosRetrasados/export', [PrestamoController::class, 'retrasadosExport']);
+    Route::get('prestamosRetrasados/mensajes', [MensajePlantillaController::class, 'index']);
+    Route::put('prestamosRetrasados/mensajes', [MensajePlantillaController::class, 'update']);
 
     Route::get('egresos', [EgresoController::class, 'index']);
     Route::post('egresos', [EgresoController::class, 'store']);

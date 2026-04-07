@@ -41,7 +41,7 @@
             type="number"
             min="1"
             step="1"
-            label="Mín. días retraso"
+            label="Min. dias retraso"
             @update:model-value="applyFilters"
           />
         </div>
@@ -59,6 +59,14 @@
 
         <div class="col-12 col-md-2">
           <div class="row q-gutter-sm justify-end">
+            <q-btn
+              color="accent"
+              icon="edit_note"
+              label="Editar mensajes"
+              no-caps
+              outline
+              @click="abrirDialogoMensajes"
+            />
             <q-btn
               color="secondary"
               icon="download"
@@ -84,7 +92,7 @@
           <div class="col-12 col-md-3">
             <q-card bordered flat class="bg-orange-1">
               <q-card-section class="q-pa-sm">
-                <div class="text-caption text-orange-9 text-weight-bold">Préstamos retrasados</div>
+                <div class="text-caption text-orange-9 text-weight-bold">Prestamos retrasados</div>
                 <div class="text-h6">{{ summary.total }}</div>
               </q-card-section>
             </q-card>
@@ -108,8 +116,8 @@
           <div class="col-12 col-md-3">
             <q-card bordered flat class="bg-grey-1">
               <q-card-section class="q-pa-sm">
-                <div class="text-caption text-grey-8 text-weight-bold">Prom / Máx retraso</div>
-                <div class="text-h6">{{ summary.prom_dias }} / {{ summary.max_dias }} días</div>
+                <div class="text-caption text-grey-8 text-weight-bold">Prom / Max retraso</div>
+                <div class="text-h6">{{ summary.prom_dias }} / {{ summary.max_dias }} dias</div>
               </q-card-section>
             </q-card>
           </div>
@@ -120,20 +128,20 @@
 
       <q-card-section class="q-pa-none">
         <q-table
+          v-model:pagination="pagination"
           flat
           :rows="prestamos"
           :columns="columns"
           row-key="id"
           :loading="loading"
-          v-model:pagination="pagination"
           binary-state-sort
+          rows-per-page-label="Filas por pagina"
           @request="onRequest"
-          rows-per-page-label="Filas por página"
         >
           <template #body-cell-cliente="props">
             <q-td :props="props">
               <div class="text-weight-medium">{{ props.row.cliente?.name || 'N/A' }}</div>
-              <div class="text-caption text-grey-7">CI: {{ props.row.cliente?.ci || '—' }}</div>
+              <div class="text-caption text-grey-7">CI: {{ props.row.cliente?.ci || '-' }}</div>
             </q-td>
           </template>
 
@@ -141,7 +149,7 @@
             <q-td :props="props">
               <div>{{ date(props.row.fecha_limite) }}</div>
               <div class="text-caption text-orange-9 text-weight-bold">
-                {{ props.row.dias_retraso }} día(s)
+                {{ props.row.dias_retraso }} dia(s)
               </div>
             </q-td>
           </template>
@@ -191,7 +199,7 @@
                 size="10px"
                 color="primary"
                 icon="more_vert"
-                label="Acción"
+                label="Accion"
                 no-caps
               >
                 <q-list dense>
@@ -206,24 +214,8 @@
                     <q-item-section avatar>
                       <q-icon name="warning" color="orange" />
                     </q-item-section>
-                    <q-item-section>WhatsApp fundición</q-item-section>
+                    <q-item-section>WhatsApp fundicion</q-item-section>
                   </q-item>
-
-<!--                  <q-item clickable v-close-popup @click="confirmFundir(props.row)">-->
-<!--                    <q-item-section avatar>-->
-<!--                      <q-icon name="local_fire_department" color="negative" />-->
-<!--                    </q-item-section>-->
-<!--                    <q-item-section>Fundir</q-item-section>-->
-<!--                  </q-item>-->
-
-<!--                  <q-separator />-->
-
-<!--                  <q-item clickable v-close-popup @click="$router.push('/prestamos/editar/' + props.row.id)">-->
-<!--                    <q-item-section avatar>-->
-<!--                      <q-icon name="edit" color="primary" />-->
-<!--                    </q-item-section>-->
-<!--                    <q-item-section>Editar / pagar</q-item-section>-->
-<!--                  </q-item>-->
                 </q-list>
               </q-btn-dropdown>
             </q-td>
@@ -232,17 +224,69 @@
           <template #no-data>
             <div class="full-width row flex-center q-gutter-sm q-pa-md text-grey-7">
               <q-icon name="info" />
-              <span>No hay préstamos retrasados con los filtros aplicados.</span>
+              <span>No hay prestamos retrasados con los filtros aplicados.</span>
             </div>
           </template>
         </q-table>
       </q-card-section>
     </q-card>
+
+    <q-dialog v-model="dialogMensajes">
+      <q-card style="width: 900px; max-width: 95vw;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Editar mensajes de regularizacion y fundicion</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text-caption text-grey-7 q-mb-md">
+            Variables disponibles: {{ placeholders.join(' ') }}
+          </div>
+
+          <div class="q-mb-md">
+            <div class="text-subtitle2 q-mb-sm">Mensaje de regularizacion</div>
+            <q-input
+              v-model="mensajesForm.prestamo_regularizacion"
+              type="textarea"
+              autogrow
+              outlined
+            />
+          </div>
+
+          <div>
+            <div class="text-subtitle2 q-mb-sm">Mensaje de fundicion</div>
+            <q-input
+              v-model="mensajesForm.prestamo_fundicion"
+              type="textarea"
+              autogrow
+              outlined
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" no-caps v-close-popup />
+          <q-btn
+            color="primary"
+            label="Guardar en base de datos"
+            no-caps
+            :loading="savingMensajes"
+            @click="guardarMensajes"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script>
 import moment from 'moment'
+
+const MENSAJES_DEFAULT = {
+  prestamo_regularizacion: 'Hola #NOMBRE#, su prestamo #PRESTAMO# ya esta fuera de tiempo. Vencio el #FECHA# y tiene #DIAS_RETRASO# dia(s) de retraso. Su saldo actual es Bs. #SALDO#. Por favor regularice hoy mismo su pago.',
+  prestamo_fundicion: 'Hola #NOMBRE#, su prestamo #PRESTAMO# continua retrasado. Vencio el #FECHA# y tiene #DIAS_RETRASO# dia(s) de retraso. Su saldo actual es Bs. #SALDO#. Si no regulariza el pago a la brevedad, la joya pasara a fundicion.'
+}
 
 export default {
   name: 'PrestamosRetrasados',
@@ -270,7 +314,7 @@ export default {
         rowsNumber: 0
       },
       columns: [
-        { name: 'acciones', label: 'Acción', field: 'acciones', align: 'left' },
+        { name: 'acciones', label: 'Accion', field: 'acciones', align: 'left' },
         { name: 'numero', label: 'N°', field: 'numero', align: 'left' },
         { name: 'cliente', label: 'Cliente', field: row => row.cliente?.name || '', align: 'left' },
         { name: 'celular', label: 'Celular', field: 'celular', align: 'left' },
@@ -282,12 +326,19 @@ export default {
         { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
         { name: 'user', label: 'Usuario', field: row => row.user?.name || '', align: 'left' }
       ],
+      dialogMensajes: false,
+      loadingMensajes: false,
+      savingMensajes: false,
+      placeholders: ['#NOMBRE#', '#PRESTAMO#', '#FECHA#', '#DIAS_RETRASO#', '#SALDO#'],
+      mensajes: { ...MENSAJES_DEFAULT },
+      mensajesForm: { ...MENSAJES_DEFAULT },
       loading: false,
       exporting: false
     }
   },
   mounted () {
     this.getUsuarios()
+    this.fetchMensajes()
     this.fetchData()
   },
   methods: {
@@ -321,10 +372,72 @@ export default {
         this.pagination.rowsPerPage = data.meta?.per_page || this.pagination.rowsPerPage
         this.pagination.rowsNumber = data.meta?.total || 0
       } catch (e) {
-        this.$alert?.error?.(e.response?.data?.message || 'Error al obtener préstamos retrasados')
+        this.$alert?.error?.(e.response?.data?.message || 'Error al obtener prestamos retrasados')
       } finally {
         this.loading = false
       }
+    },
+    async fetchMensajes () {
+      this.loadingMensajes = true
+      try {
+        const { data } = await this.$axios.get('prestamosRetrasados/mensajes')
+        const templates = {}
+        ;(data.data || []).forEach(item => {
+          templates[item.clave] = item.contenido || ''
+        })
+        this.mensajes = {
+          ...this.mensajes,
+          ...templates
+        }
+        this.placeholders = data.placeholders || this.placeholders
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al obtener mensajes configurados')
+      } finally {
+        this.loadingMensajes = false
+      }
+    },
+    abrirDialogoMensajes () {
+      this.mensajesForm = {
+        prestamo_regularizacion: this.mensajes.prestamo_regularizacion || '',
+        prestamo_fundicion: this.mensajes.prestamo_fundicion || ''
+      }
+      this.dialogMensajes = true
+    },
+    async guardarMensajes () {
+      this.savingMensajes = true
+      try {
+        const { data } = await this.$axios.put('prestamosRetrasados/mensajes', {
+          mensajes: this.mensajesForm
+        })
+
+        const templates = {}
+        ;(data.data || []).forEach(item => {
+          templates[item.clave] = item.contenido || ''
+        })
+        this.mensajes = {
+          ...this.mensajes,
+          ...templates
+        }
+        this.dialogMensajes = false
+        this.$alert?.success?.(data.message || 'Mensajes actualizados correctamente')
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al guardar mensajes')
+      } finally {
+        this.savingMensajes = false
+      }
+    },
+    renderMensaje (template, prestamo) {
+      const replacements = {
+        '#NOMBRE#': prestamo.cliente?.name || '',
+        '#PRESTAMO#': prestamo.numero || '',
+        '#FECHA#': this.date(prestamo.fecha_limite),
+        '#DIAS_RETRASO#': String(prestamo.dias_retraso || 0),
+        '#SALDO#': this.money(prestamo.saldo)
+      }
+
+      return Object.entries(replacements).reduce((message, [key, value]) => {
+        return message.split(key).join(value)
+      }, template || '')
     },
     onRequest (props) {
       this.pagination = {
@@ -354,30 +467,20 @@ export default {
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
       } catch (e) {
-        this.$alert?.error?.(e.response?.data?.message || 'Error al exportar préstamos retrasados')
+        this.$alert?.error?.(e.response?.data?.message || 'Error al exportar prestamos retrasados')
       } finally {
         this.exporting = false
       }
     },
     waHrefRegularizar (prestamo) {
       const phone = String(prestamo.celular || '').replace(/\D/g, '')
-      const msg = encodeURIComponent(
-        `Hola ${prestamo.cliente?.name || ''}, su préstamo ${prestamo.numero} ya está fuera de tiempo. ` +
-        `Venció el ${this.date(prestamo.fecha_limite)} y tiene ${prestamo.dias_retraso} día(s) de retraso. ` +
-        `Su saldo actual es Bs. ${this.money(prestamo.saldo)}. ` +
-        'Por favor regularice hoy mismo su pago.'
-      )
+      const msg = encodeURIComponent(this.renderMensaje(this.mensajes.prestamo_regularizacion, prestamo))
 
       return phone ? `https://wa.me/${phone}?text=${msg}` : null
     },
     waHrefFundicion (prestamo) {
       const phone = String(prestamo.celular || '').replace(/\D/g, '')
-      const msg = encodeURIComponent(
-        `Hola ${prestamo.cliente?.name || ''}, su préstamo ${prestamo.numero} continúa retrasado. ` +
-        `Venció el ${this.date(prestamo.fecha_limite)} y tiene ${prestamo.dias_retraso} día(s) de retraso. ` +
-        `Su saldo actual es Bs. ${this.money(prestamo.saldo)}. ` +
-        'Si no regulariza el pago a la brevedad, la joya pasará a fundición.'
-      )
+      const msg = encodeURIComponent(this.renderMensaje(this.mensajes.prestamo_fundicion, prestamo))
 
       return phone ? `https://wa.me/${phone}?text=${msg}` : null
     },
@@ -389,28 +492,11 @@ export default {
       const url = this.waHrefFundicion(prestamo)
       if (url) window.open(url, '_blank')
     },
-    confirmFundir (prestamo) {
-      this.$q.dialog({
-        title: 'Fundir préstamo',
-        message: `¿Desea marcar como fundido el préstamo ${prestamo.numero}?`,
-        cancel: true,
-        persistent: true
-      }).onOk(() => this.fundir(prestamo.id))
-    },
-    async fundir (id) {
-      try {
-        await this.$axios.post(`prestamos/${id}/fundir`)
-        this.$alert?.success?.('Préstamo marcado como fundido')
-        this.fetchData()
-      } catch (e) {
-        this.$alert?.error?.(e.response?.data?.message || 'Error al fundir préstamo')
-      }
-    },
     money (v) {
       return Number(v || 0).toFixed(2)
     },
     date (v) {
-      return v ? moment(v).format('DD/MM/YYYY') : '—'
+      return v ? moment(v).format('DD/MM/YYYY') : '-'
     },
     estadoColor (estado) {
       if (estado === 'Pendiente') return 'orange'
