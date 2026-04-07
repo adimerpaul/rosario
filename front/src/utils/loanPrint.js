@@ -121,7 +121,7 @@ function buildPrestamoModel (prestamo, tipoCambio) {
 
 function renderPrestamoContrato (model) {
   return `
-    <div class="sheet">
+    <div class="" style="padding-top:55px;">
       <table style="width:100%; border-collapse:collapse;">
         <tr>
           <td style="width:82px; vertical-align:top;"></td>
@@ -228,17 +228,20 @@ function renderPrestamoContrato (model) {
         P.B.: peso bruto.
       </div>
 
-      <table style="width:100%; margin-top:18px;">
+      <table style="width:100%; margin-top:45px;">
         <tr>
           <td style="width:50%;">
             <div class="sign-line"></div>
             <div class="xs center">Firma del cliente</div>
-            <div class="xs center">${escapeHtml(model.cliente)}</div>
+            <div class="xs " style="padding-left: 250px;">
+            Nombre: <br>
+            CI: <br>
+</div>
           </td>
-          <td style="width:50%;">
-            <div class="sign-line"></div>
-            <div class="xs center">Firma joyeria</div>
-          </td>
+<!--          <td style="width:50%;">-->
+<!--            <div class="sign-line"></div>-->
+<!--            <div class="xs center">Firma joyeria</div>-->
+<!--          </td>-->
         </tr>
       </table>
     </div>
