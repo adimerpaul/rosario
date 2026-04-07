@@ -62,6 +62,9 @@ class OrdenController extends Controller
     {
         $this->authorizeVentasAccess($request);
 
+        $perPage = max(1, $request->integer('per_page', 18));
+        $page = max(1, $request->integer('page', 1));
+
         $query = Joya::with(['estucheItem.columna.vitrina'])
             ->whereDoesntHave('ventas', function ($q) {
                 $q->where('tipo', 'Venta directa')
@@ -102,7 +105,7 @@ class OrdenController extends Controller
             });
         }
 
-        return $query->get()->map(function (Joya $joya) {
+        $joyas = $query->get()->map(function (Joya $joya) {
             $cogName = $joya->tipo === 'Importada' ? 'Joya importada' : 'Precio Venta';
             $valorCog = (float) optional(Cog::where('name', $cogName)->first())->value;
 
@@ -125,6 +128,16 @@ class OrdenController extends Controller
             ];
         })->filter(fn (array $joya) => $this->matchesJoyaSearch($joya, (string) $request->input('search', '')))
             ->values();
+
+        $items = $joyas->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $items,
+            $joyas->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
     }
 
     public function joyasVitrina(Request $request)

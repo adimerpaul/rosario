@@ -15,7 +15,17 @@ it('lists available joyas for direct sale', function () {
 
     $this->getJson('/api/ordenes/joyas-disponibles')
         ->assertOk()
-        ->assertJsonCount(5);
+        ->assertJsonCount(5, 'data');
+});
+
+it('paginates available joyas for direct sale', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Vendedor']));
+
+    $this->getJson('/api/ordenes/joyas-disponibles?per_page=2&page=2')
+        ->assertOk()
+        ->assertJsonPath('per_page', 2)
+        ->assertJsonPath('current_page', 2)
+        ->assertJsonCount(2, 'data');
 });
 
 it('creates a direct jewel sale in ordenes table', function () {

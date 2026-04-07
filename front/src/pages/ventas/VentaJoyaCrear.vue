@@ -2,7 +2,7 @@
   <q-page class="venta-page q-pa-md">
     <div class="venta-shell">
       <div class="row q-col-gutter-md">
-        <div class="col-12 col-lg-7">
+        <div class="col-12 col-lg-7 venta-column venta-column--catalog">
           <q-card flat bordered class="panel-card">
             <q-card-section class="row items-center q-col-gutter-sm">
               <div class="col-12 col-md">
@@ -124,10 +124,45 @@
                 <div class="text-subtitle2 q-mt-sm">No hay joyas disponibles para venta</div>
               </div>
             </q-card-section>
+
+            <q-separator />
+
+            <q-card-section>
+              <div class="row items-center justify-between q-col-gutter-sm">
+                <div class="col-12 col-sm-auto">
+                  <div class="row items-center q-gutter-sm">
+                    <div class="text-caption text-grey-7">Por pagina</div>
+                    <q-select
+                      v-model="joyasPagination.rowsPerPage"
+                      :options="joyasPerPageOptions"
+                      outlined
+                      dense
+                      emit-value
+                      map-options
+                      style="width: 110px"
+                      @update:model-value="onChangeJoyasPerPage"
+                    />
+                    <div class="text-caption text-grey-7">
+                      Mostrando {{ joyas.length }} de {{ joyasPagination.rowsNumber }} joyas
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-auto">
+                  <q-pagination
+                    v-model="joyasPagination.page"
+                    :max="joyasPagination.lastPage"
+                    :max-pages="6"
+                    boundary-numbers
+                    direction-links
+                    @update:model-value="getJoyas"
+                  />
+                </div>
+              </div>
+            </q-card-section>
           </q-card>
         </div>
 
-        <div class="col-12 col-lg-5">
+        <div class="col-12 col-lg-5 venta-column venta-column--form">
           <q-card flat bordered class="panel-card">
             <q-card-section>
               <div class="text-h6 text-weight-bold">Datos de la venta</div>
@@ -370,6 +405,7 @@ export default {
       saving: false,
       clientLoading: false,
       joyas: [],
+      joyasIndex: {},
       vitrinas: [],
       clientes: [],
       clienteFiltro: '',
@@ -399,6 +435,13 @@ export default {
         linea: null,
         estuche_id: null
       },
+      joyasPagination: {
+        page: 1,
+        rowsPerPage: 18,
+        rowsNumber: 0,
+        lastPage: 1
+      },
+      joyasPerPageOptions: [12, 18, 24, 36],
       clientForm: {
         name: '',
         ci: '',
@@ -453,7 +496,7 @@ export default {
     },
     selectedJoyas () {
       return this.form.joya_ids
-        .map(id => this.joyas.find(joya => joya.id === id))
+        .map(id => this.joyasIndex[id])
         .filter(Boolean)
     },
     selectedVentaJoyas () {
@@ -527,11 +570,22 @@ export default {
     getJoyas () {
       this.loadingJoyas = true
       this.$axios.get('ordenes/joyas-disponibles', {
-        params: this.filters
+        params: {
+          ...this.filters,
+          page: this.joyasPagination.page,
+          per_page: this.joyasPagination.rowsPerPage
+        }
       }).then(({ data }) => {
-        this.joyas = data || []
-        const disponibles = new Set(this.joyas.map(joya => joya.id))
-        this.form.joya_ids = this.form.joya_ids.filter(id => disponibles.has(id))
+        this.joyas = data.data || []
+        const nextIndex = { ...this.joyasIndex }
+        this.joyas.forEach(joya => {
+          nextIndex[joya.id] = joya
+        })
+        this.joyasIndex = nextIndex
+        this.joyasPagination.page = data.current_page || 1
+        this.joyasPagination.rowsPerPage = data.per_page || this.joyasPagination.rowsPerPage
+        this.joyasPagination.rowsNumber = data.total || this.joyas.length
+        this.joyasPagination.lastPage = data.last_page || 1
         this.form.joya_id = this.form.joya_ids[0] || null
         this.syncSelectedJoyas()
       }).catch(err => {
@@ -540,7 +594,15 @@ export default {
         this.loadingJoyas = false
       })
     },
+    onChangeJoyasPerPage () {
+      this.joyasPagination.page = 1
+      this.getJoyas()
+    },
     selectJoya (joya) {
+      this.joyasIndex = {
+        ...this.joyasIndex,
+        [joya.id]: joya
+      }
       if (this.form.joya_ids.includes(joya.id)) {
         this.form.joya_ids = this.form.joya_ids.filter(id => id !== joya.id)
       } else {
@@ -714,15 +776,19 @@ export default {
   watch: {
     'filters.vitrina_id' () {
       this.filters.estuche_id = null
+      this.joyasPagination.page = 1
       this.getJoyas()
     },
     'filters.estuche_id' () {
+      this.joyasPagination.page = 1
       this.getJoyas()
     },
     'filters.linea' () {
+      this.joyasPagination.page = 1
       this.getJoyas()
     },
     'filters.search' () {
+      this.joyasPagination.page = 1
       this.getJoyas()
     }
   }
@@ -738,6 +804,14 @@ export default {
 .venta-shell {
   max-width: 1600px;
   margin: 0 auto;
+}
+
+.venta-column--catalog {
+  order: 2;
+}
+
+.venta-column--form {
+  order: 1;
 }
 
 .panel-card {
@@ -839,6 +913,16 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .venta-column--catalog {
+    order: 1;
+  }
+
+  .venta-column--form {
+    order: 2;
+  }
 }
 </style>
 
