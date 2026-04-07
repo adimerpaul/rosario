@@ -69,6 +69,43 @@ it('forbids a vendedor from accessing joyas crud', function () {
     ])->assertForbidden();
 });
 
+it('searches joyas from the database and not only from the current page', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
+
+    Joya::query()->delete();
+
+    $estuche = Estuche::firstOrFail();
+
+    foreach (range(1, 13) as $index) {
+        Joya::create([
+            'tipo' => 'Importada',
+            'peso' => 1,
+            'linea' => 'Mama',
+            'estuche_id' => $estuche->id,
+            'estuche' => $estuche->nombre,
+            'nombre' => 'ANILLO '.$index,
+            'imagen' => 'joya.png',
+            'monto_bs' => 100 + $index,
+        ]);
+    }
+
+    Joya::create([
+        'tipo' => 'Plata',
+        'peso' => 2,
+        'linea' => 'Roger',
+        'estuche_id' => $estuche->id,
+        'estuche' => $estuche->nombre,
+        'nombre' => 'COLLAR UNICO BUSCADO',
+        'imagen' => 'joya.png',
+        'monto_bs' => 999,
+    ]);
+
+    $this->getJson('/api/joyas?per_page=12&search=UNICO')
+        ->assertOk()
+        ->assertJsonPath('total', 1)
+        ->assertJsonPath('data.0.nombre', 'COLLAR UNICO BUSCADO');
+});
+
 it('allows an admin to update and delete a joya', function () {
     Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
 

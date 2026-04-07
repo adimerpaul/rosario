@@ -11,14 +11,13 @@
           flat
           :rows-per-page-options="[12, 24, 48]"
           title="Joyas"
-          :filter="filter"
           :loading="loading"
         >
           <template v-slot:top>
             <div class="row items-center full-width q-col-gutter-sm">
-              <div class="col-12 col-md">
+              <div class="col-12 col-lg">
                 <div class="text-h6 text-weight-bold">Inventario de joyas</div>
-                <div class="text-caption text-grey-7">Administrador: alta, edición, imagen y control de catálogo.</div>
+                <div class="text-caption text-grey-7">Administrador: alta, edicion, imagen y control de catalogo.</div>
               </div>
               <div class="col-12 col-md-auto">
                 <div class="row q-gutter-sm">
@@ -30,15 +29,23 @@
                 <q-select
                   v-model="pagination.rowsPerPage"
                   :options="[12, 24, 48]"
-                  label="Por página"
+                  label="Por pagina"
                   dense
                   outlined
                   style="min-width: 110px"
                   @update:model-value="changeRowsPerPage"
                 />
               </div>
-              <div class="col-12 col-md-4">
-                <q-input v-model="filter" label="Buscar por nombre, tipo, línea o estuche" dense outlined clearable>
+              <div class="col-12 col-md-5 col-lg-4 joyas-search-col">
+                <q-input
+                  v-model="filter"
+                  label="Buscar por nombre, tipo, linea o estuche"
+                  dense
+                  outlined
+                  clearable
+                  debounce="400"
+                  @update:model-value="onSearchChange"
+                >
                   <template v-slot:append>
                     <q-icon name="search" />
                   </template>
@@ -49,9 +56,6 @@
 
           <template v-slot:bottom>
             <div class="row items-center justify-between full-width q-gutter-sm">
-              <div class="text-caption text-grey-7">
-                Mostrando {{ joyas.length }} de {{ pagination.rowsNumber }} joyas
-              </div>
               <q-pagination
                 v-model="pagination.page"
                 :max="pagination.lastPage"
@@ -60,6 +64,9 @@
                 direction-links
                 @update:model-value="joyasGet"
               />
+              <div class="text-caption text-grey-7">
+                Mostrando {{ joyas.length }} de {{ pagination.rowsNumber }} joyas
+              </div>
             </div>
           </template>
 
@@ -146,7 +153,7 @@
         <q-card-section class="row items-center joya-form-header">
           <div>
             <div class="text-h6 text-weight-bold">{{ actionJoya }} joya</div>
-            <div class="text-caption text-grey-7">Carga los datos principales, la ubicación y la imagen del catálogo.</div>
+            <div class="text-caption text-grey-7">Carga los datos principales, la ubicacion y la imagen del catalogo.</div>
           </div>
           <q-space />
           <q-btn icon="close" flat round dense @click="cerrarDialogo" />
@@ -388,7 +395,8 @@ export default {
       this.$axios.get('joyas', {
         params: {
           page: this.pagination.page,
-          per_page: this.pagination.rowsPerPage
+          per_page: this.pagination.rowsPerPage,
+          search: this.filter || ''
         }
       })
         .then(res => {
@@ -404,6 +412,10 @@ export default {
         .finally(() => {
           this.loading = false
         })
+    },
+    onSearchChange() {
+      this.pagination.page = 1
+      this.joyasGet()
     },
     async subirImagen(joyaId) {
       if (!this.selectedImageFile) {
@@ -494,6 +506,10 @@ export default {
 .joyas-shell {
   max-width: 1380px;
   margin: 0 auto;
+}
+
+.joyas-search-col {
+  margin-left: auto;
 }
 
 .joyas-table-card {
