@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AlmacenMovimiento;
 use App\Models\Egreso;
 use App\Models\Orden;
 use App\Models\OrdenPago;
@@ -29,9 +30,10 @@ class OrdenPagoController extends Controller
             $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
             $orden->saldo = max(0, ($orden->costo_total ?? 0) - ($pagado + ($orden->adelanto ?? 0)));
             if ($orden->saldo > 0 && $orden->estado === 'Entregado') {
-                $orden->estado = 'Pendiente';
+                $orden->estado = $orden->tipo === 'Venta directa' ? 'Reservado' : 'Pendiente';
             }
             $orden->save();
+            $this->syncVentaDirectaAlmacen($orden->fresh(), $request->user()?->id, 'ENTRADA AUTOMATICA POR ANULACION DE PAGO');
 
             Egreso::create([
                 'fecha' => now()->toDateString(),
@@ -63,8 +65,14 @@ class OrdenPagoController extends Controller
         ]);
 
         $pagado = $orden->pagos()->where('estado', 'Activo')->sum('monto');
-        $orden->saldo = $orden->costo_total - $pagado - $orden->adelanto;
+        $orden->saldo = max(0, $orden->costo_total - $pagado - $orden->adelanto);
+        if ($orden->estado !== 'Cancelada') {
+            $orden->estado = $orden->saldo <= 0
+                ? 'Entregado'
+                : ($orden->tipo === 'Venta directa' ? 'Reservado' : 'Pendiente');
+        }
         $orden->save();
+        $this->syncVentaDirectaAlmacen($orden->fresh(), $request->user()?->id, 'SALIDA AUTOMATICA POR PAGO DE VENTA');
 
         return $pago->load('user');
     }
@@ -79,11 +87,12 @@ class OrdenPagoController extends Controller
 
         $orden->saldo += $pago->monto;
         if ($orden->saldo > 0) {
-            $orden->estado = 'Pendiente';
+            $orden->estado = $orden->tipo === 'Venta directa' ? 'Reservado' : 'Pendiente';
         } else {
             $orden->estado = 'Entregado';
         }
         $orden->save();
+        $this->syncVentaDirectaAlmacen($orden->fresh(), null, 'ENTRADA AUTOMATICA POR REVERSION DE PAGO');
 
         $pago->update([
             'estado' => 'Anulado',
@@ -95,7 +104,7 @@ class OrdenPagoController extends Controller
     public function toggleMetodo(Request $request, OrdenPago $pago)
     {
         $user = $request->user();
-        if (!$user || ($user->role ?? null) !== 'Administrador') {
+        if (! $user || ($user->role ?? null) !== 'Administrador') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
@@ -120,5 +129,43 @@ class OrdenPagoController extends Controller
             'EFECTIVO' => 'EFECTIVO',
             default => 'EFECTIVO',
         };
+    }
+
+    private function syncVentaDirectaAlmacen(Orden $orden, ?int $userId, ?string $observacion = null): void
+    {
+        if ($orden->tipo !== 'Venta directa') {
+            return;
+        }
+
+        $latestMovement = AlmacenMovimiento::where('orden_id', $orden->id)
+            ->orderByDesc('id')
+            ->first();
+
+        $isInWarehouse = $latestMovement?->tipo_movimiento === 'ENTRADA';
+        $shouldBeInWarehouse = ($orden->estado !== 'Cancelada') && (float) ($orden->saldo ?? 0) > 0;
+
+        if ($shouldBeInWarehouse && ! $isInWarehouse) {
+            AlmacenMovimiento::create([
+                'orden_id' => $orden->id,
+                'prestamo_id' => null,
+                'user_id' => $userId ?: $orden->user_id,
+                'tipo_movimiento' => 'ENTRADA',
+                'fecha_movimiento' => now(),
+                'observacion' => $observacion ?: 'ENTRADA AUTOMATICA POR VENTA RESERVADA',
+            ]);
+
+            return;
+        }
+
+        if (! $shouldBeInWarehouse && $isInWarehouse) {
+            AlmacenMovimiento::create([
+                'orden_id' => $orden->id,
+                'prestamo_id' => $latestMovement?->prestamo_id,
+                'user_id' => $userId ?: $orden->user_id,
+                'tipo_movimiento' => 'SALIDA',
+                'fecha_movimiento' => now(),
+                'observacion' => $observacion ?: 'SALIDA AUTOMATICA POR ENTREGA DE VENTA',
+            ]);
+        }
     }
 }

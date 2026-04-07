@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AlmacenMovimiento;
 use App\Models\Cog;
 use App\Models\Egreso;
 use App\Models\Joya;
 use App\Models\Orden;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
@@ -310,6 +311,12 @@ class OrdenController extends Controller
 
             $orden->save();
 
+            $this->syncVentaDirectaAlmacen(
+                $orden->fresh(),
+                $request->user()?->id,
+                'SALIDA AUTOMATICA POR ANULACION DE VENTA'
+            );
+
             $montoRevertido = $request->boolean('anular_pagos')
                 ? $adelantoActual + $totalPagosActivos
                 : $adelantoActual;
@@ -378,14 +385,14 @@ class OrdenController extends Controller
 
         if ($request->filled('linea') && $request->input('linea') !== 'Todos') {
             $linea = (string) $request->input('linea');
-                $query->where(function ($lineaQuery) use ($linea) {
-                    $lineaQuery->whereHas('joya', function ($q) use ($linea) {
-                        $q->where('linea', $linea);
-                    })->orWhereHas('joyas', function ($q) use ($linea) {
-                        $q->where('linea', $linea);
-                    });
+            $query->where(function ($lineaQuery) use ($linea) {
+                $lineaQuery->whereHas('joya', function ($q) use ($linea) {
+                    $q->where('linea', $linea);
+                })->orWhereHas('joyas', function ($q) use ($linea) {
+                    $q->where('linea', $linea);
                 });
-            }
+            });
+        }
 
         if ($request->filled('search')) {
             $s = trim((string) $request->search);
@@ -441,6 +448,7 @@ class OrdenController extends Controller
             ->get()
             ->map(function (Orden $venta) {
                 $joyas = $venta->joyas->isNotEmpty() ? $venta->joyas : collect([$venta->joya])->filter();
+
                 return [
                     'fecha' => $venta->fecha_creacion ? Carbon::parse($venta->fecha_creacion)->format('d/m/Y') : '',
                     'codigo' => $venta->numero,
@@ -669,12 +677,17 @@ class OrdenController extends Controller
                     'costo_total' => $costoTotal,
                     'adelanto' => $adelanto,
                     'saldo' => $saldo,
-                    'estado' => $saldo <= 0 ? 'Entregado' : 'Pendiente',
+                    'estado' => $saldo <= 0 ? 'Entregado' : 'Reservado',
                     'tipo_pago' => $venta['tipo_pago'] ?: ($basePayload['tipo_pago'] ?? 'Efectivo'),
                 ]);
 
                 $orden = Orden::create($payload);
                 $orden->joyas()->sync([$joya->id]);
+                $this->syncVentaDirectaAlmacen(
+                    $orden,
+                    $basePayload['user_id'] ?? null,
+                    'ENTRADA AUTOMATICA POR RESERVA DE JOYA'
+                );
 
                 return $orden->load([
                     'cliente:id,name,ci,status,cellphone',
@@ -715,6 +728,12 @@ class OrdenController extends Controller
             $orden->estado = 'Entregado';
             $orden->save();
         }
+
+        $this->syncVentaDirectaAlmacen(
+            $orden->fresh(),
+            $request->user()?->id,
+            'SALIDA AUTOMATICA POR PAGO TOTAL DE VENTA'
+        );
 
         return $orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']);
     }
@@ -777,10 +796,17 @@ class OrdenController extends Controller
         $orden->saldo = max(0, (float) ($orden->costo_total ?? 0) - ((float) ($orden->adelanto ?? 0) + $pagado));
 
         if ($orden->estado !== 'Cancelada') {
-            $orden->estado = $orden->saldo <= 0 ? 'Entregado' : 'Pendiente';
+            $orden->estado = $orden->saldo <= 0
+                ? 'Entregado'
+                : ($orden->tipo === 'Venta directa' ? 'Reservado' : 'Pendiente');
         }
 
         $orden->save();
+        $this->syncVentaDirectaAlmacen(
+            $orden->fresh(),
+            $request->user()?->id,
+            'SINCRONIZACION AUTOMATICA DE ALMACEN POR ACTUALIZACION DE VENTA'
+        );
 
         return $orden->load(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']);
     }
@@ -1042,14 +1068,14 @@ class OrdenController extends Controller
 
                 return $joyas->map(function (Joya $joya) use ($venta, $fecha) {
                     return [
-                    'fecha' => $fecha->format('d/m/Y'),
-                    'codigo' => $this->joyaCodigo((int) $joya->id),
-                    'detalle' => $joya->nombre ?: $venta->detalle,
-                    'peso' => (float) ($joya->peso ?? 0),
-                    'linea' => $this->lineaLabel($joya->linea),
-                    'estado' => 'VENDIDO',
-                    'usuario' => $venta->user?->name ?: 'SIN USUARIO',
-                    'timestamp' => $fecha->timestamp,
+                        'fecha' => $fecha->format('d/m/Y'),
+                        'codigo' => $this->joyaCodigo((int) $joya->id),
+                        'detalle' => $joya->nombre ?: $venta->detalle,
+                        'peso' => (float) ($joya->peso ?? 0),
+                        'linea' => $this->lineaLabel($joya->linea),
+                        'estado' => 'VENDIDO',
+                        'usuario' => $venta->user?->name ?: 'SIN USUARIO',
+                        'timestamp' => $fecha->timestamp,
                     ];
                 });
             });
@@ -1283,5 +1309,43 @@ class OrdenController extends Controller
         }
 
         return 'RESERVADO';
+    }
+
+    private function syncVentaDirectaAlmacen(Orden $orden, ?int $userId, ?string $observacion = null): void
+    {
+        if ($orden->tipo !== 'Venta directa') {
+            return;
+        }
+
+        $latestMovement = AlmacenMovimiento::where('orden_id', $orden->id)
+            ->orderByDesc('id')
+            ->first();
+
+        $isInWarehouse = $latestMovement?->tipo_movimiento === 'ENTRADA';
+        $shouldBeInWarehouse = ($orden->estado !== 'Cancelada') && (float) ($orden->saldo ?? 0) > 0;
+
+        if ($shouldBeInWarehouse && ! $isInWarehouse) {
+            AlmacenMovimiento::create([
+                'orden_id' => $orden->id,
+                'prestamo_id' => null,
+                'user_id' => $userId ?: $orden->user_id,
+                'tipo_movimiento' => 'ENTRADA',
+                'fecha_movimiento' => now(),
+                'observacion' => $observacion ?: 'ENTRADA AUTOMATICA POR VENTA RESERVADA',
+            ]);
+
+            return;
+        }
+
+        if (! $shouldBeInWarehouse && $isInWarehouse) {
+            AlmacenMovimiento::create([
+                'orden_id' => $orden->id,
+                'prestamo_id' => $latestMovement?->prestamo_id,
+                'user_id' => $userId ?: $orden->user_id,
+                'tipo_movimiento' => 'SALIDA',
+                'fecha_movimiento' => now(),
+                'observacion' => $observacion ?: 'SALIDA AUTOMATICA POR ENTREGA DE VENTA',
+            ]);
+        }
     }
 }

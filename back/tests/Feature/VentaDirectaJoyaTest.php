@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AlmacenMovimiento;
 use App\Models\Client;
 use App\Models\Joya;
 use App\Models\Orden;
@@ -44,6 +45,7 @@ it('creates a direct jewel sale in ordenes table', function () {
             'tipo' => 'Venta directa',
             'joya_id' => $joya->id,
             'cliente_id' => $cliente->id,
+            'estado' => 'Reservado',
         ]);
 
     $this->assertDatabaseHas('ordenes', [
@@ -51,6 +53,12 @@ it('creates a direct jewel sale in ordenes table', function () {
         'joya_id' => $joya->id,
         'cliente_id' => $cliente->id,
         'user_id' => $user->id,
+        'estado' => 'Reservado',
+    ]);
+
+    $this->assertDatabaseHas('almacen_movimientos', [
+        'orden_id' => Orden::where('tipo', 'Venta directa')->firstOrFail()->id,
+        'tipo_movimiento' => 'ENTRADA',
     ]);
 
     expect(Orden::where('tipo', 'Venta directa')->firstOrFail()->numero)->toStartWith('V');
@@ -82,6 +90,8 @@ it('marks a direct jewel sale as entregado when fully paid at creation', functio
             'estado' => 'Entregado',
             'saldo' => 0,
         ]);
+
+    expect(AlmacenMovimiento::count())->toBe(0);
 });
 
 it('creates one direct jewel sale per selected joya', function () {
@@ -376,6 +386,46 @@ it('marks every joya in a multi-jewel sale as reservada in vitrina', function ()
         ->assertJsonFragment(['id' => $joyas[1]->id, 'estado_joya' => 'RESERVADO']);
 });
 
+it('creates warehouse entry for reserved sale and automatic exit when fully paid', function () {
+    $user = User::factory()->create(['role' => 'Administrador']);
+    Sanctum::actingAs($user);
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE ALMACEN VENTA',
+        'ci' => '555222',
+        'status' => 'Confiable',
+        'cellphone' => '70055555',
+        'address' => 'ORURO',
+    ]);
+
+    $joya = Joya::firstOrFail();
+
+    $ventaId = $this->postJson('/api/ordenes', [
+        'tipo' => 'Venta directa',
+        'joya_id' => $joya->id,
+        'cliente_id' => $cliente->id,
+        'costo_total' => 2000,
+        'adelanto' => 100,
+        'tipo_pago' => 'Efectivo',
+    ])->assertCreated()->json('id');
+
+    $this->assertDatabaseHas('almacen_movimientos', [
+        'orden_id' => $ventaId,
+        'tipo_movimiento' => 'ENTRADA',
+    ]);
+
+    $this->postJson("/api/ordenes/{$ventaId}/pagar-todo")
+        ->assertOk()
+        ->assertJsonFragment([
+            'estado' => 'Entregado',
+            'saldo' => 0,
+        ]);
+
+    $this->assertDatabaseHas('almacen_movimientos', [
+        'orden_id' => $ventaId,
+        'tipo_movimiento' => 'SALIDA',
+    ]);
+});
 
 it('finds joyas in vitrina by codigo', function () {
     Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
