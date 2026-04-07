@@ -427,3 +427,55 @@ it('refreshes an existing opening amount when the next day has no movements yet'
         ->assertJsonPath('daily_cash.opening_amount', $expectedNet)
         ->assertJsonPath('total_caja', $expectedNet);
 });
+
+it('refreshes a stale opening amount even when the day already has movements', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    Sanctum::actingAs($admin);
+
+    $thursday = Carbon::create(2026, 4, 2)->toDateString();
+    $friday = Carbon::create(2026, 4, 3)->toDateString();
+    $saturday = Carbon::create(2026, 4, 4)->toDateString();
+
+    DailyCash::create([
+        'date' => $thursday,
+        'opening_amount' => 7410.82,
+        'user_id' => $admin->id,
+    ]);
+
+    Ingreso::create([
+        'fecha' => $thursday,
+        'descripcion' => 'INGRESO JUEVES',
+        'metodo' => 'EFECTIVO',
+        'monto' => 8020,
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+    ]);
+
+    DailyCash::create([
+        'date' => $friday,
+        'opening_amount' => 15430.82,
+        'user_id' => $admin->id,
+    ]);
+
+    DailyCash::create([
+        'date' => $saturday,
+        'opening_amount' => 7410.82,
+        'user_id' => $admin->id,
+    ]);
+
+    Ingreso::create([
+        'fecha' => $saturday,
+        'descripcion' => 'INGRESO SABADO',
+        'metodo' => 'EFECTIVO',
+        'monto' => 1000,
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+    ]);
+
+    $this->getJson('/api/daily-cash?date='.$saturday)
+        ->assertOk()
+        ->assertJsonPath('suggested_opening_amount', 15430.82)
+        ->assertJsonPath('daily_cash.opening_amount', 15430.82)
+        ->assertJsonPath('total_ingresos', 16430.82)
+        ->assertJsonPath('total_caja', 16430.82);
+});

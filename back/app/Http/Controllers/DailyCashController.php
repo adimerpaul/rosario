@@ -42,16 +42,9 @@ class DailyCashController extends Controller
             ['opening_amount' => $suggested, 'user_id' => optional($auth)->id]
         );
 
-        if ((float) $daily->opening_amount <= 0 && $suggested > 0) {
-            $daily->opening_amount = $suggested;
-            $daily->user_id = $daily->user_id ?: optional($auth)->id;
-            $daily->save();
-            $daily->refresh();
-        }
-
         if (
             ! $isAdminFilteringByUser &&
-            ! $this->dateHasMovements($date, $userForTotals) &&
+            ! (bool) $daily->closed &&
             round((float) $daily->opening_amount, 2) !== round($suggested, 2)
         ) {
             $daily->opening_amount = $suggested;
@@ -387,12 +380,6 @@ class DailyCashController extends Controller
             ->merge($itemsPagoPrest)
             ->merge($itemsIngresoOtros)
             ->values();
-    }
-
-    private function dateHasMovements(string $date, ?User $user = null): bool
-    {
-        return $this->buildItemsIngresos($date, $user)->isNotEmpty()
-            || $this->buildItemsEgresos($date, $user)->isNotEmpty();
     }
 
     private function buildItemsEgresos(string $date, ?User $user = null)
