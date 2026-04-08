@@ -129,6 +129,31 @@ it('shows only the selected user totals when filtering libro diario by usuario',
         ->assertJsonCount(0, 'items_egresos');
 });
 
+it('does not create a daily cash row when filtering libro diario by usuario', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    $user = User::factory()->create(['role' => 'Vendedor', 'username' => 'roger']);
+    Sanctum::actingAs($admin);
+
+    $today = Carbon::today()->toDateString();
+
+    Ingreso::create([
+        'fecha' => $today,
+        'descripcion' => 'INGRESO FILTRADO',
+        'metodo' => 'EFECTIVO',
+        'monto' => 50,
+        'estado' => 'Activo',
+        'user_id' => $user->id,
+    ]);
+
+    expect(DailyCash::whereDate('date', $today)->exists())->toBeFalse();
+
+    $this->getJson('/api/daily-cash?date='.$today.'&usuario=roger')
+        ->assertOk()
+        ->assertJsonPath('is_user_filtered', true);
+
+    expect(DailyCash::whereDate('date', $today)->exists())->toBeFalse();
+});
+
 it('uses the previous day net total as opening amount for the next day', function () {
     $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
     Sanctum::actingAs($admin);
@@ -478,4 +503,34 @@ it('refreshes a stale opening amount even when the day already has movements', f
         ->assertJsonPath('daily_cash.opening_amount', 15430.82)
         ->assertJsonPath('total_ingresos', 16430.82)
         ->assertJsonPath('total_caja', 16430.82);
+});
+
+it('does not create a future daily cash row when querying libro diario', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    Sanctum::actingAs($admin);
+
+    $futureDate = Carbon::today()->addDay()->toDateString();
+
+    expect(DailyCash::whereDate('date', $futureDate)->exists())->toBeFalse();
+
+    $this->getJson('/api/daily-cash?date='.$futureDate)
+        ->assertOk()
+        ->assertJsonPath('date', $futureDate)
+        ->assertJsonPath('daily_cash.id', null);
+
+    expect(DailyCash::whereDate('date', $futureDate)->exists())->toBeFalse();
+});
+
+it('rejects storing a future daily cash row', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    Sanctum::actingAs($admin);
+
+    $futureDate = Carbon::today()->addDay()->toDateString();
+
+    $this->postJson('/api/daily-cash', [
+        'date' => $futureDate,
+        'opening_amount' => 100,
+    ])->assertStatus(422);
+
+    expect(DailyCash::whereDate('date', $futureDate)->exists())->toBeFalse();
 });

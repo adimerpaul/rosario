@@ -36,22 +36,12 @@ class DailyCashController extends Controller
         }
 
         $suggested = $this->calculateSuggestedOpeningAmount($date, $userForTotals);
-
-        $daily = DailyCash::firstOrCreate(
-            ['date' => $date],
-            ['opening_amount' => $suggested, 'user_id' => optional($auth)->id]
+        $daily = $this->resolveDailyCash(
+            $date,
+            $suggested,
+            optional($auth)->id,
+            $isAdminFilteringByUser
         );
-
-        if (
-            ! $isAdminFilteringByUser &&
-            ! (bool) $daily->closed &&
-            round((float) $daily->opening_amount, 2) !== round($suggested, 2)
-        ) {
-            $daily->opening_amount = $suggested;
-            $daily->user_id = $daily->user_id ?: optional($auth)->id;
-            $daily->save();
-            $daily->refresh();
-        }
 
         $ordenes = \App\Models\Orden::with(['cliente', 'user'])
             ->whereDate('fecha_creacion', $date)
@@ -233,7 +223,7 @@ class DailyCashController extends Controller
     public function storeOrUpdate(Request $request)
     {
         $data = $request->validate([
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'opening_amount' => 'required|numeric|min:0',
             'note' => 'nullable|string|max:255',
         ]);
@@ -248,6 +238,47 @@ class DailyCashController extends Controller
         );
 
         return response()->json($daily->fresh());
+    }
+
+    private function resolveDailyCash(
+        string $date,
+        float $suggested,
+        ?int $authUserId,
+        bool $isAdminFilteringByUser
+    ): DailyCash {
+        $daily = DailyCash::query()->whereDate('date', $date)->first();
+        $targetDate = Carbon::parse($date)->startOfDay();
+        $today = now()->startOfDay();
+        $canPersist = ! $isAdminFilteringByUser && $targetDate->lte($today);
+
+        if (! $daily && ! $canPersist) {
+            return new DailyCash([
+                'date' => $date,
+                'opening_amount' => $suggested,
+                'user_id' => $authUserId,
+            ]);
+        }
+
+        if (! $daily) {
+            return DailyCash::create([
+                'date' => $date,
+                'opening_amount' => $suggested,
+                'user_id' => $authUserId,
+            ]);
+        }
+
+        if (
+            $canPersist &&
+            ! (bool) $daily->closed &&
+            round((float) $daily->opening_amount, 2) !== round($suggested, 2)
+        ) {
+            $daily->opening_amount = $suggested;
+            $daily->user_id = $daily->user_id ?: $authUserId;
+            $daily->save();
+            $daily->refresh();
+        }
+
+        return $daily;
     }
 
     private function calculateSuggestedOpeningAmount(string $date, ?User $user = null): float

@@ -136,14 +136,14 @@
                       </div>
                       <q-space/>
                       <div class="text-right">
-                        <template v-if="orden.tipo === 'Orden'">
-                          <div class="text-caption text-grey-7">Costo oro</div>
-                          <div class="text-weight-bold">{{ money(orden.costo_total_oro) }}</div>
-                          <div class="text-caption text-grey-7">P. oro: {{ money(orden.precio_oro_historico) }}</div>
-                        </template>
-                        <q-chip dense square text-color="white" :style="{backgroundColor: getEstadoColor(orden.estado)}" class="q-mt-xs">
-                          {{ orden.estado }}
-                        </q-chip>
+<!--                        <template v-if="orden.tipo === 'Orden'">-->
+<!--                          <div class="text-caption text-grey-7">Costo oro</div>-->
+<!--                          <div class="text-weight-bold">{{ money(orden.costo_total_oro) }}</div>-->
+<!--                          <div class="text-caption text-grey-7">P. oro: {{ money(orden.precio_oro_historico) }}</div>-->
+<!--                        </template>-->
+<!--                        <q-chip dense square text-color="white" :style="{backgroundColor: getEstadoColor(orden.estado)}" class="q-mt-xs">-->
+<!--                          {{ orden.estado }}-->
+<!--                        </q-chip>-->
                       </div>
                     </div>
                   </q-card-section>
