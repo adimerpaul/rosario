@@ -97,9 +97,9 @@
                         <div class="col-12 col-md-4">
                           <q-input label="Celular" v-model="orden.celular" outlined dense />
                         </div>
-                        <div class="col-12 col-md-4">
-                          <q-input label="Precio oro" :model-value="money(precioOro.value)" outlined dense readonly />
-                        </div>
+<!--                        <div class="col-12 col-md-4">-->
+<!--                          <q-input label="Precio oro" :model-value="money(precioOro.value)" outlined dense readonly />-->
+<!--                        </div>-->
                         <div class="col-12 col-md-4">
                           <q-input
                             label="Peso (kg)"
@@ -107,15 +107,14 @@
                             type="number"
                             outlined
                             dense
-                            min="0.01"
+                            min="0.00"
                             step="0.01"
-                            :rules="[val => Number(val) > 0 || 'El peso debe ser mayor a 0']"
                             @update:model-value="calcularTotal"
                           />
                         </div>
-                        <div class="col-12 col-md-4">
-                          <q-input label="Costo oro" :model-value="money(costoOro)" outlined dense readonly />
-                        </div>
+<!--                        <div class="col-12 col-md-4">-->
+<!--                          <q-input label="Costo oro" :model-value="money(costoOro)" outlined dense readonly />-->
+<!--                        </div>-->
                         <div class="col-12 col-md-4">
                           <q-input label="Costo Total" v-model.number="orden.costo_total" type="number" outlined dense @update:model-value="validarCostoTotal" />
                         </div>
@@ -397,10 +396,10 @@ export default {
         this.$alert.error('Debe seleccionar un cliente')
         return
       }
-      if (Number(this.orden.peso || 0) <= 0) {
-        this.$alert.error('El peso debe ser mayor a 0')
-        return
-      }
+      // if (Number(this.orden.peso || 0) <= 0) {
+      //   this.$alert.error('El peso debe ser mayor a 0')
+      //   return
+      // }
 
       this.loading = true
       this.orden.kilates18 = this.check18Kilates

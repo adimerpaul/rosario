@@ -538,7 +538,7 @@ class OrdenController extends Controller
 
         $request->validate([
             'cliente_id' => 'required|exists:clientes,id',
-            'peso' => $isVentaDirecta ? 'nullable|numeric|min:0' : 'required|numeric|gt:0',
+            'peso' => $isVentaDirecta ? 'nullable|numeric' : 'required|numeric',
             'costo_total' => 'nullable|numeric|min:0',
             'adelanto' => 'nullable|numeric|min:0',
             'saldo' => 'nullable|numeric|min:0',

@@ -187,12 +187,12 @@ function renderPrestamoContrato (model) {
           <td class="box" style="width:33%;">
             <div class="label">Interes</div>
             <div class="md">${escapeHtml(model.interesMensual)} %</div>
-            <div class="xs muted">30 dias: ${escapeHtml(model.interesMonto30)} ${escapeHtml(model.monedaCorta)}</div>
+<!--            <div class="xs muted">30 dias: ${escapeHtml(model.interesMonto30)} ${escapeHtml(model.monedaCorta)}</div>-->
           </td>
           <td class="box" style="width:33%;">
             <div class="label">Almacen</div>
             <div class="md">${escapeHtml(model.almacenMensual)} %</div>
-            <div class="xs muted">30 dias: ${escapeHtml(model.almacenMonto30)} ${escapeHtml(model.monedaCorta)}</div>
+<!--            <div class="xs muted">30 dias: ${escapeHtml(model.almacenMonto30)} ${escapeHtml(model.monedaCorta)}</div>-->
           </td>
           <td class="box" style="width:34%;">
             <div class="label">Plazo</div>
