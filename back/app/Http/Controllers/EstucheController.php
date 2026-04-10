@@ -11,7 +11,7 @@ class EstucheController extends Controller
     {
         $this->ensureViewer($request);
 
-        return Estuche::with(['columna.vitrina', 'joyas:id,nombre,estuche_id'])
+        return Estuche::with(['columna.vitrina', 'joyas' => fn ($query) => $query->where('vendido', false)->select('id', 'nombre', 'estuche_id')])
             ->orderBy('nombre')
             ->get()
             ->map(function (Estuche $estuche) {

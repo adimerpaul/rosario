@@ -10,9 +10,14 @@
           <div class="text-caption text-grey-7">Vista compacta del préstamo, deuda y pagos.</div>
         </div>
         <div class="col-auto">
-          <q-chip :color="estadoColor" text-color="white" dense>
-            {{ prestamo.estado }}
-          </q-chip>
+          <div class="row q-gutter-xs items-center">
+            <q-chip color="secondary" text-color="white" dense>
+              Compra oro: {{ money(prestamo.precio_oro || 0) }}
+            </q-chip>
+            <q-chip :color="estadoColor" text-color="white" dense>
+              {{ prestamo.estado }}
+            </q-chip>
+          </div>
         </div>
         <div class="col-12 col-md-auto">
           <div class="row q-gutter-sm justify-end">
@@ -99,7 +104,7 @@
                     <q-input dense outlined label="Celular" v-model="prestamo.celular" />
                   </div>
                   <div class="col-12">
-                    <q-input dense outlined label="Precio oro compra" :model-value="money(precioOro.value)" readonly />
+                    <q-input dense outlined label="Precio oro compra" :model-value="money(prestamo.precio_oro || 0)" readonly />
                   </div>
                 </div>
               </q-card-section>
@@ -513,7 +518,5 @@ export default {
   }
 }
 </script>
-
-
 
 

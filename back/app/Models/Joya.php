@@ -23,6 +23,11 @@ class Joya extends Model implements AuditableContract
         'nombre',
         'imagen',
         'monto_bs',
+        'vendido',
+    ];
+
+    protected $casts = [
+        'vendido' => 'boolean',
     ];
 
     protected $hidden = [

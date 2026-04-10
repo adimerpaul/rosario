@@ -12,7 +12,7 @@ class VitrinaController extends Controller
         $this->ensureViewer($request);
 
         return Vitrina::with([
-            'columnas.estuches.joyas',
+            'columnas.estuches.joyas' => fn ($query) => $query->where('vendido', false),
         ])->orderBy('orden')->get();
     }
 

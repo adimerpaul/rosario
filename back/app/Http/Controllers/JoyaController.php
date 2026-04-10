@@ -20,7 +20,7 @@ class JoyaController extends Controller
 
         $query = Joya::query()
             ->with(['estucheItem.columna.vitrina', 'user:id,name,username'])
-            ->when($soloSinEstuche, fn ($query) => $query->whereNull('estuche_id'))
+            ->when($soloSinEstuche, fn ($query) => $query->whereNull('estuche_id')->where('vendido', false))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nombre', 'like', "%{$search}%")
@@ -139,6 +139,7 @@ class JoyaController extends Controller
             'estuche_id' => ['nullable', 'exists:estuches,id'],
             'nombre' => 'required|string|max:255',
             'monto_bs' => 'required|numeric|min:0',
+            'vendido' => 'nullable|boolean',
         ]);
     }
 

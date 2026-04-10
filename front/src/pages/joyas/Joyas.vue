@@ -133,6 +133,14 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-vendido="props">
+            <q-td :props="props">
+              <q-chip dense :color="props.row.vendido ? 'negative' : 'positive'" text-color="white">
+                {{ props.row.vendido ? 'Vendido' : 'Disponible' }}
+              </q-chip>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-user="props">
             <q-td :props="props">
               {{ props.row.user?.username || props.row.user?.name || '-' }}
@@ -234,6 +242,14 @@
                       outlined
                     />
                   </div>
+                  <div class="col-12 col-md-4">
+                    <q-toggle
+                      v-model="joya.vendido"
+                      label="Joya vendida"
+                      color="negative"
+                      left-label
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -299,6 +315,7 @@ export default {
         linea: 'Mama',
         estuche_id: null,
         monto_bs: 0,
+        vendido: false,
         imagen: 'joya.png'
       },
       columns: [
@@ -311,7 +328,8 @@ export default {
         { name: 'estuche', label: 'Estuche', align: 'left', field: row => row.estuche },
         { name: 'user', label: 'Creado por', align: 'left', field: row => row.user?.username || row.user?.name || '-' },
         { name: 'created_at', label: 'Fecha', align: 'left', field: 'created_at' },
-        { name: 'monto_bs', label: 'Monto', align: 'left', field: 'monto_bs' }
+        { name: 'monto_bs', label: 'Monto', align: 'left', field: 'monto_bs' },
+        { name: 'vendido', label: 'Estado venta', align: 'left', field: 'vendido' }
       ]
     }
   },
@@ -375,6 +393,7 @@ export default {
         linea: 'Mama',
         estuche_id: null,
         monto_bs: 0,
+        vendido: false,
         imagen: 'joya.png'
       }
       this.resetImageState()
@@ -385,6 +404,7 @@ export default {
       this.joya = {
         ...joya,
         estuche_id: joya.estuche_id || joya.estuche_item?.id || null,
+        vendido: Boolean(joya.vendido),
         imagen: joya.imagen || 'joya.png'
       }
       this.resetImageState()

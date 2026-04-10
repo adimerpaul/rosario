@@ -13,6 +13,19 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrestamoController extends Controller
 {
+    private function precioPrestamoActual(): float
+    {
+        $cog = Cog::query()
+            ->where('name', 'Prestamos para comprar')
+            ->first();
+
+        if (! $cog) {
+            $cog = Cog::find(3);
+        }
+
+        return (float) ($cog?->value ?? 0);
+    }
+
     public function pagoPdf(PrestamoPago $pago)
     {
         $pago->load(['prestamo.cliente', 'user']);
@@ -664,8 +677,7 @@ class PrestamoController extends Controller
         ]);
 
         return DB::transaction(function () use ($data) {
-            // Precio COMPRA oro (coincide con front que usa cogs/3)
-            $precioOro = optional(Cog::find(3))->value ?? 0;
+            $precioOro = $this->precioPrestamoActual();
 
             // Peso neto con merma
             $pesoBruto = (float) $data['peso'];

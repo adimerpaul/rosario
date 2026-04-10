@@ -66,6 +66,7 @@ class OrdenController extends Controller
         $page = max(1, $request->integer('page', 1));
 
         $query = Joya::with(['estucheItem.columna.vitrina'])
+            ->where('vendido', false)
             ->whereDoesntHave('ventas', function ($q) {
                 $q->where('tipo', 'Venta directa')
                     ->where('estado', '!=', 'Cancelada');
@@ -184,7 +185,8 @@ class OrdenController extends Controller
                         ->orWhereHas('ventas', function ($ventaQuery) use ($search) {
                             $ventaQuery->where('tipo', 'Venta directa')
                                 ->where(function ($nested) use ($search) {
-                                    $nested->whereHas('cliente', function ($clienteQuery) use ($search) {
+                                    $nested->where('numero', 'like', "%{$search}%")
+                                        ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
                                         $clienteQuery->where('name', 'like', "%{$search}%")
                                             ->orWhere('ci', 'like', "%{$search}%");
                                     })->orWhereHas('user', function ($userQuery) use ($search) {
@@ -196,7 +198,8 @@ class OrdenController extends Controller
                         ->orWhereHas('ventasItems', function ($ventaQuery) use ($search) {
                             $ventaQuery->where('tipo', 'Venta directa')
                                 ->where(function ($nested) use ($search) {
-                                    $nested->whereHas('cliente', function ($clienteQuery) use ($search) {
+                                    $nested->where('numero', 'like', "%{$search}%")
+                                        ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
                                         $clienteQuery->where('name', 'like', "%{$search}%")
                                             ->orWhere('ci', 'like', "%{$search}%");
                                     })->orWhereHas('user', function ($userQuery) use ($search) {
@@ -323,6 +326,14 @@ class OrdenController extends Controller
             }
 
             $orden->save();
+
+            if ($orden->tipo === 'Venta directa') {
+                $orden->joyas()->update(['vendido' => false]);
+
+                if ($orden->joya_id) {
+                    Joya::where('id', $orden->joya_id)->update(['vendido' => false]);
+                }
+            }
 
             $this->syncVentaDirectaAlmacen(
                 $orden->fresh(),
@@ -696,6 +707,7 @@ class OrdenController extends Controller
 
                 $orden = Orden::create($payload);
                 $orden->joyas()->sync([$joya->id]);
+                $joya->update(['vendido' => true]);
                 $this->syncVentaDirectaAlmacen(
                     $orden,
                     $basePayload['user_id'] ?? null,
@@ -1215,6 +1227,7 @@ class OrdenController extends Controller
 
         $needle = mb_strtoupper($search);
         $haystacks = [
+            $joya['numero'] ?? null,
             $joya['codigo'] ?? null,
             $joya['nombre'] ?? null,
             $joya['tipo'] ?? null,
@@ -1223,6 +1236,12 @@ class OrdenController extends Controller
             data_get($joya, 'estuche_nombre'),
             data_get($joya, 'columna_codigo'),
             data_get($joya, 'vitrina_nombre'),
+            data_get($joya, 'joya.nombre'),
+            data_get($joya, 'joya.tipo'),
+            data_get($joya, 'joya.linea'),
+            data_get($joya, 'joya.estuche_item.nombre'),
+            data_get($joya, 'joya.estuche_item.columna.codigo'),
+            data_get($joya, 'joya.estuche_item.columna.vitrina.nombre'),
             data_get($joya, 'cliente.name'),
             data_get($joya, 'user.name'),
             data_get($joya, 'user.username'),

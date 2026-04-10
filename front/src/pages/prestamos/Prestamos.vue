@@ -93,11 +93,9 @@
                           <div>
                             #{{ p.numero }}
                           </div>
-
-                          <!-- DERECHA -->
-<!--                          <div>-->
-<!--                            <pre>{{p}}</pre>-->
-<!--                          </div>-->
+                          <q-chip dense square color="secondary" text-color="white">
+                            Oro: {{ money(p.precio_oro || 0) }}
+                          </q-chip>
 
                         </div>
                         <div class="text-caption text-grey-7">
