@@ -135,15 +135,16 @@
                         </div>
                       </div>
                       <q-space/>
-                      <div class="text-right">
-<!--                        <template v-if="orden.tipo === 'Orden'">-->
-<!--                          <div class="text-caption text-grey-7">Costo oro</div>-->
-<!--                          <div class="text-weight-bold">{{ money(orden.costo_total_oro) }}</div>-->
-<!--                          <div class="text-caption text-grey-7">P. oro: {{ money(orden.precio_oro_historico) }}</div>-->
-<!--                        </template>-->
-<!--                        <q-chip dense square text-color="white" :style="{backgroundColor: getEstadoColor(orden.estado)}" class="q-mt-xs">-->
-<!--                          {{ orden.estado }}-->
-<!--                        </q-chip>-->
+                      <div class="text-right order-status-chip-wrap">
+                        <q-chip
+                          dense
+                          square
+                          text-color="white"
+                          :style="{ backgroundColor: getEstadoColor(orden.estado) }"
+                          class="order-status-chip"
+                        >
+                          {{ orden.estado }}
+                        </q-chip>
                       </div>
                     </div>
                   </q-card-section>
@@ -602,6 +603,15 @@ export default {
 .order-number-line {
   margin-bottom: 1px;
   line-height: 1.05;
+}
+.order-status-chip-wrap {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  min-width: fit-content;
+}
+.order-status-chip {
+  margin: 0;
 }
 .order-date-lines {
   line-height: 1.1;

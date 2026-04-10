@@ -63,6 +63,7 @@ class DatabaseSeeder extends Seeder
         $cogs = [
             ['name' => 'Precio Compra', 'value' => 950.00, 'description' => 'Precio de compra del oro'],
             ['name' => 'Precio Venta', 'value' => 1200.00, 'description' => 'Precio de venta del oro'],
+            ['name' => 'Venta plata', 'value' => 120.00, 'description' => 'Monto de venta para plata'],
             ['name' => 'Prestamos para comprar', 'value' => 900, 'description' => 'Interes por prestamos para comprar oro'],
             ['name' => 'Tipo de cambio', 'value' => 6.96, 'description' => 'Tipo de cambio USD a BOB'],
             ['name' => 'Joya importada', 'value' => 1350.00, 'description' => 'Precio de joya importada'],

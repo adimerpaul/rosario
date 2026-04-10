@@ -44,6 +44,7 @@ export default {
       const orden = [
         'Precio Compra',
         'Precio Venta',
+        'Venta plata',
         'Prestamos para comprar',
         'Tipo de cambio',
         'Joya importada'

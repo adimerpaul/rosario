@@ -1,15 +1,4 @@
-import moment from 'moment'
-import Printd from 'printd'
-
-const COMPANY = {
-  nombre: 'JOYERIA ROSARIO',
-  sucursal: 'ORURO',
-  direccion: 'DIR. ADOLFO MIER, POTOSI Y PAGADOR (LADO PALACE HOTEL)',
-  cel: '73800584',
-  telefono: '52-55713'
-}
-
-const DIRECT_PRINT_STYLES = `
+import{h as d}from"./moment-C5S46NFB.js";import{P as h}from"./index-C5E5KQtJ.js";const x={nombre:"JOYERIA ROSARIO",sucursal:"ORURO",direccion:"DIR. ADOLFO MIER, POTOSI Y PAGADOR (LADO PALACE HOTEL)",cel:"73800584",telefono:"52-55713"},v=`
   @page { size: letter portrait; margin: 5mm; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -172,101 +161,15 @@ const DIRECT_PRINT_STYLES = `
     border-top: 1px dashed #999;
     height: 0;
   }
-`
-
-function escapeHtml (value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function money (value) {
-  return Number(value || 0).toFixed(2)
-}
-
-function formatDate (value, format = 'DD/MM/YYYY') {
-  if (!value) return '-'
-  return moment(value).format(format)
-}
-
-function formatPhone (order) {
-  return order?.cliente?.cellphone || order?.celular || 'N/A'
-}
-
-function normalizeBaseUrl (axiosInstance) {
-  const rawBase = axiosInstance?.defaults?.baseURL || window.location.origin
-  const url = new URL(rawBase, window.location.origin)
-  url.pathname = url.pathname.replace(/\/api\/?$/, '/')
-  return url.toString().replace(/\/$/, '')
-}
-
-function imageUrl (baseUrl, fileName) {
-  if (!fileName) return ''
-  return `${baseUrl}/images/${fileName}`
-}
-
-function buildOrderPrintModel (order, precioOro, axiosInstance) {
-  const baseUrl = normalizeBaseUrl(axiosInstance)
-  const creationDate = moment(order?.fecha_creacion || new Date())
-  const today = moment()
-
-  return {
-    company: COMPANY,
-    logo: imageUrl(baseUrl, 'logo.png'),
-    fallbackRings: imageUrl(baseUrl, 'rings.png'),
-    photo: imageUrl(baseUrl, order?.foto_modelo),
-    numero: order?.numero || '',
-    cliente: order?.cliente?.name || 'N/A',
-    detalle: [
-      order?.detalle || '-',
-      `Peso: ${order?.peso || 0} gr.`,
-      `Oro: ${order?.kilates18 || '-'}`
-    ].join(' / '),
-    costoTotal: money(order?.costo_total),
-    adelanto: money(Number(order?.adelanto || 0) + Number(order?.totalPagos || 0)),
-    saldo: money(order?.saldo),
-    entrega: order?.fecha_entrega ? formatDate(order.fecha_entrega) : '-',
-    observaciones: order?.observacion || order?.observaciones || '',
-    nota: order?.nota || 'Ningun trabajo sera entregado sin la presente orden. Importante en caso de no recojo se espera un maximo de 90 dias antes de proceder a la fundicion de la joya',
-    garantia: {
-      codigo: order?.numero || '-',
-      fecha: today.format('DD/MM/YYYY'),
-      dia: today.format('DD'),
-      mes: today.format('MM'),
-      ano: today.format('YYYY'),
-      cliente: order?.cliente?.name || 'N/A',
-      tipo: 'Joya',
-      periodo: '1 ano',
-      detalle: order?.detalle || '-',
-      mantenimientoMeses: 12,
-      precioOro: money(precioOro)
-    },
-    fechaTrabajo: {
-      hoy: today.format('DD/MM/YYYY'),
-      dia: creationDate.format('DD'),
-      mes: creationDate.format('MM'),
-      ano: creationDate.format('YYYY')
-    }
-  }
-}
-
-function renderOrderWorkSheet (model, variant = 'top') {
-  const referenceHtml = model.photo
-    ? `<div class="reference-box"><img class="reference-image" src="${escapeHtml(model.photo)}" alt="Foto de referencia"></div>`
-    : `
+`;function a(e){return String(e??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function l(e){return Number(e||0).toFixed(2)}function u(e,t="DD/MM/YYYY"){return e?d(e).format(t):"-"}function f(e){const t=e?.defaults?.baseURL||window.location.origin,i=new URL(t,window.location.origin);return i.pathname=i.pathname.replace(/\/api\/?$/,"/"),i.toString().replace(/\/$/,"")}function r(e,t){return t?`${e}/images/${t}`:""}function p(e,t,i){const s=f(i),o=d(e?.fecha_creacion||new Date),n=d();return{company:x,logo:r(s,"logo.png"),fallbackRings:r(s,"rings.png"),photo:r(s,e?.foto_modelo),numero:e?.numero||"",cliente:e?.cliente?.name||"N/A",detalle:[e?.detalle||"-",`Peso: ${e?.peso||0} gr.`,`Oro: ${e?.kilates18||"-"}`].join(" / "),costoTotal:l(e?.costo_total),adelanto:l(Number(e?.adelanto||0)+Number(e?.totalPagos||0)),saldo:l(e?.saldo),entrega:e?.fecha_entrega?u(e.fecha_entrega):"-",observaciones:e?.observacion||e?.observaciones||"",nota:e?.nota||"Ningun trabajo sera entregado sin la presente orden. Importante en caso de no recojo se espera un maximo de 90 dias antes de proceder a la fundicion de la joya",garantia:{codigo:e?.numero||"-",fecha:n.format("DD/MM/YYYY"),dia:n.format("DD"),mes:n.format("MM"),ano:n.format("YYYY"),cliente:e?.cliente?.name||"N/A",tipo:"Joya",periodo:"1 ano",detalle:e?.detalle||"-",mantenimientoMeses:12,precioOro:l(t)},fechaTrabajo:{hoy:n.format("DD/MM/YYYY"),dia:o.format("DD"),mes:o.format("MM"),ano:o.format("YYYY")}}}function c(e,t="top"){const i=e.photo?`<div class="reference-box"><img class="reference-image" src="${a(e.photo)}" alt="Foto de referencia"></div>`:`
       <div class="small muted">Espacio para dibujo o detalle del cliente</div>
       <div class="sketch-guide"></div>
-    `
-
-  return `
-    <div class="sheet order-copy-${escapeHtml(variant)}">
+    `;return`
+    <div class="sheet order-copy-${a(t)}">
       <table class="head">
         <tr>
           <td class="logo-box">
-            <img src="${escapeHtml(model.logo)}" alt="Logo">
+            <img src="${a(e.logo)}" alt="Logo">
             <div class="small">
               Calidad y garantia<br>
               Oro 18 Klts<br>
@@ -274,24 +177,24 @@ function renderOrderWorkSheet (model, variant = 'top') {
             </div>
           </td>
           <td class="center">
-            <div class="small">${escapeHtml(model.fechaTrabajo.hoy)}</div>
+            <div class="small">${a(e.fechaTrabajo.hoy)}</div>
             <div style="height:6px"></div>
             <div class="brand title">ORDEN DE TRABAJO</div>
             <div class="sub">
-              ${escapeHtml(model.company.direccion)}<br>
-              CEL. ${escapeHtml(model.company.cel)} TELF. ${escapeHtml(model.company.telefono)}<br>
-              ${escapeHtml(model.company.sucursal)} - Bolivia
+              ${a(e.company.direccion)}<br>
+              CEL. ${a(e.company.cel)} TELF. ${a(e.company.telefono)}<br>
+              ${a(e.company.sucursal)} - Bolivia
             </div>
           </td>
           <td class="right" style="width:174px">
             <table style="width:100%">
               <tr>
                 <td class="right middle" style="width:110px">
-                  <div class="badge"><b>Nro: ${escapeHtml(model.numero)}</b></div>
-                  <div class="badge"><b>Bs.</b> ${escapeHtml(model.costoTotal)}</div>
+                  <div class="badge"><b>Nro: ${a(e.numero)}</b></div>
+                  <div class="badge"><b>Bs.</b> ${a(e.costoTotal)}</div>
                 </td>
                 <td class="right" style="padding-left:4px">
-                  <img class="fallback-image" src="${escapeHtml(model.fallbackRings)}" alt="Rings">
+                  <img class="fallback-image" src="${a(e.fallbackRings)}" alt="Rings">
                 </td>
               </tr>
             </table>
@@ -303,17 +206,17 @@ function renderOrderWorkSheet (model, variant = 'top') {
         <tr>
           <td class="cell customer-box" style="width:54%">
             <span class="label">El Senor:</span>
-            <div class="large-name center">${escapeHtml(String(model.cliente).toUpperCase())}</div>
+            <div class="large-name center">${a(String(e.cliente).toUpperCase())}</div>
           </td>
           <td class="cell sketch-box" rowspan="2" style="width:46%">
             <span class="label">Grafico / Referencia:</span>
-            ${referenceHtml}
+            ${i}
           </td>
         </tr>
         <tr>
           <td class="cell job-box" style="width:54%">
             <span class="label">Trabajo de Joya:</span>
-            <div class="large">${escapeHtml(model.detalle)}</div>
+            <div class="large">${a(e.detalle)}</div>
           </td>
         </tr>
       </table>
@@ -322,15 +225,15 @@ function renderOrderWorkSheet (model, variant = 'top') {
         <tr>
           <td class="cell" style="width:33.33%">
             <span class="label">Costo Total</span>
-            <div class="center large bold">${escapeHtml(model.costoTotal)}</div>
+            <div class="center large bold">${a(e.costoTotal)}</div>
           </td>
           <td class="cell" style="width:33.33%">
             <span class="label">A cuenta</span>
-            <div class="center large bold">${escapeHtml(model.adelanto)}</div>
+            <div class="center large bold">${a(e.adelanto)}</div>
           </td>
           <td class="cell" style="width:33.33%">
             <span class="label">Saldo</span>
-            <div class="center large bold">${escapeHtml(model.saldo)}</div>
+            <div class="center large bold">${a(e.saldo)}</div>
           </td>
         </tr>
       </table>
@@ -339,47 +242,43 @@ function renderOrderWorkSheet (model, variant = 'top') {
         <tr>
           <td class="cell" style="width:40%">
             <span class="label">Fecha de Entrega:</span>
-            <div class="center large bold">${escapeHtml(model.entrega)}</div>
+            <div class="center large bold">${a(e.entrega)}</div>
           </td>
           <td class="cell observaciones-box" style="width:60%">
             <span class="label">Observaciones:</span>
-            <div class="small">${escapeHtml(model.observaciones)}</div>
+            <div class="small">${a(e.observaciones)}</div>
           </td>
         </tr>
       </table>
 
       <div class="cell mt-6">
         <span class="label">NOTA</span>
-        <div class="small note-text">${escapeHtml(model.nota)}</div>
+        <div class="small note-text">${a(e.nota)}</div>
       </div>
 
       <div class="dot"></div>
     </div>
-  `
-}
-
-function renderWarrantySheet (model) {
-  return `
+  `}function y(e){return`
     <div class="sheet">
       <table class="head">
         <tr>
           <td style="width:82px">
-            <img src="${escapeHtml(model.logo)}" alt="Logo" style="max-width:58px;max-height:58px;object-fit:contain;">
+            <img src="${a(e.logo)}" alt="Logo" style="max-width:58px;max-height:58px;object-fit:contain;">
           </td>
           <td class="center">
-            <div class="brand bold medium">${escapeHtml(model.company.nombre)}</div>
-            <div class="small">${escapeHtml(model.company.direccion)}</div>
-            <div class="small">Cel: ${escapeHtml(model.company.cel)} - ${escapeHtml(model.company.sucursal)}</div>
+            <div class="brand bold medium">${a(e.company.nombre)}</div>
+            <div class="small">${a(e.company.direccion)}</div>
+            <div class="small">Cel: ${a(e.company.cel)} - ${a(e.company.sucursal)}</div>
             <div class="brand title" style="margin-top:6px">GARANTIA</div>
             <div class="small muted">Cobertura por defectos de fabricacion segun condiciones indicadas</div>
           </td>
           <td class="right" style="width:138px">
             <div class="badge">
-              <b>Bs.</b> ${escapeHtml(model.garantia.precioOro)}<br>
-              <span class="small muted">${escapeHtml(model.garantia.fecha)}</span>
+              <b>Bs.</b> ${a(e.garantia.precioOro)}<br>
+              <span class="small muted">${a(e.garantia.fecha)}</span>
             </div>
-            <div class="badge">Codigo: ${escapeHtml(model.garantia.codigo)}</div>
-            <img class="fallback-image" src="${escapeHtml(model.fallbackRings)}" alt="Rings">
+            <div class="badge">Codigo: ${a(e.garantia.codigo)}</div>
+            <img class="fallback-image" src="${a(e.fallbackRings)}" alt="Rings">
           </td>
         </tr>
       </table>
@@ -388,14 +287,14 @@ function renderWarrantySheet (model) {
         <tr>
           <td class="cell" style="width:55%">
             <span class="label">Cliente</span>
-            <div class="medium">${escapeHtml(String(model.garantia.cliente).toUpperCase())}</div>
+            <div class="medium">${a(String(e.garantia.cliente).toUpperCase())}</div>
           </td>
           <td class="cell" style="width:45%">
             <span class="label">Fecha</span>
             <div class="medium">
-              Dia <span class="date-box">${escapeHtml(model.garantia.dia)}</span>
-              Mes <span class="date-box">${escapeHtml(model.garantia.mes)}</span>
-              Ano <span class="date-box">${escapeHtml(model.garantia.ano)}</span>
+              Dia <span class="date-box">${a(e.garantia.dia)}</span>
+              Mes <span class="date-box">${a(e.garantia.mes)}</span>
+              Ano <span class="date-box">${a(e.garantia.ano)}</span>
             </div>
           </td>
         </tr>
@@ -403,17 +302,17 @@ function renderWarrantySheet (model) {
 
       <div class="cell mt-6">
         <span class="label">Detalle de la pieza / trabajo</span>
-        <div class="medium">${escapeHtml(model.garantia.detalle)}</div>
+        <div class="medium">${a(e.garantia.detalle)}</div>
         <div class="small muted mt-6">
-          <b>Tipo:</b> ${escapeHtml(model.garantia.tipo)}
+          <b>Tipo:</b> ${a(e.garantia.tipo)}
           &nbsp;&nbsp;|&nbsp;&nbsp;
-          <b>Periodo:</b> ${escapeHtml(model.garantia.periodo)}
+          <b>Periodo:</b> ${a(e.garantia.periodo)}
         </div>
       </div>
 
       <div class="info-pills">
-        <div class="item">Mantenimiento sin costo: ${escapeHtml(model.garantia.mantenimientoMeses)} meses</div>
-        <div class="item">Sucursal: ${escapeHtml(model.company.sucursal)}</div>
+        <div class="item">Mantenimiento sin costo: ${a(e.garantia.mantenimientoMeses)} meses</div>
+        <div class="item">Sucursal: ${a(e.company.sucursal)}</div>
       </div>
 
       <div class="cell mt-6">
@@ -441,75 +340,10 @@ function renderWarrantySheet (model) {
         </tr>
       </table>
     </div>
-  `
-}
-
-async function fetchOrder (axiosInstance, orderId) {
-  const { data } = await axiosInstance.get(`ordenes/${orderId}`)
-  return data
-}
-
-async function fetchGoldPrice (axiosInstance) {
-  try {
-    const { data } = await axiosInstance.get('cogs/2')
-    return Number(data?.value || data?.valor || data || 0)
-  } catch {
-    return 0
-  }
-}
-
-function waitForPrintAssets (iframe) {
-  const images = Array.from(iframe?.contentDocument?.images || [])
-  if (!images.length) return Promise.resolve()
-
-  return Promise.all(images.map(img => {
-    if (img.complete) return Promise.resolve()
-    return new Promise(resolve => {
-      img.onload = () => resolve()
-      img.onerror = () => resolve()
-    })
-  }))
-}
-
-function printHtml (html) {
-  const root = document.createElement('div')
-  root.className = 'print-root'
-  root.innerHTML = html
-  const printer = new Printd()
-
-  return new Promise((resolve) => {
-    printer.print(root, [DIRECT_PRINT_STYLES], [], async ({ iframe, launchPrint }) => {
-      await waitForPrintAssets(iframe)
-      setTimeout(() => {
-        launchPrint()
-        resolve()
-      }, 120)
-    })
-  })
-}
-
-export async function printOrdenTrabajoDirecto (axiosInstance, orderId, orderData = null) {
-  const [orden, precioOro] = await Promise.all([
-    orderData?.cliente?.cellphone ? Promise.resolve(orderData) : fetchOrder(axiosInstance, orderId),
-    fetchGoldPrice(axiosInstance)
-  ])
-
-  const model = buildOrderPrintModel(orden, precioOro, axiosInstance)
-  return printHtml(`
+  `}async function g(e,t){const{data:i}=await e.get(`ordenes/${t}`);return i}async function b(e){try{const{data:t}=await e.get("cogs/2");return Number(t?.value||t?.valor||t||0)}catch{return 0}}function w(e){const t=Array.from(e?.contentDocument?.images||[]);return t.length?Promise.all(t.map(i=>i.complete?Promise.resolve():new Promise(s=>{i.onload=()=>s(),i.onerror=()=>s()}))):Promise.resolve()}function m(e){const t=document.createElement("div");t.className="print-root",t.innerHTML=e;const i=new h;return new Promise(s=>{i.print(t,[v],[],async({iframe:o,launchPrint:n})=>{await w(o),setTimeout(()=>{n(),s()},120)})})}async function k(e,t,i=null){const[s,o]=await Promise.all([i?.cliente?.cellphone?Promise.resolve(i):g(e,t),b(e)]),n=p(s,o,e);return m(`
     <div class="order-double-sheet">
-      ${renderOrderWorkSheet(model, 'top')}
+      ${c(n,"top")}
       <div class="half-separator"></div>
-      ${renderOrderWorkSheet(model, 'bottom')}
+      ${c(n,"bottom")}
     </div>
-  `)
-}
-
-export async function printGarantiaDirecta (axiosInstance, orderId, orderData = null) {
-  const [orden, precioOro] = await Promise.all([
-    orderData?.cliente?.cellphone ? Promise.resolve(orderData) : fetchOrder(axiosInstance, orderId),
-    fetchGoldPrice(axiosInstance)
-  ])
-
-  const model = buildOrderPrintModel(orden, precioOro, axiosInstance)
-  return printHtml(renderWarrantySheet(model))
-}
+  `)}async function Y(e,t,i=null){const[s,o]=await Promise.all([i?.cliente?.cellphone?Promise.resolve(i):g(e,t),b(e)]),n=p(s,o,e);return m(y(n))}export{k as a,Y as p};

@@ -195,8 +195,11 @@
                       <q-input :model-value="item.venta.costo_total" label="Monto" type="number" outlined dense bg-color="white" @update:model-value="updateVentaItem(item.joya.id, 'costo_total', $event)">
                         <template #append>
                           <q-btn flat round dense icon="restart_alt" @click="restoreVentaItemReferential(item.joya.id)">
-                            <q-tooltip>Usar precio referencial</q-tooltip>
+                            <q-tooltip>Usar monto de joya</q-tooltip>
                           </q-btn>
+                        </template>
+                        <template #hint>
+                          Monto joya: {{ money(item.joya.monto_bs) }} Bs
                         </template>
                       </q-input>
                     </div>
@@ -546,8 +549,13 @@ export default {
     itemEstado (venta) {
       return this.itemSaldo(venta) <= 0 ? 'Entregado' : 'Pendiente'
     },
+    joyaMontoVenta (joya) {
+      return joya && Object.prototype.hasOwnProperty.call(joya, 'monto_bs')
+        ? this.toNumber(joya.monto_bs)
+        : this.toNumber(joya?.precio_referencial)
+    },
     buildVentaItem (joya, previous = null) {
-      const referencia = this.toNumber(joya?.precio_referencial)
+      const referencia = this.joyaMontoVenta(joya)
       return {
         joya_id: joya.id,
         costo_total: previous ? this.toNumber(previous.costo_total) : referencia,
@@ -646,7 +654,7 @@ export default {
     restoreVentaItemReferential (joyaId) {
       const joya = this.selectedJoyas.find(item => item.id === joyaId)
       if (!joya) return
-      const referencia = this.toNumber(joya.precio_referencial)
+      const referencia = this.joyaMontoVenta(joya)
       this.ventaItems = this.ventaItems.map(item => item.joya_id === joyaId
         ? { ...item, costo_total: referencia, adelanto: referencia }
         : item)
