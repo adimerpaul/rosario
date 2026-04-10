@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AlmacenMovimiento;
 use App\Models\Egreso;
+use App\Models\Joya;
 use App\Models\Orden;
 use App\Models\OrdenPago;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class OrdenPagoController extends Controller
                 $orden->estado = $orden->tipo === 'Venta directa' ? 'Reservado' : 'Pendiente';
             }
             $orden->save();
+            $this->syncVentaDirectaJoyaVendida($orden->fresh());
             $this->syncVentaDirectaAlmacen($orden->fresh(), $request->user()?->id, 'ENTRADA AUTOMATICA POR ANULACION DE PAGO');
 
             Egreso::create([
@@ -72,6 +74,7 @@ class OrdenPagoController extends Controller
                 : ($orden->tipo === 'Venta directa' ? 'Reservado' : 'Pendiente');
         }
         $orden->save();
+        $this->syncVentaDirectaJoyaVendida($orden->fresh());
         $this->syncVentaDirectaAlmacen($orden->fresh(), $request->user()?->id, 'SALIDA AUTOMATICA POR PAGO DE VENTA');
 
         return $pago->load('user');
@@ -92,6 +95,7 @@ class OrdenPagoController extends Controller
             $orden->estado = 'Entregado';
         }
         $orden->save();
+        $this->syncVentaDirectaJoyaVendida($orden->fresh());
         $this->syncVentaDirectaAlmacen($orden->fresh(), null, 'ENTRADA AUTOMATICA POR REVERSION DE PAGO');
 
         $pago->update([
@@ -166,6 +170,21 @@ class OrdenPagoController extends Controller
                 'fecha_movimiento' => now(),
                 'observacion' => $observacion ?: 'SALIDA AUTOMATICA POR ENTREGA DE VENTA',
             ]);
+        }
+    }
+
+    private function syncVentaDirectaJoyaVendida(Orden $orden): void
+    {
+        if ($orden->tipo !== 'Venta directa') {
+            return;
+        }
+
+        $vendida = $orden->estado === 'Entregado' && (float) ($orden->saldo ?? 0) <= 0;
+
+        $orden->joyas()->update(['vendido' => $vendida]);
+
+        if ($orden->joya_id) {
+            Joya::where('id', $orden->joya_id)->update(['vendido' => $vendida]);
         }
     }
 }

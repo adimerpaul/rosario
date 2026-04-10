@@ -74,12 +74,16 @@
                         <div v-if="estuche.joyas?.length" class="joyas-grid">
                           <div v-for="joya in estuche.joyas" :key="joya.id" class="joya-mini">
                             <div class="joya-mini__actions" v-if="isAdmin">
+                              <q-btn flat round dense size="xs" icon="edit" color="primary" @click="openEditarJoyaDialog(joya)" />
                               <q-btn flat round dense size="xs" icon="close" color="negative" @click="quitarJoyaDeEstuche(joya)" />
                             </div>
                             <q-img :src="imagenUrl(joya.imagen)" class="joya-mini__img" fit="cover" />
                             <div class="joya-mini__text">
                               <div class="joya-mini__name">{{ joya.nombre }}</div>
                               <div class="joya-mini__meta">{{ money(joya.monto_bs) }} Bs</div>
+                              <q-chip dense square :color="colorEstadoJoya(joya)" text-color="white" class="q-mt-xs">
+                                {{ estadoJoya(joya) }}
+                              </q-chip>
                             </div>
                           </div>
                         </div>
@@ -232,6 +236,41 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="joyaDialog" persistent>
+      <q-card style="width: 460px; max-width: 95vw;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Editar joya</div>
+          <q-space />
+          <q-btn icon="close" flat round dense @click="joyaDialog = false" />
+        </q-card-section>
+        <q-card-section>
+          <q-form @submit.prevent="saveJoya">
+            <div class="row q-col-gutter-sm">
+              <div class="col-12">
+                <q-input v-model="joyaForm.nombre" label="Nombre" outlined dense @update:model-value="joyaForm.nombre = upper(joyaForm.nombre)" />
+              </div>
+              <div class="col-12 col-sm-6">
+                <q-select v-model="joyaForm.tipo" :options="tipos" label="Tipo" outlined dense />
+              </div>
+              <div class="col-12 col-sm-6">
+                <q-select v-model="joyaForm.linea" :options="lineas" label="Linea" outlined dense />
+              </div>
+              <div class="col-12 col-sm-6">
+                <q-input v-model.number="joyaForm.peso" label="Peso (gr)" type="number" min="0" step="0.01" outlined dense />
+              </div>
+              <div class="col-12 col-sm-6">
+                <q-input v-model.number="joyaForm.monto_bs" label="Monto (Bs)" type="number" min="0" step="0.01" outlined dense />
+              </div>
+            </div>
+            <div class="text-right q-mt-md">
+              <q-btn flat color="negative" label="Cancelar" no-caps @click="joyaDialog = false" :loading="loading" />
+              <q-btn color="primary" label="Guardar" type="submit" no-caps class="q-ml-sm" :loading="loading" />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -246,10 +285,21 @@ export default {
       vitrinaDialog: false,
       columnaDialog: false,
       estucheDialog: false,
+      joyaDialog: false,
       agregarJoyaDialog: false,
       joyasSinEstuche: [],
       selectedEstuche: null,
       joyaSeleccionadaId: null,
+      joyaForm: {
+        id: null,
+        nombre: '',
+        tipo: 'Importada',
+        peso: 0,
+        linea: 'Mama',
+        monto_bs: 0
+      },
+      tipos: ['Importada', 'Joya nacional', 'Plata'],
+      lineas: ['Mama', 'Papa', 'Roger', 'Andreina'],
       vitrinaForm: {
         id: null,
         nombre: '',
@@ -289,6 +339,24 @@ export default {
     },
     imagenUrl(imagen) {
       return `${this.$url}/../images/${imagen || 'joya.png'}`
+    },
+    latestVenta(joya) {
+      const ventas = [...(joya?.ventas || []), ...(joya?.ventas_items || [])]
+      const unicas = ventas.filter((venta, index, array) => array.findIndex(item => item.id === venta.id) === index)
+      return unicas.sort((a, b) => Number(b.id || 0) - Number(a.id || 0))[0] || null
+    },
+    estadoJoya(joya) {
+      const venta = this.latestVenta(joya)
+      if (!venta) return 'Disponible'
+      if (venta.estado === 'Cancelada') return 'Disponible'
+      if (venta.estado === 'Entregado' && Number(venta.saldo || 0) <= 0) return 'Vendido'
+      return Number(venta.saldo || 0) > 0 ? 'Reservado' : 'Disponible'
+    },
+    colorEstadoJoya(joya) {
+      const estado = this.estadoJoya(joya)
+      if (estado === 'Reservado') return 'warning'
+      if (estado === 'Vendido') return 'negative'
+      return 'positive'
     },
     getVitrinas() {
       this.loading = true
@@ -343,6 +411,32 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    openEditarJoyaDialog(joya) {
+      this.joyaForm = {
+        id: joya.id,
+        nombre: joya.nombre || '',
+        tipo: joya.tipo || 'Importada',
+        peso: Number(joya.peso || 0),
+        linea: joya.linea || 'Mama',
+        monto_bs: Number(joya.monto_bs || 0)
+      }
+      this.joyaDialog = true
+    },
+    saveJoya() {
+      this.loading = true
+      this.$axios.put(`joyas/${this.joyaForm.id}`, this.joyaForm)
+        .then(() => {
+          this.joyaDialog = false
+          this.$alert.success('Joya actualizada')
+          this.getVitrinas()
+        })
+        .catch(error => {
+          this.$alert.error(error.response?.data?.message || 'Error al actualizar joya')
+        })
+        .finally(() => {
+          this.loading = false
+        })
     },
     agregarJoyaAEstuche() {
       if (!this.joyaSeleccionadaId || !this.selectedEstuche) {

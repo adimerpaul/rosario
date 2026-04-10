@@ -12,7 +12,18 @@ class VitrinaController extends Controller
         $this->ensureViewer($request);
 
         return Vitrina::with([
-            'columnas.estuches.joyas' => fn ($query) => $query->where('vendido', false),
+            'columnas.estuches.joyas' => fn ($query) => $query
+                ->where('vendido', false)
+                ->with([
+                    'ventas' => fn ($ventaQuery) => $ventaQuery
+                        ->where('tipo', 'Venta directa')
+                        ->where('estado', '!=', 'Cancelada')
+                        ->orderByDesc('id'),
+                    'ventasItems' => fn ($ventaQuery) => $ventaQuery
+                        ->where('tipo', 'Venta directa')
+                        ->where('estado', '!=', 'Cancelada')
+                        ->orderByDesc('id'),
+                ]),
         ])->orderBy('orden')->get();
     }
 

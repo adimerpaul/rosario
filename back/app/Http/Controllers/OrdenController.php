@@ -327,13 +327,7 @@ class OrdenController extends Controller
 
             $orden->save();
 
-            if ($orden->tipo === 'Venta directa') {
-                $orden->joyas()->update(['vendido' => false]);
-
-                if ($orden->joya_id) {
-                    Joya::where('id', $orden->joya_id)->update(['vendido' => false]);
-                }
-            }
+            $this->syncVentaDirectaJoyaVendida($orden->fresh());
 
             $this->syncVentaDirectaAlmacen(
                 $orden->fresh(),
@@ -707,7 +701,7 @@ class OrdenController extends Controller
 
                 $orden = Orden::create($payload);
                 $orden->joyas()->sync([$joya->id]);
-                $joya->update(['vendido' => true]);
+                $this->syncVentaDirectaJoyaVendida($orden->fresh());
                 $this->syncVentaDirectaAlmacen(
                     $orden,
                     $basePayload['user_id'] ?? null,
@@ -753,6 +747,8 @@ class OrdenController extends Controller
             $orden->estado = 'Entregado';
             $orden->save();
         }
+
+        $this->syncVentaDirectaJoyaVendida($orden->fresh());
 
         $this->syncVentaDirectaAlmacen(
             $orden->fresh(),
@@ -832,6 +828,7 @@ class OrdenController extends Controller
         }
 
         $orden->save();
+        $this->syncVentaDirectaJoyaVendida($orden->fresh());
         $this->syncVentaDirectaAlmacen(
             $orden->fresh(),
             $request->user()?->id,
@@ -1396,6 +1393,21 @@ class OrdenController extends Controller
                 'fecha_movimiento' => now(),
                 'observacion' => $observacion ?: 'SALIDA AUTOMATICA POR ENTREGA DE VENTA',
             ]);
+        }
+    }
+
+    private function syncVentaDirectaJoyaVendida(Orden $orden): void
+    {
+        if ($orden->tipo !== 'Venta directa') {
+            return;
+        }
+
+        $vendida = $orden->estado === 'Entregado' && (float) ($orden->saldo ?? 0) <= 0;
+
+        $orden->joyas()->update(['vendido' => $vendida]);
+
+        if ($orden->joya_id) {
+            Joya::where('id', $orden->joya_id)->update(['vendido' => $vendida]);
         }
     }
 

@@ -19,13 +19,16 @@ class DailyCashController extends Controller
         $username = $request->query('usuario');
 
         $auth = $request->user();
+        $isAdmin = ($auth && ($auth->role ?? '') === 'Administrador');
         $user = null;
         $userForTotals = null;
         $isAdminFilteringByUser = false;
+        $isOwnUserScope = false;
 
-        if ($auth && ($auth->role ?? '') !== 'Administrador') {
+        if ($auth && ! $isAdmin) {
             $user = $auth;
             $userForTotals = $auth;
+            $isOwnUserScope = true;
         } elseif ($username) {
             $user = User::where('username', $username)->first();
             if (! $user) {
@@ -198,7 +201,7 @@ class DailyCashController extends Controller
 
         $ingresosSinCaja = $sumActivos($itemsIngresosTotales);
         $egresosTotal = $sumActivos($itemsEgresosTotales);
-        $openingAmountFiltered = $isAdminFilteringByUser
+        $openingAmountFiltered = ($isAdminFilteringByUser || $isOwnUserScope)
             ? 0.0
             : $this->filterOpeningAmount((float) $daily->opening_amount, $metodoPago);
 
@@ -211,7 +214,7 @@ class DailyCashController extends Controller
             'daily_cash' => $daily,
             'suggested_opening_amount' => round($suggested, 2),
             'filtered_opening_amount' => round($openingAmountFiltered, 2),
-            'is_user_filtered' => $isAdminFilteringByUser,
+            'is_user_filtered' => ($isAdminFilteringByUser || $isOwnUserScope),
             'items_ingresos' => $itemsIngresos,
             'items_egresos' => $itemsEgresos,
             'total_ingresos' => round($totalIngresos, 2),

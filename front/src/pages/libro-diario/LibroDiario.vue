@@ -14,7 +14,7 @@
             dense
             outlined
             clearable
-            v-if="$store.user?.role === 'Administrador'"
+            v-if="isAdmin"
           />
         </div>
 
@@ -78,12 +78,12 @@
                 <th class="text-left">Metodo</th>
                 <th class="text-left">Fuente</th>
                 <th class="text-left">Estado</th>
-                <th class="text-right" v-if="$store.user?.role === 'Administrador'">Acciones</th>
+                <th class="text-right" v-if="isAdmin">Acciones</th>
               </tr>
               </thead>
 
               <tbody>
-              <tr v-if="!isUserFiltered">
+              <tr v-if="isAdmin && !isUserFiltered">
                 <td class="text-left">-</td>
                 <td class="text-left">
                   <div>Caja inicial del dia</div>
@@ -95,7 +95,7 @@
                 <td class="text-left">
                   <q-chip dense color="blue-6" text-color="white">Fijo</q-chip>
                 </td>
-                <td v-if="$store.user?.role === 'Administrador'"></td>
+                <td v-if="isAdmin"></td>
               </tr>
 
               <tr v-for="it in ingresosActivos" :key="`in-${it.key}`">
@@ -113,7 +113,7 @@
                   </q-chip>
                 </td>
 
-                <td class="text-right" v-if="$store.user?.role === 'Administrador'">
+                <td class="text-right" v-if="isAdmin">
                   <q-btn
                     v-if="canToggleIngresoMetodo(it)"
                     dense flat color="primary" icon="swap_horiz"
@@ -131,7 +131,7 @@
               </tr>
 
               <tr v-if="!ingresosActivos.length">
-                <td :colspan="$store.user?.role === 'Administrador' ? 7 : 6" class="text-center text-grey">
+                <td :colspan="isAdmin ? 7 : 6" class="text-center text-grey">
                   {{ isUserFiltered ? 'Sin ingresos' : 'Sin ingresos (solo caja inicial)' }}
                 </td>
               </tr>
@@ -154,7 +154,7 @@
                 <th class="text-left">Metodo</th>
                 <th class="text-left">Fuente</th>
                 <th class="text-left">Estado</th>
-                <th class="text-right" v-if="$store.user?.role === 'Administrador'">Acciones</th>
+                <th class="text-right" v-if="isAdmin">Acciones</th>
               </tr>
               </thead>
 
@@ -174,7 +174,7 @@
                   </q-chip>
                 </td>
 
-                <td class="text-right" v-if="$store.user?.role === 'Administrador'">
+                <td class="text-right" v-if="isAdmin">
                   <q-btn
                     v-if="it.fuente === 'EGRESO' && it.estado === 'Activo'"
                     dense flat color="primary" icon="swap_horiz"
@@ -192,7 +192,7 @@
               </tr>
 
               <tr v-if="!egresosActivos.length">
-                <td :colspan="$store.user?.role === 'Administrador' ? 7 : 6" class="text-center text-grey">
+                <td :colspan="isAdmin ? 7 : 6" class="text-center text-grey">
                   Sin egresos
                 </td>
               </tr>
@@ -351,6 +351,10 @@ export default {
   },
 
   computed: {
+    isAdmin () {
+      return this.$store.user?.role === 'Administrador'
+    },
+
     queryParams () {
       return {
         date: this.fecha,
