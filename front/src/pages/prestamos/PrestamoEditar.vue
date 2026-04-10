@@ -201,6 +201,7 @@
                   icon="more_vert"
                   label="Acciones"
                   no-caps
+                  size="10px"
                 >
                   <q-list dense style="min-width: 220px">
                     <q-item clickable v-close-popup @click="imprimirPago(p.id)">
