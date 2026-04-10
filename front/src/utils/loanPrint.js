@@ -48,6 +48,11 @@ async function fetchPrestamo (axiosInstance, prestamoId) {
   return data
 }
 
+async function fetchPrestamoPagos (axiosInstance, prestamoId) {
+  const { data } = await axiosInstance.get(`prestamos/${prestamoId}/pagos`)
+  return Array.isArray(data) ? data : []
+}
+
 async function fetchTipoCambio (axiosInstance) {
   try {
     const { data } = await axiosInstance.get('cogs/4')
@@ -355,6 +360,204 @@ function renderCambioMoneda (model) {
       </table>
     </div>
   `
+}
+
+function buildPagoModel (prestamo, pago) {
+  const clienteNombre = String(prestamo?.cliente?.name || '—').toUpperCase()
+  const peso = Number(prestamo?.peso || 0).toFixed(0)
+  const monto = Number(pago?.monto || 0).toFixed(0)
+  const fechaCancelado = prestamo?.fecha_limite
+    ? moment(prestamo.fecha_limite).format('D/M/YYYY')
+    : '—'
+  const fechaVencimiento = prestamo?.fecha_cancelacion
+    ? moment(prestamo.fecha_cancelacion).format('D/M/YYYY')
+    : '—'
+  const emitido = moment().format('DD/MM/YYYY HH:mm')
+
+  return {
+    empresa: 'Joyeria Rosario',
+    direccion: 'Adolfo Mier entre Potosi y Pagador',
+    ciudadPais: 'Oruro - Bolivia',
+    celular: '73800584',
+    pagoId: pago?.id || '',
+    clienteNombre,
+    peso,
+    monto,
+    fechaCancelado,
+    fechaVencimiento,
+    usuario: pago?.user?.name || '',
+    emitido
+  }
+}
+
+function buildPrestamoPagosModel (prestamo, pagos) {
+  const pagosNormalizados = (pagos || []).map((pago) => ({
+    id: pago?.id || '',
+    fecha: pago?.fecha ? moment(pago.fecha).format('DD/MM/YYYY') : '—',
+    tipo: pago?.tipo_pago || '—',
+    monto: Number(pago?.monto || 0),
+    metodo: pago?.metodo || '—',
+    usuario: pago?.user?.name || '—',
+    estado: pago?.estado || '—'
+  }))
+
+  return {
+    empresa: 'Joyeria Rosario',
+    direccion: 'Adolfo Mier entre Potosi y Pagador',
+    ciudadPais: 'Oruro - Bolivia',
+    celular: '73800584',
+    numero: prestamo?.numero || `PR-${prestamo?.id || ''}`,
+    cliente: prestamo?.cliente?.name || '—',
+    fechaCreacion: prestamo?.fecha_creacion ? moment(prestamo.fecha_creacion).format('DD/MM/YYYY') : '—',
+    emitido: moment().format('DD/MM/YYYY HH:mm'),
+    pagos: pagosNormalizados,
+    total: pagosNormalizados
+      .filter(pago => pago.estado === 'Activo')
+      .reduce((sum, pago) => sum + pago.monto, 0)
+  }
+}
+
+export async function printPagoPrestamoDirecto (prestamo, pago) {
+  const model = buildPagoModel(prestamo, pago)
+  const emitidoPor = model.usuario ? ` por ${escapeHtml(model.usuario)}` : ''
+
+  return printHtml(`
+    <div class="sheet">
+      <table style="width:100%; border-collapse:collapse;">
+        <tr>
+          <td style="width:72px; vertical-align:top;"></td>
+          <td class="center">
+            <div class="title" style="color:#991b1b;">${escapeHtml(model.empresa)}</div>
+            <div class="sm">${escapeHtml(model.direccion)}</div>
+            <div class="sm">${escapeHtml(model.ciudadPais)}</div>
+            <div class="sm">Cel: ${escapeHtml(model.celular)}</div>
+            <div class="md" style="margin-top:4px; font-weight:700;">COMPROBANTE DE PAGO</div>
+          </td>
+          <td class="right" style="width:120px; vertical-align:top;">
+            <div class="badge">Pago #${escapeHtml(model.pagoId)}</div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="border:1.5px solid #6aa84f; border-radius:10px; padding:10px 12px; margin-top:8px;">
+        <div class="label center" style="display:block; margin-bottom:8px;">DETALLE DEL PAGO</div>
+        <table style="width:100%; border-collapse:collapse;">
+          <tr>
+            <td style="width:42%; padding:5px 0; font-size:12px; font-weight:700; color:#444;">Nombre:</td>
+            <td style="padding:5px 0; font-size:13px; font-weight:700; color:#111;">${escapeHtml(model.clienteNombre)}</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0; font-size:12px; font-weight:700; color:#444;">Peso:</td>
+            <td style="padding:5px 0; font-size:13px; font-weight:700; color:#111;">${escapeHtml(model.peso)} GR</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0; font-size:12px; font-weight:700; color:#444;">Monto:</td>
+            <td style="padding:5px 0; font-size:13px; font-weight:700; color:#111;">${escapeHtml(model.monto)} Bs</td>
+          </tr>
+        </table>
+
+        <div style="border-top:1px dashed #d9d9d9; margin:8px 0;"></div>
+
+        <table style="width:100%; border-collapse:collapse;">
+          <tr>
+            <td style="width:42%; padding:5px 0; font-size:12px; font-weight:700; color:#444;">Mes cancelado:</td>
+            <td style="padding:5px 0; font-size:13px; font-weight:700; color:#111;">${escapeHtml(model.fechaCancelado)}</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0; font-size:12px; font-weight:700; color:#444;">Mes vencimiento:</td>
+            <td style="padding:5px 0; font-size:13px; font-weight:700; color:#111;">${escapeHtml(model.fechaVencimiento)}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="xs muted center" style="margin-top:8px;">
+        Comprobante emitido el ${escapeHtml(model.emitido)}${emitidoPor}
+      </div>
+    </div>
+  `)
+}
+
+export async function printDetallePagosPrestamoDirecto (axiosInstance, prestamoId, prestamoData = null) {
+  const [prestamo, pagos] = await Promise.all([
+    prestamoData?.cliente ? Promise.resolve(prestamoData) : fetchPrestamo(axiosInstance, prestamoId),
+    fetchPrestamoPagos(axiosInstance, prestamoId)
+  ])
+
+  const model = buildPrestamoPagosModel(prestamo, pagos)
+  const rows = model.pagos.map(pago => `
+    <tr>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd;">${escapeHtml(String(pago.id))}</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd;">${escapeHtml(pago.fecha)}</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd;">${escapeHtml(pago.tipo)}</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd;" class="right">${escapeHtml(money(pago.monto))} Bs</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd;">${escapeHtml(pago.metodo)}</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd;">${escapeHtml(pago.usuario)}</td>
+      <td style="padding:7px 8px; border-bottom:1px solid #ddd;">${escapeHtml(pago.estado)}</td>
+    </tr>
+  `).join('')
+
+  return printHtml(`
+    <div class="sheet" style="border-color:#1f2937;">
+      <div class="center">
+        <div class="title" style="color:#111827;">DETALLE DE PAGOS DEL PRESTAMO</div>
+        <div class="sm">${escapeHtml(model.empresa)} · ${escapeHtml(model.direccion)}</div>
+        <div class="sm">${escapeHtml(model.ciudadPais)} · Cel: ${escapeHtml(model.celular)}</div>
+      </div>
+
+      <table class="grid" style="margin-top:8px;">
+        <tr>
+          <td class="box" style="width:34%;">
+            <div class="label">Prestamo</div>
+            <div class="md" style="font-weight:700;">${escapeHtml(model.numero)}</div>
+          </td>
+          <td class="box" style="width:33%;">
+            <div class="label">Cliente</div>
+            <div class="md" style="font-weight:700;">${escapeHtml(model.cliente)}</div>
+          </td>
+          <td class="box" style="width:33%;">
+            <div class="label">Fecha de creacion</div>
+            <div class="md">${escapeHtml(model.fechaCreacion)}</div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="box" style="margin-top:8px;">
+        <table style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f3f4f6;">
+              <th style="text-align:left; padding:8px;">#</th>
+              <th style="text-align:left; padding:8px;">Fecha</th>
+              <th style="text-align:left; padding:8px;">Tipo</th>
+              <th style="text-align:right; padding:8px;">Monto</th>
+              <th style="text-align:left; padding:8px;">Metodo</th>
+              <th style="text-align:left; padding:8px;">Usuario</th>
+              <th style="text-align:left; padding:8px;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || `
+              <tr>
+                <td colspan="7" style="padding:12px; text-align:center; color:#666;">Sin pagos registrados</td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+
+      <table class="grid" style="margin-top:8px;">
+        <tr>
+          <td class="box" style="width:50%;">
+            <div class="label">Total pagos activos</div>
+            <div class="md" style="font-weight:700;">${escapeHtml(money(model.total))} Bs</div>
+          </td>
+          <td class="box" style="width:50%;">
+            <div class="label">Emitido</div>
+            <div class="md">${escapeHtml(model.emitido)}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `)
 }
 
 export async function printPrestamoDirecto (axiosInstance, prestamoId, prestamoData = null) {

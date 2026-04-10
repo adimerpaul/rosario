@@ -215,6 +215,10 @@
                           <q-item-section avatar><q-icon name="local_printshop"/></q-item-section>
                           <q-item-section>Cambio de Moneda</q-item-section>
                         </q-item>
+                        <q-item clickable v-ripple @click="imprimirDetallePagos(p)" v-close-popup>
+                          <q-item-section avatar><q-icon name="print"/></q-item-section>
+                          <q-item-section>Detalle de pagos</q-item-section>
+                        </q-item>
 <!--                        <q-item clickable v-ripple @click="imprimir(p)" v-close-popup>-->
 <!--                          <q-item-section avatar><q-icon name="print"/></q-item-section>-->
 <!--                          <q-item-section>Imprimir Contrato PDF</q-item-section>-->
@@ -395,7 +399,7 @@
 
 <script>
 import moment from 'moment'
-import { printCambioMonedaDirecto, printPrestamoDirecto } from 'src/utils/loanPrint'
+import { printCambioMonedaDirecto, printDetallePagosPrestamoDirecto, printPrestamoDirecto } from 'src/utils/loanPrint'
 
 export default {
   name: 'PrestamosPage',
@@ -529,6 +533,13 @@ export default {
         await printCambioMonedaDirecto(this.$axios, p.id, p)
       } catch (e) {
         this.$alert?.error?.(e.response?.data?.message || 'Error al imprimir el cambio de moneda directo')
+      }
+    },
+    async imprimirDetallePagos (p) {
+      try {
+        await printDetallePagosPrestamoDirecto(this.$axios, p.id, p)
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al imprimir el detalle de pagos')
       }
     },
     async confirmMensualidad () {

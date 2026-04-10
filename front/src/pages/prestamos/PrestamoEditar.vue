@@ -16,7 +16,7 @@
         </div>
         <div class="col-12 col-md-auto">
           <div class="row q-gutter-sm justify-end">
-            <q-btn-dropdown color="secondary" icon="print" label="Imprimir" no-caps dense>
+            <q-btn-dropdown color="deep-orange" icon="print" label="Imprimir" no-caps dense>
               <q-list dense style="min-width: 220px">
                 <q-item clickable v-close-popup @click="imprimirPrestamo">
                   <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
@@ -182,17 +182,43 @@
         <q-markup-table flat bordered dense>
           <thead>
           <tr class="bg-grey-2">
+            <th class="text-right">Acción</th>
             <th>Fecha</th>
             <th>Monto</th>
             <th>Tipo</th>
             <th>Método</th>
             <th>Usuario</th>
             <th>Estado</th>
-            <th class="text-right">Acción</th>
           </tr>
           </thead>
           <tbody>
           <tr v-for="p in pagos" :key="p.id">
+            <td class="text-right">
+              <div class="row q-gutter-xs justify-end no-wrap">
+                <q-btn-dropdown
+                  dense
+                  color="primary"
+                  icon="more_vert"
+                  label="Acciones"
+                  no-caps
+                >
+                  <q-list dense style="min-width: 220px">
+                    <q-item clickable v-close-popup @click="imprimirPago(p.id)">
+                      <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
+                      <q-item-section>Imprimir</q-item-section>
+                    </q-item>
+                    <q-item clickable v-close-popup @click="imprimirPagoDirecto(p)">
+                      <q-item-section avatar><q-icon name="print" /></q-item-section>
+                      <q-item-section>Impresion directa</q-item-section>
+                    </q-item>
+                    <q-item v-if="p.estado === 'Activo' && isAdmin" clickable v-close-popup @click="confirmAnularPago(p.id)">
+                      <q-item-section avatar><q-icon color="negative" name="delete" /></q-item-section>
+                      <q-item-section>Anular</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-btn-dropdown>
+              </div>
+            </td>
             <td>{{ p.fecha }}</td>
             <td>{{ money(p.monto) }}</td>
             <td>
@@ -206,29 +232,6 @@
               <q-chip dense square :color="p.estado === 'Activo' ? 'green' : 'grey'" text-color="white">
                 {{ p.estado }}
               </q-chip>
-            </td>
-            <td class="text-right">
-              <div class="row q-gutter-xs justify-end no-wrap">
-                <q-btn
-                  dense
-                  flat
-                  color="secondary"
-                  icon="print"
-                  label="Imprimir"
-                  no-caps
-                  @click="imprimirPago(p.id)"
-                />
-                <q-btn
-                  v-if="p.estado === 'Activo' && isAdmin"
-                  flat
-                  dense
-                  color="negative"
-                  icon="delete"
-                  label="Anular"
-                  no-caps
-                  @click="confirmAnularPago(p.id)"
-                />
-              </div>
             </td>
           </tr>
           <tr v-if="!pagos.length">
@@ -275,7 +278,7 @@
 
 <script>
 import moment from 'moment'
-import { printCambioMonedaDirecto, printPrestamoDirecto } from 'src/utils/loanPrint'
+import { printCambioMonedaDirecto, printPagoPrestamoDirecto, printPrestamoDirecto } from 'src/utils/loanPrint'
 
 export default {
   name: 'PrestamoEditarPage',
@@ -469,6 +472,13 @@ export default {
       const url = this.$axios.defaults.baseURL + `/prestamos/pagos/${id}/pdf`
       window.open(url, '_blank')
     },
+    async imprimirPagoDirecto (pago) {
+      try {
+        await printPagoPrestamoDirecto(this.prestamo, pago)
+      } catch (e) {
+        this.$alert?.error?.(e.response?.data?.message || 'Error al imprimir el pago directo')
+      }
+    },
     colorTipoPago (tipo) {
       if (['INTERES', 'CARGOS', 'MENSUALIDAD'].includes(tipo)) return 'orange'
       if (tipo === 'ADICIONAR CAPITAL') return 'indigo'
@@ -502,6 +512,7 @@ export default {
   }
 }
 </script>
+
 
 
 
