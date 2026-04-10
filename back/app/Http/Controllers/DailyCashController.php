@@ -93,6 +93,10 @@ class DailyCashController extends Controller
             ->whereDate('fecha', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->where('estado', 'Activo')
+            ->where(function ($q) {
+                $q->whereNull('tipo_pago')
+                    ->orWhere('tipo_pago', '!=', 'ADICIONAR CAPITAL');
+            })
             ->orderBy('created_at')
             ->get();
 
@@ -138,7 +142,10 @@ class DailyCashController extends Controller
             ->filter(fn ($item) => $this->passesMetodoFilter($item['metodo'] ?? null, $metodoPago))
             ->values();
 
-        $prestamos = \App\Models\Prestamo::with(['cliente', 'user'])
+        $prestamos = \App\Models\Prestamo::with(['cliente', 'user', 'pagos' => function ($q) {
+            $q->where('estado', 'Activo')
+                ->where('tipo_pago', 'ADICIONAR CAPITAL');
+        }])
             ->whereDate('prestamos.created_at', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->orderBy('prestamos.created_at')
@@ -146,12 +153,13 @@ class DailyCashController extends Controller
 
         $itemsPrestamos = $prestamos->map(function ($prestamo) {
             $metodoColumn = $this->prestamoMetodoColumn();
+            $montoInicial = $this->prestamoMontoInicial($prestamo);
 
             return [
                 'id' => $prestamo->id,
                 'hora' => Carbon::parse($prestamo->fecha_creacion)->format('H:i'),
                 'descripcion' => 'Prestamo '.$prestamo->numero.' - '.($prestamo->cliente->name ?? 'N/A'),
-                'monto' => (float) ($prestamo->valor_prestado ?? 0),
+                'monto' => $montoInicial,
                 'usuario' => $prestamo->user->username ?? $prestamo->user->name ?? 'N/A',
                 'metodo' => $this->normalizeMetodo($metodoColumn ? $prestamo->{$metodoColumn} : 'EFECTIVO'),
                 'fuente' => 'PRESTAMO OTORGADO',
@@ -159,6 +167,28 @@ class DailyCashController extends Controller
                 'key' => 'pr-'.$prestamo->id,
             ];
         })->filter(fn ($item) => $item['monto'] > 0)->values();
+
+        $pagosCapital = \App\Models\PrestamoPago::with(['prestamo.cliente', 'user'])
+            ->whereDate('fecha', $date)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where('estado', 'Activo')
+            ->where('tipo_pago', 'ADICIONAR CAPITAL')
+            ->orderBy('created_at')
+            ->get();
+
+        $itemsCapitalPrestamos = $pagosCapital->map(function ($pago) {
+            return [
+                'id' => $pago->id,
+                'hora' => optional($pago->created_at)->format('H:i') ?: '-',
+                'descripcion' => 'Adicionar capital '.$pago->prestamo->numero.' - '.($pago->prestamo->cliente->name ?? 'N/A'),
+                'monto' => (float) $pago->monto,
+                'usuario' => $pago->user->username ?? $pago->user->name ?? 'N/A',
+                'metodo' => $this->normalizeMetodo($pago->metodo ?? 'EFECTIVO'),
+                'fuente' => 'ADICIONAR CAPITAL',
+                'estado' => $pago->estado ?? 'Activo',
+                'key' => 'pc-'.$pago->id,
+            ];
+        })->values();
 
         $egresosOtros = \App\Models\Egreso::with(['user'])
             ->whereDate('fecha', $date)
@@ -182,6 +212,7 @@ class DailyCashController extends Controller
 
         $itemsEgresos = collect()
             ->merge($itemsPrestamos)
+            ->merge($itemsCapitalPrestamos)
             ->merge($itemsEgresoOtros)
             ->filter(fn ($item) => $this->passesMetodoFilter($item['metodo'] ?? null, $metodoPago))
             ->values();
@@ -371,6 +402,10 @@ class DailyCashController extends Controller
             ->whereDate('fecha', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->where('estado', 'Activo')
+            ->where(function ($q) {
+                $q->whereNull('tipo_pago')
+                    ->orWhere('tipo_pago', '!=', 'ADICIONAR CAPITAL');
+            })
             ->orderBy('created_at')
             ->get();
 
@@ -418,7 +453,10 @@ class DailyCashController extends Controller
 
     private function buildItemsEgresos(string $date, ?User $user = null)
     {
-        $prestamos = \App\Models\Prestamo::with(['cliente', 'user'])
+        $prestamos = \App\Models\Prestamo::with(['cliente', 'user', 'pagos' => function ($q) {
+            $q->where('estado', 'Activo')
+                ->where('tipo_pago', 'ADICIONAR CAPITAL');
+        }])
             ->whereDate('prestamos.created_at', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
             ->orderBy('prestamos.created_at')
@@ -426,12 +464,13 @@ class DailyCashController extends Controller
 
         $itemsPrestamos = $prestamos->map(function ($prestamo) {
             $metodoColumn = $this->prestamoMetodoColumn();
+            $montoInicial = $this->prestamoMontoInicial($prestamo);
 
             return [
                 'id' => $prestamo->id,
                 'hora' => Carbon::parse($prestamo->fecha_creacion)->format('H:i'),
                 'descripcion' => 'Prestamo '.$prestamo->numero.' - '.($prestamo->cliente->name ?? 'N/A'),
-                'monto' => (float) ($prestamo->valor_prestado ?? 0),
+                'monto' => $montoInicial,
                 'usuario' => $prestamo->user->username ?? $prestamo->user->name ?? 'N/A',
                 'metodo' => $this->normalizeMetodo($metodoColumn ? $prestamo->{$metodoColumn} : 'EFECTIVO'),
                 'fuente' => 'PRESTAMO OTORGADO',
@@ -439,6 +478,28 @@ class DailyCashController extends Controller
                 'key' => 'pr-'.$prestamo->id,
             ];
         })->filter(fn ($item) => $item['monto'] > 0)->values();
+
+        $pagosCapital = \App\Models\PrestamoPago::with(['prestamo.cliente', 'user'])
+            ->whereDate('fecha', $date)
+            ->when($user, fn ($q) => $q->where('user_id', $user->id))
+            ->where('estado', 'Activo')
+            ->where('tipo_pago', 'ADICIONAR CAPITAL')
+            ->orderBy('created_at')
+            ->get();
+
+        $itemsCapitalPrestamos = $pagosCapital->map(function ($pago) {
+            return [
+                'id' => $pago->id,
+                'hora' => optional($pago->created_at)->format('H:i') ?: '-',
+                'descripcion' => 'Adicionar capital '.$pago->prestamo->numero.' - '.($pago->prestamo->cliente->name ?? 'N/A'),
+                'monto' => (float) $pago->monto,
+                'usuario' => $pago->user->username ?? $pago->user->name ?? 'N/A',
+                'metodo' => $this->normalizeMetodo($pago->metodo ?? 'EFECTIVO'),
+                'fuente' => 'ADICIONAR CAPITAL',
+                'estado' => $pago->estado ?? 'Activo',
+                'key' => 'pc-'.$pago->id,
+            ];
+        })->values();
 
         $egresosOtros = \App\Models\Egreso::with(['user'])
             ->whereDate('fecha', $date)
@@ -462,8 +523,18 @@ class DailyCashController extends Controller
 
         return collect()
             ->merge($itemsPrestamos)
+            ->merge($itemsCapitalPrestamos)
             ->merge($itemsEgresoOtros)
             ->values();
+    }
+
+    private function prestamoMontoInicial(\App\Models\Prestamo $prestamo): float
+    {
+        $capitalAdicionado = (float) collect($prestamo->pagos ?? [])
+            ->filter(fn ($pago) => ($pago->estado ?? 'Activo') === 'Activo' && ($pago->tipo_pago ?? null) === 'ADICIONAR CAPITAL')
+            ->sum('monto');
+
+        return max(0, round((float) ($prestamo->valor_prestado ?? 0) - $capitalAdicionado, 2));
     }
 
     private function normalizeMetodo($metodo): ?string

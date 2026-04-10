@@ -534,3 +534,79 @@ it('rejects storing a future daily cash row', function () {
 
     expect(DailyCash::whereDate('date', $futureDate)->exists())->toBeFalse();
 });
+
+it('separates additional capital from the original prestamo owner in libro diario', function () {
+    $admin = User::factory()->create(['role' => 'Administrador', 'username' => 'admin']);
+    $vendedor = User::factory()->create(['role' => 'Vendedor', 'username' => 'vendedor']);
+    Sanctum::actingAs($admin);
+
+    $today = Carbon::today()->toDateString();
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE CAPITAL',
+        'ci' => '334455',
+        'status' => 'Confiable',
+        'cellphone' => '70003344',
+        'address' => 'ORURO',
+    ]);
+
+    $prestamo = Prestamo::create([
+        'numero' => 'PR-001000-2026',
+        'fecha_creacion' => $today,
+        'fecha_limite' => Carbon::today()->addMonth()->toDateString(),
+        'fecha_cancelacion' => Carbon::today()->addMonths(2)->toDateString(),
+        'cliente_id' => $cliente->id,
+        'user_id' => $vendedor->id,
+        'peso' => 5,
+        'merma' => 0,
+        'peso_neto' => 5,
+        'precio_oro' => 900,
+        'valor_total' => 4500,
+        'valor_prestado' => 600,
+        'interes' => 3,
+        'almacen' => 2,
+        'celular' => '70003344',
+        'detalle' => 'PRESTAMO CON CAPITAL ADICIONAL',
+        'estado' => 'Activo',
+    ]);
+
+    $prestamo->timestamps = false;
+    $prestamo->forceFill([
+        'created_at' => Carbon::parse($today)->setTime(9, 0, 0),
+        'updated_at' => Carbon::parse($today)->setTime(9, 0, 0),
+    ])->save();
+
+    \App\Models\PrestamoPago::create([
+        'prestamo_id' => $prestamo->id,
+        'fecha' => $today,
+        'monto' => 100,
+        'metodo' => 'EFECTIVO',
+        'tipo_pago' => 'ADICIONAR CAPITAL',
+        'estado' => 'Activo',
+        'user_id' => $admin->id,
+        'created_at' => Carbon::parse($today)->setTime(11, 0, 0),
+        'updated_at' => Carbon::parse($today)->setTime(11, 0, 0),
+    ]);
+
+    $response = $this->getJson('/api/daily-cash?date='.$today)
+        ->assertOk()
+        ->assertJsonPath('total_egresos', 600)
+        ->json();
+
+    expect(collect($response['items_egresos'])->contains(fn ($item) =>
+        $item['fuente'] === 'PRESTAMO OTORGADO' &&
+        (float) $item['monto'] === 500.0 &&
+        $item['usuario'] === $vendedor->username
+    ))->toBeTrue();
+
+    expect(collect($response['items_egresos'])->contains(fn ($item) =>
+        $item['fuente'] === 'ADICIONAR CAPITAL' &&
+        (float) $item['monto'] === 100.0 &&
+        $item['usuario'] === $admin->username
+    ))->toBeTrue();
+
+    expect(collect($response['items_ingresos'])->contains(fn ($item) =>
+        $item['fuente'] === 'PAGO PRESTAMO' &&
+        (float) $item['monto'] === 100.0
+    ))->toBeFalse();
+});

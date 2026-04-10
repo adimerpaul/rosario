@@ -809,6 +809,9 @@ class PrestamoController extends Controller
             $pago->save();
 
             $prestamo = $pago->prestamo()->first();
+            if (($pago->tipo_pago ?? null) === 'ADICIONAR CAPITAL') {
+                $prestamo->valor_prestado = max(0, (float) $prestamo->valor_prestado - (float) $pago->monto);
+            }
             $pagado = $prestamo->pagos()->where('estado', 'Activo')->sum('monto');
 
             $vp = (float) $prestamo->valor_prestado;
