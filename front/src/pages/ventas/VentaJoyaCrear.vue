@@ -187,7 +187,19 @@
                     </div>
                     <div class="text-right">
                       <div class="text-caption text-grey-7">{{ item.joya.peso }} gr</div>
-                      <div class="text-subtitle2 text-primary text-weight-bold">{{ money(item.joya.precio_referencial) }} Bs</div>
+                      <div class="row items-center justify-end no-wrap q-gutter-xs q-mt-xs">
+                        <div class="text-subtitle2 text-primary text-weight-bold">{{ money(joyaMontoVenta(item.joya)) }} Bs</div>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          color="negative"
+                          icon="delete"
+                          @click="removeSelectedJoya(item.joya.id)"
+                        >
+                          <q-tooltip>Quitar de la seleccion</q-tooltip>
+                        </q-btn>
+                      </div>
                     </div>
                   </div>
                   <div class="row q-col-gutter-sm q-mt-sm">
@@ -199,7 +211,7 @@
                           </q-btn>
                         </template>
                         <template #hint>
-                          Monto joya: {{ money(item.joya.monto_bs) }} Bs
+                          Monto venta sugerido: {{ money(joyaMontoVenta(item.joya)) }} Bs
                         </template>
                       </q-input>
                     </div>
@@ -550,9 +562,8 @@ export default {
       return this.itemSaldo(venta) <= 0 ? 'Entregado' : 'Pendiente'
     },
     joyaMontoVenta (joya) {
-      return joya && Object.prototype.hasOwnProperty.call(joya, 'monto_bs')
-        ? this.toNumber(joya.monto_bs)
-        : this.toNumber(joya?.precio_referencial)
+      const monto = this.toNumber(joya?.monto_bs)
+      return monto > 0 ? monto : this.toNumber(joya?.precio_referencial)
     },
     buildVentaItem (joya, previous = null) {
       const referencia = this.joyaMontoVenta(joya)
@@ -616,6 +627,11 @@ export default {
       } else {
         this.form.joya_ids = [...this.form.joya_ids, joya.id]
       }
+      this.form.joya_id = this.form.joya_ids[0] || null
+      this.syncSelectedJoyas()
+    },
+    removeSelectedJoya (joyaId) {
+      this.form.joya_ids = this.form.joya_ids.filter(id => id !== joyaId)
       this.form.joya_id = this.form.joya_ids[0] || null
       this.syncSelectedJoyas()
     },

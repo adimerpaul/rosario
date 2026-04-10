@@ -106,7 +106,7 @@ class OrdenController extends Controller
         }
 
         $joyas = $query->get()->map(function (Joya $joya) {
-            $cogName = $joya->tipo === 'Importada' ? 'Joya importada' : 'Precio Venta';
+            $cogName = $this->joyaCogName($joya);
             $valorCog = (float) optional(Cog::where('name', $cogName)->first())->value;
 
             return [
@@ -914,7 +914,11 @@ class OrdenController extends Controller
 
     private function precioVentaJoya(Joya $joya): float
     {
-        $cogName = $joya->tipo === 'Importada' ? 'Joya importada' : 'Precio Venta';
+        if ((float) ($joya->monto_bs ?? 0) > 0) {
+            return round((float) $joya->monto_bs, 2);
+        }
+
+        $cogName = $this->joyaCogName($joya);
         $valorCog = (float) optional(Cog::where('name', $cogName)->first())->value;
 
         if ($valorCog > 0 && (float) $joya->peso > 0) {
@@ -922,6 +926,15 @@ class OrdenController extends Controller
         }
 
         return round((float) ($joya->monto_bs ?? 0), 2);
+    }
+
+    private function joyaCogName(Joya $joya): string
+    {
+        return match ($joya->tipo) {
+            'Importada' => 'Joya importada',
+            'Plata' => 'Venta plata',
+            default => 'Precio Venta',
+        };
     }
 
     private function storeOrdenImage($file): string
