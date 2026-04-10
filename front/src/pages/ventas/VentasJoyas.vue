@@ -16,10 +16,10 @@
                     <q-item-section avatar><q-icon name="receipt_long" /></q-item-section>
                     <q-item-section>Detalle de ventas</q-item-section>
                   </q-item>
-                  <q-item clickable v-close-popup @click="openReportDialog('ventas_todas')">
-                    <q-item-section avatar><q-icon name="list_alt" /></q-item-section>
-                    <q-item-section>Todas las ventas</q-item-section>
-                  </q-item>
+<!--                  <q-item clickable v-close-popup @click="openReportDialog('ventas_todas')">-->
+<!--                    <q-item-section avatar><q-icon name="list_alt" /></q-item-section>-->
+<!--                    <q-item-section>Todas las ventas</q-item-section>-->
+<!--                  </q-item>-->
                   <q-item clickable v-close-popup @click="openReportDialog('inventario_movimientos')">
                     <q-item-section avatar><q-icon name="swap_horiz" /></q-item-section>
                     <q-item-section>Movimientos al inventario</q-item-section>
@@ -50,6 +50,20 @@
                 outlined
                 dense
                 label="Usuario"
+              />
+            </div>
+            <div class="col-12 col-md-3">
+              <q-select
+                v-model="filters.vitrina_id"
+                :options="vitrinaOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                dense
+                clearable
+                label="Vitrina"
               />
             </div>
             <div class="col-12 col-md-3">
@@ -281,6 +295,7 @@ export default {
       reportDialog: false,
       filters: {
         user_id: null,
+        vitrina_id: null,
         estado_joya: 'Todos',
         linea: null,
         fecha: '',
@@ -314,6 +329,9 @@ export default {
     },
     estadoOptions () {
       return ['Todos', 'EN VITRINA', 'RESERVADO', 'VENDIDO', 'ANULADO']
+    },
+    vitrinaOptions () {
+      return this.vitrinas.map(vitrina => ({ label: vitrina.nombre, value: vitrina.id }))
     },
     estucheOptions () {
       return this.vitrinas.flatMap(vitrina => (vitrina.columnas || []).flatMap(columna => (columna.estuches || []).map(estuche => ({
@@ -490,6 +508,10 @@ export default {
       this.getVentas()
     },
     'filters.estado_joya' () {
+      this.pagination.page = 1
+      this.getVentas()
+    },
+    'filters.vitrina_id' () {
       this.pagination.page = 1
       this.getVentas()
     },
