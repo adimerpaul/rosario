@@ -349,12 +349,12 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="reportDialog">
+    <q-dialog v-model="reportDialog" persistent>
       <q-card style="width: 560px; max-width: 96vw;">
         <q-card-section class="row items-center q-pb-sm">
           <div class="text-h6">Impresiones</div>
           <q-space />
-          <q-btn flat round dense icon="close" @click="reportDialog = false" />
+          <q-btn flat round dense icon="close" :disable="reportLoading" @click="reportDialog = false" />
         </q-card-section>
         <q-card-section class="q-pt-none">
           <div class="row q-col-gutter-sm">
@@ -401,8 +401,8 @@
           </div>
         </q-card-section>
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat color="negative" no-caps label="Cancelar" @click="reportDialog = false" />
-          <q-btn color="primary" no-caps icon="print" label="Imprimir" @click="imprimirReporte" />
+          <q-btn flat color="negative" no-caps label="Cancelar" :disable="reportLoading" @click="reportDialog = false" />
+          <q-btn color="primary" no-caps icon="print" label="Imprimir" :loading="reportLoading" :disable="reportLoading" @click="imprimirReporte" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -418,6 +418,7 @@ export default {
     return {
       loadingJoyas: false,
       saving: false,
+      reportLoading: false,
       clientLoading: false,
       joyas: [],
       joyasIndex: {},
@@ -738,6 +739,7 @@ export default {
       window.URL.revokeObjectURL(href)
     },
     async imprimirReporte () {
+      this.reportLoading = true
       try {
         const routeMap = {
           ventas_detalle: 'reportes/ventas/pdf',
@@ -756,6 +758,8 @@ export default {
         this.reportDialog = false
       } catch (err) {
         this.$alert.error(err.response?.data?.message || 'Error al imprimir el reporte')
+      } finally {
+        this.reportLoading = false
       }
     },
     guardarVenta () {
@@ -949,7 +953,6 @@ export default {
   }
 }
 </style>
-
 
 
 

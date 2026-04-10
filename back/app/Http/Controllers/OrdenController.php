@@ -506,6 +506,7 @@ class OrdenController extends Controller
                     'detalle' => $joya->nombre,
                     'peso' => (float) ($joya->peso ?? 0),
                     'linea' => $this->lineaLabel($joya->linea),
+                    'estado' => $joya->estuche_id ? 'EN VITRINA' : 'SIN ESTUCHE',
                     'usuario' => $joya->user?->name ?: 'SIN USUARIO',
                 ];
             })
@@ -1072,6 +1073,7 @@ class OrdenController extends Controller
             return [
                 'fecha' => $fecha->format('d/m/Y'),
                 'codigo' => $this->joyaCodigo((int) $audit->auditable_id),
+                'imagen' => $newValues['imagen'] ?? $oldValues['imagen'] ?? $joya?->imagen,
                 'detalle' => $newValues['nombre'] ?? $oldValues['nombre'] ?? $joya?->nombre ?? 'SIN DETALLE',
                 'peso' => (float) ($newValues['peso'] ?? $oldValues['peso'] ?? $joya?->peso ?? 0),
                 'linea' => $this->lineaLabel($linea),
@@ -1110,6 +1112,7 @@ class OrdenController extends Controller
                     return [
                         'fecha' => $fecha->format('d/m/Y'),
                         'codigo' => $this->joyaCodigo((int) $joya->id),
+                        'imagen' => $joya->imagen,
                         'detalle' => $joya->nombre ?: $venta->detalle,
                         'peso' => (float) ($joya->peso ?? 0),
                         'linea' => $this->lineaLabel($joya->linea),
