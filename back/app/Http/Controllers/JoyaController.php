@@ -12,7 +12,7 @@ class JoyaController extends Controller
 {
     public function index(Request $request)
     {
-        $this->ensureAdmin($request);
+//        $this->ensureAdmin($request);
 
         $search = trim((string) $request->input('search', ''));
         $soloSinEstuche = $request->boolean('sin_estuche', false);

@@ -101,7 +101,9 @@
               <tr v-for="it in ingresosActivos" :key="`in-${it.key}`">
                 <td class="text-left">{{ it.hora }}</td>
                 <td class="text-left">
-                  <div>{{ it.descripcion }}</div>
+                  <div>
+                    {{ it.descripcion }}
+                  </div>
                   <div class="text-caption text-grey-7">Usuario: {{ it.usuario || 'N/A' }}</div>
                 </td>
                 <td class="text-right">{{ currency(it.monto) }}</td>

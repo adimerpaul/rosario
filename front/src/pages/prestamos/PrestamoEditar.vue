@@ -62,8 +62,13 @@
           <div class="col-6 col-md-3">
             <q-card flat bordered class="bg-orange-1">
               <q-card-section class="q-pa-sm">
-                <div class="text-caption text-grey-8">Deuda interés</div>
-                <div class="text-subtitle1 text-weight-bold text-orange-9">{{ money(prestamo.deuda_interes) }}</div>
+                <div class="text-caption text-grey-8">Monto maximo prestamo</div>
+                <div class="text-subtitle1 text-weight-bold text-orange-9">
+<!--                  {{ money(prestamo.deuda_interes) }}-->
+<!--                  <pre>-->
+                    {{ parseFloat( prestamo.precio_oro*prestamo.peso_neto).toFixed(2)}}
+<!--                  </pre>-->
+                </div>
               </q-card-section>
             </q-card>
           </div>

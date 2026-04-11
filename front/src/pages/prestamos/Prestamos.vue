@@ -93,9 +93,10 @@
                           <div>
                             #{{ p.numero }}
                           </div>
-                          <q-chip dense square color="secondary" text-color="white">
-                            Oro: {{ money(p.precio_oro || 0) }}
+                          <q-chip dense square color="secondary" text-color="white" >
+                             Venta: {{ parseFloat( p.precio_oro*p.peso_neto).toFixed(2) }}
                           </q-chip>
+<!--                          <pre>{{p}}</pre>-->
 
                         </div>
                         <div class="text-caption text-grey-7">
