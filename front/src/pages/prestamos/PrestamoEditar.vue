@@ -143,10 +143,10 @@
                   </div>
 
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-select dense outlined label="Interes (%)" v-model.number="prestamo.interes" :options="[1,2,3]"  @update:model-value="recalcular" readonly />
+                    <q-select dense outlined label="Interes (%)" v-model.number="prestamo.interes" :options="[1,2,3]"  @update:model-value="recalcular" :readonly="!isAdmin" />
                   </div>
                   <div class="col-12 col-sm-6 col-md-4">
-                    <q-select dense outlined label="Almacén (%)" v-model.number="prestamo.almacen" :options="[1,1.5,2,2.5,3]" :readonly="!isAdmin" readonly @update:model-value="recalcular" />
+                    <q-select dense outlined label="Almacén (%)" v-model.number="prestamo.almacen" :options="[1,1.5,2,2.5,3]" :readonly="!isAdmin" @update:model-value="recalcular" />
                   </div>
                   <div class="col-12 col-sm-6 col-md-4">
                     <q-input dense outlined label="Valor total ref." :model-value="money(prestamo.valor_total)" readonly />
@@ -330,8 +330,7 @@ export default {
   },
   computed: {
     isAdmin () {
-      const r = (this.$store?.user?.role || '').toString().toLowerCase()
-      return r.includes('admin')
+      return this.$store?.user?.role === 'Administrador'
     },
     pesoNetoStr () {
       return this.pesoNeto.toFixed(3)
@@ -377,11 +376,6 @@ export default {
       this.pagos = data
     },
     recalcular () {
-      if (!this.isAdmin) {
-        const vp = Number(this.prestamo.valor_prestado || 0)
-        this.prestamo.almacen = vp >= 1000 ? 2 : 3
-      }
-
       const bruto = Number(this.prestamo.peso || 0)
       let merma = Number(this.prestamo.merma || 0)
       if (merma > bruto) {
@@ -414,6 +408,7 @@ export default {
           fecha_creacion: this.prestamo.fecha_creacion,
           fecha_limite: this.prestamo.fecha_limite,
           interes: this.prestamo.interes,
+          almacen: this.prestamo.almacen,
         }
         const { data } = await this.$axios.put(`prestamos/${this.prestamo.id}`, payload)
         if (data.fecha_creacion) data.fecha_creacion = String(data.fecha_creacion).substring(0, 10)
@@ -523,5 +518,4 @@ export default {
   }
 }
 </script>
-
 

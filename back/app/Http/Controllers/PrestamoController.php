@@ -561,7 +561,7 @@ class PrestamoController extends Controller
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'w');
-            fwrite($handle, "<html><head><meta charset=\"UTF-8\"></head><body>");
+            fwrite($handle, '<html><head><meta charset="UTF-8"></head><body>');
             fwrite($handle, '<table border="1">');
             fwrite($handle, '<thead><tr>');
 
@@ -676,7 +676,9 @@ class PrestamoController extends Controller
             'detalle' => 'nullable|string',
         ]);
 
-        return DB::transaction(function () use ($data) {
+        $isAdmin = ($request->user()?->role ?? null) === 'Administrador';
+
+        return DB::transaction(function () use ($data, $isAdmin) {
             $precioOro = $this->precioPrestamoActual();
 
             // Peso neto con merma
@@ -690,7 +692,7 @@ class PrestamoController extends Controller
             // Deuda teórica según % (sobre lo prestado)
             $vp = (float) $data['valor_prestado'];
             $i = (float) $data['interes']; // %
-            $a = (float) $data['almacen']; // %
+            $a = $this->resolveAlmacenRate($vp, $isAdmin, $data['almacen'] ?? null);
             $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
 
             $tipoDeCambio = Cog::find(4);
@@ -725,8 +727,7 @@ class PrestamoController extends Controller
 
     public function update(Request $request, Prestamo $prestamo)
     {
-        $user = $request->user();
-        $isAdmin = in_array(strtolower($user->role ?? ''), ['admin', 'administrador', 'administrator']);
+        $isAdmin = ($request->user()?->role ?? null) === 'Administrador';
 
         if (! $isAdmin) {
             return response()->json(['message' => 'No autorizado para editar este prestamo'], 403);
@@ -736,12 +737,13 @@ class PrestamoController extends Controller
             'fecha_creacion' => 'nullable|date',
             'fecha_limite' => 'nullable|date',
             'interes' => 'nullable|numeric|gte:1|lte:3',
+            'almacen' => 'nullable|numeric|gte:1|lte:3',
         ]);
 
         return DB::transaction(function () use ($prestamo, $data) {
             $vp = (float) $prestamo->valor_prestado;
             $i = array_key_exists('interes', $data) ? (float) $data['interes'] : (float) $prestamo->interes;
-            $a = (float) $prestamo->almacen;
+            $a = $this->resolveAlmacenRate($vp, true, $data['almacen'] ?? $prestamo->almacen);
             $pagado = $prestamo->pagos()->where('estado', 'Activo')->sum('monto');
             $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
             $saldo = $deuda - $pagado;
@@ -750,13 +752,22 @@ class PrestamoController extends Controller
                 'fecha_creacion' => $data['fecha_creacion'] ?? $prestamo->fecha_creacion,
                 'fecha_limite' => $data['fecha_limite'] ?? $prestamo->fecha_limite,
                 'interes' => $i,
+                'almacen' => $a,
+                'saldo' => $saldo,
                 'estado' => $saldo <= 0 ? 'Entregado' : $prestamo->estado,
             ]);
 
-            $prestamo->saldo = $saldo;
-
             return $prestamo->load(['cliente', 'user']);
         });
+    }
+
+    private function resolveAlmacenRate(float $valorPrestado, bool $isAdmin, mixed $requestedRate): float
+    {
+        if (! $isAdmin && $valorPrestado > 1000) {
+            return 2.0;
+        }
+
+        return (float) $requestedRate;
     }
 
     /* ======= PAGOS ======= */
@@ -848,5 +859,3 @@ class PrestamoController extends Controller
         return response()->json($pago->fresh()->load('user'));
     }
 }
-
-

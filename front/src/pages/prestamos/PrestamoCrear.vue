@@ -124,7 +124,7 @@
                         label="Prestado (Bs)" v-model.number="prestamo.valor_prestado"
                         type="number" outlined dense
                         :min="0" :max="prestamo.valor_total"
-                        @update:model-value="calcularSaldo;"
+                        @update:model-value="calcularSaldo"
                       />
                     </div>
                     <div class="col-6 col-md-2 ">
@@ -253,8 +253,7 @@ export default {
 
   computed: {
     isAdmin () {
-      const r = (this.$store?.user?.role || '').toString().toLowerCase()
-      return r.includes('admin') // "admin", "administrador", etc.
+      return this.$store?.user?.role === 'Administrador'
     },
     pesoNetoStr () {
       return this.pesoNeto.toFixed(3)
@@ -318,10 +317,9 @@ export default {
     calcularSaldo () {
       const vp = Number(this.prestamo.valor_prestado || 0)
 
-      // 1) Fijar % de almacén si NO es admin (regla: >=1000 => 2%, si no 3%)
-      // this.prestamo.almacen = vp >= 1000 ? 2 : 3 pero si es admin puede cambiar
+      // 1) Fijar % de almacén si NO es admin (regla: >1000 => 2%)
       if (!this.isAdmin) {
-        this.prestamo.almacen = vp >= 1000 ? 2 : 3
+        this.prestamo.almacen = vp > 1000 ? 2 : 3
       }
 
       // 2) Recalcular montos con los % vigentes
