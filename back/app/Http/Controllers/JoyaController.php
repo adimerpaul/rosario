@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Estuche;
 use App\Models\Joya;
+use App\Models\Orden;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
@@ -12,14 +14,23 @@ class JoyaController extends Controller
 {
     public function index(Request $request)
     {
-//        $this->ensureAdmin($request);
+        //        $this->ensureAdmin($request);
 
         $search = trim((string) $request->input('search', ''));
         $soloSinEstuche = $request->boolean('sin_estuche', false);
         $perPage = (int) $request->input('per_page', 12);
 
         $query = Joya::query()
-            ->with(['estucheItem.columna.vitrina', 'user:id,name,username'])
+            ->with([
+                'estucheItem.columna.vitrina',
+                'user:id,name,username',
+                'ventas' => function ($query) {
+                    $query->where('tipo', 'Venta directa')->orderByDesc('id');
+                },
+                'ventasItems' => function ($query) {
+                    $query->where('tipo', 'Venta directa')->orderByDesc('id');
+                },
+            ])
             ->when($soloSinEstuche, fn ($query) => $query->whereNull('estuche_id')->where('vendido', false))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
@@ -33,10 +44,16 @@ class JoyaController extends Controller
             ->orderByDesc('id');
 
         if ($soloSinEstuche) {
-            return $query->get();
+            return $query->get()->map(fn (Joya $joya) => $this->appendEstadoJoya($joya));
         }
 
-        return $query->paginate($perPage)->appends($request->query());
+        /** @var LengthAwarePaginator $paginator */
+        $paginator = $query->paginate($perPage)->appends($request->query());
+        $paginator->setCollection(
+            $paginator->getCollection()->map(fn (Joya $joya) => $this->appendEstadoJoya($joya))
+        );
+
+        return $paginator;
     }
 
     public function store(Request $request)
@@ -164,5 +181,43 @@ class JoyaController extends Controller
         $role = $request->user()?->role;
 
         abort_unless($role === 'Administrador', 403, 'No autorizado');
+    }
+
+    private function appendEstadoJoya(Joya $joya): Joya
+    {
+        $ultimaVenta = $this->ultimaVentaDirecta($joya);
+
+        $joya->setAttribute('estado_joya', $this->estadoJoya($ultimaVenta));
+        $joya->setAttribute('venta_id', $ultimaVenta?->id);
+        $joya->setAttribute('numero_venta', $ultimaVenta?->numero);
+
+        return $joya;
+    }
+
+    private function ultimaVentaDirecta(Joya $joya): ?Orden
+    {
+        return collect()
+            ->merge($joya->ventas ?? collect())
+            ->merge($joya->ventasItems ?? collect())
+            ->unique('id')
+            ->sortByDesc('id')
+            ->first();
+    }
+
+    private function estadoJoya(?Orden $venta): string
+    {
+        if (! $venta) {
+            return 'DISPONIBLE';
+        }
+
+        if ($venta->estado === 'Cancelada') {
+            return 'ANULADO';
+        }
+
+        if ($venta->estado === 'Entregado') {
+            return 'VENDIDO';
+        }
+
+        return 'RESERVADO';
     }
 }

@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Client;
 use App\Models\Estuche;
 use App\Models\Joya;
+use App\Models\Orden;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -104,6 +106,44 @@ it('searches joyas from the database and not only from the current page', functi
         ->assertOk()
         ->assertJsonPath('total', 1)
         ->assertJsonPath('data.0.nombre', 'COLLAR UNICO BUSCADO');
+});
+
+it('shows reserved estado_joya in joyas listing when the jewel has an active direct sale', function () {
+    Sanctum::actingAs(User::factory()->create(['role' => 'Administrador']));
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE RESERVA',
+        'ci' => '778899',
+        'status' => 'Confiable',
+        'cellphone' => '70077889',
+        'address' => 'ORURO',
+    ]);
+
+    $joya = Joya::firstOrFail();
+
+    Orden::create([
+        'numero' => 'V0900-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => now(),
+        'fecha_entrega' => now()->addDays(5)->toDateString(),
+        'detalle' => 'VENTA DIRECTA RESERVADA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 1800,
+        'adelanto' => 500,
+        'saldo' => 1300,
+        'estado' => 'Reservado',
+        'peso' => $joya->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => 1,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joya->id,
+    ]);
+
+    $this->getJson('/api/joyas?search='.urlencode($joya->nombre))
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $joya->id)
+        ->assertJsonPath('data.0.estado_joya', 'RESERVADO')
+        ->assertJsonPath('data.0.vendido', false);
 });
 
 it('allows an admin to update and delete a joya', function () {

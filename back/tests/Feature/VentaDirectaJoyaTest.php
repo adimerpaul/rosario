@@ -450,3 +450,64 @@ it('finds joyas in vitrina by codigo', function () {
             'codigo' => $codigo,
         ]);
 });
+
+it('recalculates joya vendido flag from delivered direct sales only', function () {
+    $user = User::factory()->create(['role' => 'Administrador']);
+    $cliente = Client::create([
+        'name' => 'CLIENTE RECALCULO',
+        'ci' => '445566',
+        'status' => 'Confiable',
+        'cellphone' => '70044444',
+        'address' => 'ORURO',
+    ]);
+
+    $joyas = Joya::query()->take(3)->get()->values();
+    [$joyaDisponible, $joyaReservada, $joyaVendida] = [$joyas[0], $joyas[1], $joyas[2]];
+
+    $joyaDisponible->update(['vendido' => true]);
+    $joyaReservada->update(['vendido' => true]);
+    $joyaVendida->update(['vendido' => false]);
+
+    Orden::create([
+        'numero' => 'V0300-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => now(),
+        'fecha_entrega' => now()->addDays(7)->toDateString(),
+        'detalle' => 'VENTA RESERVADA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 1800,
+        'adelanto' => 300,
+        'saldo' => 1500,
+        'estado' => 'Reservado',
+        'peso' => $joyaReservada->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $user->id,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joyaReservada->id,
+    ]);
+
+    Orden::create([
+        'numero' => 'V0301-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => now(),
+        'fecha_entrega' => now()->toDateString(),
+        'detalle' => 'VENTA ENTREGADA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 2200,
+        'adelanto' => 2200,
+        'saldo' => 0,
+        'estado' => 'Entregado',
+        'peso' => $joyaVendida->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $user->id,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joyaVendida->id,
+    ]);
+
+    $migration = include database_path('migrations/2026_04_13_220000_recalculate_vendido_on_joyas_from_ventas_directas.php');
+    $migration->up();
+
+    expect($joyaDisponible->fresh()->vendido)->toBeFalse()
+        ->and($joyaReservada->fresh()->vendido)->toBeFalse()
+        ->and($joyaVendida->fresh()->vendido)->toBeTrue();
+});

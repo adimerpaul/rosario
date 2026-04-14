@@ -135,8 +135,8 @@
 
           <template v-slot:body-cell-vendido="props">
             <q-td :props="props">
-              <q-chip dense :color="props.row.vendido ? 'negative' : 'positive'" text-color="white">
-                {{ props.row.vendido ? 'Vendido' : 'Disponible' }}
+              <q-chip dense :color="estadoColor(props.row.estado_joya)" text-color="white">
+                {{ props.row.estado_joya || (props.row.vendido ? 'VENDIDO' : 'DISPONIBLE') }}
               </q-chip>
             </q-td>
           </template>
@@ -363,6 +363,12 @@ export default {
       if (tipo === 'Importada') return 'deep-orange'
       if (tipo === 'Joya nacional') return 'brown'
       return 'blue-grey'
+    },
+    estadoColor(estado) {
+      if (estado === 'VENDIDO') return 'negative'
+      if (estado === 'RESERVADO') return 'warning'
+      if (estado === 'ANULADO') return 'grey'
+      return 'positive'
     },
     resetImageState() {
       this.selectedImageFile = null
