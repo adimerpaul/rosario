@@ -101,8 +101,14 @@
               <tr v-for="it in ingresosActivos" :key="`in-${it.key}`">
                 <td class="text-left">{{ it.hora }}</td>
                 <td class="text-left diario-col-descripcion">
-                  <div class="diario-descripcion">
-                    {{ it.descripcion }}
+                  <div class="diario-descripcion diario-descripcion--main">
+                    {{ splitDescripcion(it.descripcion).titulo }}
+                  </div>
+                  <div
+                    v-if="splitDescripcion(it.descripcion).cliente"
+                    class="text-caption text-grey-8 diario-descripcion diario-descripcion--cliente"
+                  >
+                    {{ splitDescripcion(it.descripcion).cliente }}
                   </div>
                   <div class="text-caption text-grey-7 diario-meta">Usuario: {{ it.usuario || 'N/A' }}</div>
                 </td>
@@ -166,7 +172,13 @@
               <tr v-for="it in egresosActivos" :key="`eg-${it.key}`">
                 <td class="text-left">{{ it.hora }}</td>
                 <td class="text-left diario-col-descripcion">
-                  <div class="diario-descripcion">{{ it.descripcion }}</div>
+                  <div class="diario-descripcion diario-descripcion--main">{{ splitDescripcion(it.descripcion).titulo }}</div>
+                  <div
+                    v-if="splitDescripcion(it.descripcion).cliente"
+                    class="text-caption text-grey-8 diario-descripcion diario-descripcion--cliente"
+                  >
+                    {{ splitDescripcion(it.descripcion).cliente }}
+                  </div>
                   <div class="text-caption text-grey-7 diario-meta">Usuario: {{ it.usuario || 'N/A' }}</div>
                 </td>
                 <td class="text-right diario-col-monto">
@@ -298,7 +310,13 @@
               <td class="text-left">{{ it.hora }}</td>
               <td class="text-right">{{ currency(it.monto) }}</td>
               <td class="text-left">
-                <div>{{ it.descripcion }}</div>
+                <div class="diario-descripcion diario-descripcion--main">{{ splitDescripcion(it.descripcion).titulo }}</div>
+                <div
+                  v-if="splitDescripcion(it.descripcion).cliente"
+                  class="text-caption text-grey-8 diario-descripcion diario-descripcion--cliente"
+                >
+                  {{ splitDescripcion(it.descripcion).cliente }}
+                </div>
                 <div class="text-caption text-grey-7">Usuario: {{ it.usuario || 'N/A' }}</div>
               </td>
               <td class="text-left">{{ it.fuente }}</td>
@@ -401,6 +419,20 @@ export default {
 
   methods: {
     currency (n) { return `${Number(n || 0).toFixed(2)} Bs.` },
+    splitDescripcion (descripcion) {
+      const text = String(descripcion || '').trim()
+      const separator = ' - '
+      const separatorIndex = text.indexOf(separator)
+
+      if (separatorIndex === -1) {
+        return { titulo: text, cliente: '' }
+      }
+
+      return {
+        titulo: text.slice(0, separatorIndex).trim(),
+        cliente: text.slice(separatorIndex + separator.length).trim()
+      }
+    },
 
     fetchUsuarios () {
       this.$axios.get('users')
@@ -653,7 +685,7 @@ export default {
 
 .diario-descripcion {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -661,8 +693,21 @@ export default {
   max-width: 100%;
 }
 
+.diario-descripcion--main {
+  font-size: 12px;
+  line-height: 1.28;
+}
+
+.diario-descripcion--cliente {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
 .diario-meta {
   margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.25;
 }
 
 .diario-monto {
@@ -705,7 +750,7 @@ export default {
 
   .diario-descripcion {
     -webkit-line-clamp: 3;
-    line-height: 1.2;
+    line-height: 1.28;
   }
 
   .diario-monto {
@@ -715,6 +760,14 @@ export default {
   }
 
   .diario-meta {
+    font-size: 10px;
+  }
+
+  .diario-descripcion--main {
+    font-size: 11px;
+  }
+
+  .diario-descripcion--cliente {
     font-size: 10px;
   }
 }
