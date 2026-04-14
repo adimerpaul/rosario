@@ -319,7 +319,7 @@ export default {
 
       // 1) Fijar % de almacén si NO es admin (regla: >1000 => 2%)
       if (!this.isAdmin) {
-        this.prestamo.almacen = vp > 1000 ? 2 : 3
+        this.prestamo.almacen = vp >= 900 ? 2 : 3
       }
 
       // 2) Recalcular montos con los % vigentes

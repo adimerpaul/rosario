@@ -92,7 +92,7 @@ class JoyaController extends Controller
 
     public function updateImagen(Request $request, Joya $joya)
     {
-        $this->ensureAdmin($request);
+//        $this->ensureAdmin($request);
 
         $request->validate([
             'imagen' => 'required|image|max:5120',
