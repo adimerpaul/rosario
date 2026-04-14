@@ -72,12 +72,12 @@
             <q-markup-table flat bordered dense class="diario-table">
               <thead>
               <tr class="bg-green-2">
-                <th class="text-left">Hora</th>
-                <th class="text-left">Descripcion</th>
-                <th class="text-right">Monto (Bs.)</th>
-                <th class="text-left">Metodo</th>
-                <th class="text-left">Fuente</th>
-                <th class="text-left">Estado</th>
+                <th class="text-left diario-col-hora">Hora</th>
+                <th class="text-left diario-col-descripcion">Descripcion</th>
+                <th class="text-right diario-col-monto">Monto (Bs.)</th>
+                <th class="text-left diario-col-metodo">Metodo</th>
+                <th class="text-left diario-col-fuente">Fuente</th>
+                <th class="text-left diario-col-estado">Estado</th>
                 <th class="text-right" v-if="isAdmin">Acciones</th>
               </tr>
               </thead>
@@ -100,16 +100,18 @@
 
               <tr v-for="it in ingresosActivos" :key="`in-${it.key}`">
                 <td class="text-left">{{ it.hora }}</td>
-                <td class="text-left">
-                  <div>
+                <td class="text-left diario-col-descripcion">
+                  <div class="diario-descripcion">
                     {{ it.descripcion }}
                   </div>
-                  <div class="text-caption text-grey-7">Usuario: {{ it.usuario || 'N/A' }}</div>
+                  <div class="text-caption text-grey-7 diario-meta">Usuario: {{ it.usuario || 'N/A' }}</div>
                 </td>
-                <td class="text-right">{{ currency(it.monto) }}</td>
-                <td class="text-left">{{ it.metodo || '-' }}</td>
-                <td class="text-left">{{ it.fuente }}</td>
-                <td class="text-left">
+                <td class="text-right diario-col-monto">
+                  <span class="diario-monto">{{ currency(it.monto) }}</span>
+                </td>
+                <td class="text-left diario-col-metodo">{{ it.metodo || '-' }}</td>
+                <td class="text-left diario-col-fuente">{{ it.fuente }}</td>
+                <td class="text-left diario-col-estado">
                   <q-chip dense :color="it.estado === 'Activo' ? 'green-6' : 'grey-6'" text-color="white">
                     {{ it.estado }}
                   </q-chip>
@@ -150,12 +152,12 @@
             <q-markup-table flat bordered dense class="diario-table">
               <thead>
               <tr class="bg-red-2">
-                <th class="text-left">Hora</th>
-                <th class="text-left">Descripcion</th>
-                <th class="text-right">Monto (Bs.)</th>
-                <th class="text-left">Metodo</th>
-                <th class="text-left">Fuente</th>
-                <th class="text-left">Estado</th>
+                <th class="text-left diario-col-hora">Hora</th>
+                <th class="text-left diario-col-descripcion">Descripcion</th>
+                <th class="text-right diario-col-monto">Monto (Bs.)</th>
+                <th class="text-left diario-col-metodo">Metodo</th>
+                <th class="text-left diario-col-fuente">Fuente</th>
+                <th class="text-left diario-col-estado">Estado</th>
                 <th class="text-right" v-if="isAdmin">Acciones</th>
               </tr>
               </thead>
@@ -163,14 +165,16 @@
               <tbody>
               <tr v-for="it in egresosActivos" :key="`eg-${it.key}`">
                 <td class="text-left">{{ it.hora }}</td>
-                <td class="text-left">
-                  <div>{{ it.descripcion }}</div>
-                  <div class="text-caption text-grey-7">Usuario: {{ it.usuario || 'N/A' }}</div>
+                <td class="text-left diario-col-descripcion">
+                  <div class="diario-descripcion">{{ it.descripcion }}</div>
+                  <div class="text-caption text-grey-7 diario-meta">Usuario: {{ it.usuario || 'N/A' }}</div>
                 </td>
-                <td class="text-right">{{ currency(it.monto) }}</td>
-                <td class="text-left">{{ it.metodo || 'EFECTIVO' }}</td>
-                <td class="text-left">{{ it.fuente }}</td>
-                <td class="text-left">
+                <td class="text-right diario-col-monto">
+                  <span class="diario-monto">{{ currency(it.monto) }}</span>
+                </td>
+                <td class="text-left diario-col-metodo">{{ it.metodo || 'EFECTIVO' }}</td>
+                <td class="text-left diario-col-fuente">{{ it.fuente }}</td>
+                <td class="text-left diario-col-estado">
                   <q-chip dense :color="it.estado === 'Activo' ? 'green-6' : 'grey-6'" text-color="white">
                     {{ it.estado }}
                   </q-chip>
@@ -618,5 +622,100 @@ export default {
   font-size: 12px;
   padding: 4px 6px;
   line-height: 1.15;
+}
+
+.diario-col-hora {
+  width: 68px;
+}
+
+.diario-col-descripcion {
+  width: 34%;
+  max-width: 260px;
+}
+
+.diario-col-monto {
+  width: 132px;
+  min-width: 132px;
+  white-space: nowrap;
+}
+
+.diario-col-metodo {
+  width: 88px;
+}
+
+.diario-col-fuente {
+  width: 92px;
+}
+
+.diario-col-estado {
+  width: 90px;
+}
+
+.diario-descripcion {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.diario-meta {
+  margin-top: 3px;
+}
+
+.diario-monto {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+@media (max-width: 1023px) {
+  .diario-col-descripcion {
+    width: 28%;
+    max-width: 180px;
+  }
+
+  .diario-table :deep(th),
+  .diario-table :deep(td) {
+    font-size: 11px;
+    padding: 4px;
+  }
+}
+
+@media (max-width: 767px) {
+  .diario-col-hora {
+    width: 56px;
+  }
+
+  .diario-col-descripcion {
+    width: 24%;
+    max-width: 120px;
+  }
+
+  .diario-col-monto {
+    width: 116px;
+    min-width: 116px;
+  }
+
+  .diario-col-fuente,
+  .diario-col-estado {
+    width: 78px;
+  }
+
+  .diario-descripcion {
+    -webkit-line-clamp: 3;
+    line-height: 1.2;
+  }
+
+  .diario-monto {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .diario-meta {
+    font-size: 10px;
+  }
 }
 </style>

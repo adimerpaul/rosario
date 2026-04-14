@@ -17,7 +17,9 @@
             <div class="row items-center full-width q-col-gutter-sm">
               <div class="col-12 col-lg">
                 <div class="text-h6 text-weight-bold">Inventario de joyas</div>
-                <div class="text-caption text-grey-7">Administrador: alta, edicion, imagen y control de catalogo.</div>
+                <div class="text-caption text-grey-7">
+                  {{ isAdmin ? 'Administrador: alta, edicion, imagen y control de catalogo.' : 'Vendedor: alta y consulta de catalogo.' }}
+                </div>
               </div>
               <div class="col-12 col-md-auto">
                 <div class="row q-gutter-sm">
@@ -70,7 +72,7 @@
             </div>
           </template>
 
-          <template v-slot:body-cell-actions="props">
+          <template v-if="isAdmin" v-slot:body-cell-actions="props">
             <q-td :props="props">
               <q-btn-dropdown label="Opciones" no-caps size="10px" dense color="primary">
                 <q-list>
@@ -319,7 +321,6 @@ export default {
         imagen: 'joya.png'
       },
       columns: [
-        { name: 'actions', label: 'Acciones', align: 'center' },
         { name: 'imagen', label: 'Imagen', align: 'left', field: 'imagen' },
         { name: 'nombre', label: 'Nombre', align: 'left', field: 'nombre' },
         { name: 'tipo', label: 'Tipo', align: 'left', field: 'tipo' },
@@ -334,6 +335,9 @@ export default {
     }
   },
   computed: {
+    isAdmin() {
+      return this.$store.user?.role === 'Administrador'
+    },
     imagenPreviewUrl() {
       return this.imagePreviewUrl || this.imagenUrl(this.joya.imagen)
     },
@@ -344,6 +348,11 @@ export default {
   mounted() {
     this.getEstuches()
     this.joyasGet()
+  },
+  created() {
+    if (this.isAdmin) {
+      this.columns.unshift({ name: 'actions', label: 'Acciones', align: 'center' })
+    }
   },
   methods: {
     imagenUrl(imagen) {

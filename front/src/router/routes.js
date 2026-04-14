@@ -5,7 +5,7 @@ const routes = [
     children: [
       {path: '', component: () => import('pages/IndexPage.vue'), meta: {requiresAuth: true}},
       {path: '/usuarios', component: () => import('pages/usuarios/Usuarios.vue'), meta: {requiresAuth: true}},
-      {path: '/joyas', component: () => import('pages/joyas/Joyas.vue'), meta: {requiresAuth: true, roles: ['Administrador']}},
+      {path: '/joyas', component: () => import('pages/joyas/Joyas.vue'), meta: {requiresAuth: true, roles: ['Administrador', 'Vendedor']}},
       {path: '/estuches', component: () => import('pages/estuches/Estuches.vue'), meta: {requiresAuth: true, roles: ['Administrador', 'Vendedor']}},
       {path: '/ventas-joyas/crear', component: () => import('pages/ventas/VentaJoyaCrear.vue'), meta: {requiresAuth: true, roles: ['Administrador', 'Vendedor']}},
       {path: '/ventas-joyas', component: () => import('pages/ventas/VentasJoyas.vue'), meta: {requiresAuth: true, roles: ['Administrador', 'Vendedor']}},

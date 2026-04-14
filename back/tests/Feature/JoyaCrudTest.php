@@ -56,11 +56,11 @@ it('allows an admin to create a joya without estuche', function () {
     ]);
 });
 
-it('forbids a vendedor from accessing joyas crud', function () {
+it('allows a vendedor to list and create joyas but not edit or delete them', function () {
     Sanctum::actingAs(User::factory()->create(['role' => 'Vendedor']));
     $estuche = Estuche::firstOrFail();
 
-    $this->getJson('/api/joyas')->assertForbidden();
+    $this->getJson('/api/joyas')->assertOk();
     $this->postJson('/api/joyas', [
         'tipo' => 'Plata',
         'peso' => 1,
@@ -68,7 +68,20 @@ it('forbids a vendedor from accessing joyas crud', function () {
         'estuche_id' => $estuche->id,
         'nombre' => 'Prueba',
         'monto_bs' => 100,
+    ])->assertCreated();
+
+    $joya = Joya::where('nombre', 'PRUEBA')->firstOrFail();
+
+    $this->putJson('/api/joyas/'.$joya->id, [
+        'tipo' => 'Plata',
+        'peso' => 2,
+        'linea' => 'Roger',
+        'estuche_id' => $estuche->id,
+        'nombre' => 'Prueba editada',
+        'monto_bs' => 200,
     ])->assertForbidden();
+
+    $this->deleteJson('/api/joyas/'.$joya->id)->assertForbidden();
 });
 
 it('searches joyas from the database and not only from the current page', function () {

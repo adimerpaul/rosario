@@ -58,7 +58,7 @@ class JoyaController extends Controller
 
     public function store(Request $request)
     {
-        $this->ensureAdmin($request);
+        $this->ensureCreateAccess($request);
 
         $data = $this->validateData($request);
         $data['user_id'] = $request->user()->id;
@@ -181,6 +181,13 @@ class JoyaController extends Controller
         $role = $request->user()?->role;
 
         abort_unless($role === 'Administrador', 403, 'No autorizado');
+    }
+
+    private function ensureCreateAccess(Request $request): void
+    {
+        $role = $request->user()?->role;
+
+        abort_unless(in_array($role, ['Administrador', 'Vendedor'], true), 403, 'No autorizado');
     }
 
     private function appendEstadoJoya(Joya $joya): Joya
