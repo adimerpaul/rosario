@@ -25,6 +25,7 @@ class Prestamo extends Model implements AuditableContract
         'merma',
         'peso_neto',
         'precio_oro',
+        'precio_compra_oro',
         'valor_total',
         'valor_prestado',
         'interes',

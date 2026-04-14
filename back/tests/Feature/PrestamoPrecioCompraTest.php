@@ -8,7 +8,7 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
-it('stores the current prestamos para comprar value in precio oro when creating a prestamo', function () {
+it('stores the configured gold purchase price in precio_compra_oro when creating a prestamo', function () {
     $user = User::factory()->create();
     $client = Client::create([
         'name' => 'Cliente prueba',
@@ -20,6 +20,10 @@ it('stores the current prestamos para comprar value in precio oro when creating 
     Cog::query()->updateOrCreate(
         ['name' => 'Prestamos para comprar'],
         ['value' => 900.00, 'description' => 'Interes por prestamos para comprar oro']
+    );
+    Cog::query()->updateOrCreate(
+        ['name' => 'Precio Compra'],
+        ['value' => 820.00, 'description' => 'Precio de compra del oro']
     );
 
     Sanctum::actingAs($user);
@@ -40,5 +44,6 @@ it('stores the current prestamos para comprar value in precio oro when creating 
     $this->assertDatabaseHas('prestamos', [
         'cliente_id' => $client->id,
         'precio_oro' => 900.00,
+        'precio_compra_oro' => 820.00,
     ]);
 });

@@ -26,6 +26,15 @@ class PrestamoController extends Controller
         return (float) ($cog?->value ?? 0);
     }
 
+    private function precioCompraOroActual(): float
+    {
+        $cog = Cog::query()
+            ->where('name', 'Precio Compra')
+            ->first();
+
+        return (float) ($cog?->value ?? 0);
+    }
+
     public function pagoPdf(PrestamoPago $pago)
     {
         $pago->load(['prestamo.cliente', 'user']);
@@ -680,6 +689,7 @@ class PrestamoController extends Controller
 
         return DB::transaction(function () use ($data, $isAdmin) {
             $precioOro = $this->precioPrestamoActual();
+            $precioCompraOro = $this->precioCompraOroActual();
 
             // Peso neto con merma
             $pesoBruto = (float) $data['peso'];
@@ -708,6 +718,7 @@ class PrestamoController extends Controller
                 'merma' => $merma,
                 'peso_neto' => $pesoNeto,    // opcional si tienes la columna
                 'precio_oro' => $precioOro,
+                'precio_compra_oro' => $precioCompraOro,
                 'valor_total' => $valorTotal,
                 'valor_prestado' => $vp,
                 'interes' => $i,          // %
