@@ -179,7 +179,7 @@ class OrdenPagoController extends Controller
             return;
         }
 
-        $vendida = $orden->estado === 'Entregado' && (float) ($orden->saldo ?? 0) <= 0;
+        $vendida = $orden->estado !== 'Cancelada';
 
         $orden->joyas()->update(['vendido' => $vendida]);
 

@@ -156,7 +156,7 @@ it('shows reserved estado_joya in joyas listing when the jewel has an active dir
         ->assertOk()
         ->assertJsonPath('data.0.id', $joya->id)
         ->assertJsonPath('data.0.estado_joya', 'RESERVADO')
-        ->assertJsonPath('data.0.vendido', false);
+        ->assertJsonPath('data.0.vendido', true);
 });
 
 it('allows an admin to update and delete a joya', function () {

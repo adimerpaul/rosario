@@ -451,7 +451,7 @@ it('finds joyas in vitrina by codigo', function () {
         ]);
 });
 
-it('recalculates joya vendido flag from delivered direct sales only', function () {
+it('recalculates joya vendido flag from active direct sales', function () {
     $user = User::factory()->create(['role' => 'Administrador']);
     $cliente = Client::create([
         'name' => 'CLIENTE RECALCULO',
@@ -504,10 +504,10 @@ it('recalculates joya vendido flag from delivered direct sales only', function (
         'joya_id' => $joyaVendida->id,
     ]);
 
-    $migration = include database_path('migrations/2026_04_13_220000_recalculate_vendido_on_joyas_from_ventas_directas.php');
+    $migration = include database_path('migrations/2026_04_15_120000_recalculate_vendido_on_joyas_from_active_ventas_directas.php');
     $migration->up();
 
     expect($joyaDisponible->fresh()->vendido)->toBeFalse()
-        ->and($joyaReservada->fresh()->vendido)->toBeFalse()
+        ->and($joyaReservada->fresh()->vendido)->toBeTrue()
         ->and($joyaVendida->fresh()->vendido)->toBeTrue();
 });

@@ -389,9 +389,13 @@
             <div v-if="reportUsesEstuche" class="col-12 col-sm-6">
               <q-select
                 v-model="reportForm.estuche_id"
-                :options="estucheOptionsFull"
+                :options="reportEstucheOptions"
                 emit-value
                 map-options
+                use-input
+                fill-input
+                input-debounce="0"
+                @filter="filterReportEstuches"
                 clearable
                 outlined
                 dense
@@ -420,6 +424,7 @@ export default {
       saving: false,
       reportLoading: false,
       clientLoading: false,
+      reportEstucheOptions: [],
       joyas: [],
       joyasIndex: {},
       vitrinas: [],
@@ -580,11 +585,21 @@ export default {
     },
     openReportDialog (type) {
       this.reportForm.type = type
+      this.reportEstucheOptions = this.estucheOptionsFull
       this.reportDialog = true
+    },
+    filterReportEstuches (value, update) {
+      const needle = (value || '').toLowerCase().trim()
+      update(() => {
+        this.reportEstucheOptions = !needle
+          ? this.estucheOptionsFull
+          : this.estucheOptionsFull.filter(option => option.label.toLowerCase().includes(needle))
+      })
     },
     getVitrinas () {
       this.$axios.get('vitrinas').then(({ data }) => {
         this.vitrinas = data
+        this.reportEstucheOptions = this.estucheOptionsFull
       })
     },
     getJoyas () {
@@ -953,7 +968,6 @@ export default {
   }
 }
 </style>
-
 
 
 

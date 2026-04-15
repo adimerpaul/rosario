@@ -193,8 +193,10 @@ class JoyaController extends Controller
     private function appendEstadoJoya(Joya $joya): Joya
     {
         $ultimaVenta = $this->ultimaVentaDirecta($joya);
+        $vendida = $ultimaVenta ? $ultimaVenta->estado !== 'Cancelada' : (bool) $joya->vendido;
 
         $joya->setAttribute('estado_joya', $this->estadoJoya($ultimaVenta));
+        $joya->setAttribute('vendido', $vendida);
         $joya->setAttribute('venta_id', $ultimaVenta?->id);
         $joya->setAttribute('numero_venta', $ultimaVenta?->numero);
 

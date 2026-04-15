@@ -124,7 +124,9 @@
                         label="Prestado (Bs)" v-model.number="prestamo.valor_prestado"
                         type="number" outlined dense
                         :min="0" :max="prestamo.valor_total"
-                        @update:model-value="calcularSaldo"
+                        :error="montoPrestadoExcedeMaximo"
+                        :error-message="mensajeMontoPrestado"
+                        @update:model-value="validarMontoPrestado"
                       />
                     </div>
                     <div class="col-6 col-md-2 ">
@@ -201,7 +203,7 @@
 
                   <div class="q-mt-md text-right">
                     <q-btn label="Cancelar" color="negative" @click="$router.push('/prestamos')" class="q-mr-sm" :loading="loading"/>
-                    <q-btn label="Guardar" type="submit" color="green" :loading="loading"/>
+                    <q-btn label="Guardar" type="submit" color="green" :loading="loading" :disable="montoPrestadoExcedeMaximo"/>
                   </div>
                 </q-form>
               </q-card-section>
@@ -257,6 +259,13 @@ export default {
     },
     pesoNetoStr () {
       return this.pesoNeto.toFixed(3)
+    },
+    montoPrestadoExcedeMaximo () {
+      return Number(this.prestamo.valor_prestado || 0) > Number(this.prestamo.valor_total || 0)
+    },
+    mensajeMontoPrestado () {
+      if (!this.montoPrestadoExcedeMaximo) return ''
+      return `No puede superar el monto maximo de prestamo (${this.money(this.prestamo.valor_total)} Bs).`
     }
   },
 
@@ -333,9 +342,26 @@ export default {
       this.prestamo.saldo = this.totalPagar
     },
 
+    validarMontoPrestado (value) {
+      const montoIngresado = Number(value || 0)
+      const montoMaximo = Number(this.prestamo.valor_total || 0)
+
+      if (montoIngresado > montoMaximo) {
+        this.prestamo.valor_prestado = montoMaximo
+        this.$alert?.warning?.(`No puede superar el monto maximo de prestamo (${this.money(montoMaximo)} Bs).`)
+      }
+
+      this.calcularSaldo()
+    },
+
     guardarPrestamo () {
       if (!this.prestamo.cliente_id) {
         this.$alert?.error?.('Debe seleccionar un cliente')
+        return
+      }
+
+      if (this.montoPrestadoExcedeMaximo) {
+        this.$alert?.error?.(this.mensajeMontoPrestado)
         return
       }
 

@@ -496,18 +496,20 @@ class OrdenController extends Controller
         $this->authorizeVentasAccess($request);
 
         $joyas = $this->inventarioDisponibleQuery($request)
-            ->orderBy('linea')
-            ->orderBy('nombre')
             ->get()
-            ->map(function (Joya $joya) {
+            ->map(fn (Joya $joya) => $this->mapJoyaVitrina($joya))
+            ->filter(function (array $joya) {
+                return in_array($joya['estado_joya'] ?? null, ['EN VITRINA', 'RESERVADO'], true);
+            })
+            ->map(function (array $joya) {
                 return [
-                    'codigo' => $this->joyaCodigo($joya->id),
-                    'imagen' => $joya->imagen,
-                    'detalle' => $joya->nombre,
-                    'peso' => (float) ($joya->peso ?? 0),
-                    'linea' => $this->lineaLabel($joya->linea),
-                    'estado' => $joya->estuche_id ? 'EN VITRINA' : 'SIN ESTUCHE',
-                    'usuario' => $joya->user?->name ?: 'SIN USUARIO',
+                    'codigo' => $joya['codigo'],
+                    'imagen' => data_get($joya, 'joya.imagen'),
+                    'detalle' => data_get($joya, 'joya.nombre'),
+                    'peso' => (float) data_get($joya, 'joya.peso', 0),
+                    'linea' => $this->lineaLabel(data_get($joya, 'joya.linea')),
+                    'estado' => $joya['estado_joya'],
+                    'usuario' => data_get($joya, 'user.name', 'SIN USUARIO'),
                 ];
             })
             ->values();
@@ -1004,21 +1006,28 @@ class OrdenController extends Controller
 
     private function inventarioDisponibleQuery(Request $request)
     {
-        return Joya::with(['user:id,name', 'estucheItem.columna.vitrina'])
-            ->whereDoesntHave('ventas', function ($query) {
+        return Joya::with([
+            'user:id,name',
+            'estucheItem.columna.vitrina',
+            'ventas' => function ($query) {
                 $query->where('tipo', 'Venta directa')
-                    ->where('estado', '!=', 'Cancelada');
-            })
-            ->whereDoesntHave('ventasItems', function ($query) {
+                    ->with(['cliente:id,name,ci', 'user:id,name'])
+                    ->orderByDesc('id');
+            },
+            'ventasItems' => function ($query) {
                 $query->where('tipo', 'Venta directa')
-                    ->where('estado', '!=', 'Cancelada');
-            })
+                    ->with(['cliente:id,name,ci', 'user:id,name'])
+                    ->orderByDesc('id');
+            },
+        ])
             ->when($request->filled('linea') && $request->input('linea') !== 'Todos', function ($query) use ($request) {
                 $query->where('linea', $request->input('linea'));
             })
             ->when($request->filled('estuche_id'), function ($query) use ($request) {
                 $query->where('estuche_id', $request->integer('estuche_id'));
-            });
+            })
+            ->orderBy('linea')
+            ->orderBy('nombre');
     }
 
     private function buildInventarioMovimientos(Request $request): Collection
@@ -1405,7 +1414,7 @@ class OrdenController extends Controller
             return;
         }
 
-        $vendida = $orden->estado === 'Entregado' && (float) ($orden->saldo ?? 0) <= 0;
+        $vendida = $orden->estado !== 'Cancelada';
 
         $orden->joyas()->update(['vendido' => $vendida]);
 

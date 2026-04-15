@@ -67,6 +67,20 @@
               />
             </div>
             <div class="col-12 col-md-3">
+              <q-select
+                v-model="filters.estuche_id"
+                :options="estucheOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                dense
+                clearable
+                label="Estuche"
+              />
+            </div>
+            <div class="col-12 col-md-3">
               <q-select v-model="filters.estado_joya" :options="estadoOptions" outlined dense label="Estado joya" />
             </div>
             <div class="col-12 col-md-3">
@@ -261,9 +275,13 @@
             <div v-if="reportUsesEstuche" class="col-12 col-sm-6">
               <q-select
                 v-model="reportForm.estuche_id"
-                :options="estucheOptions"
+                :options="reportEstucheOptions"
                 emit-value
                 map-options
+                use-input
+                fill-input
+                input-debounce="0"
+                @filter="filterReportEstuches"
                 clearable
                 outlined
                 dense
@@ -294,9 +312,11 @@ export default {
       vitrinas: [],
       reportLoading: false,
       reportDialog: false,
+      reportEstucheOptions: [],
       filters: {
         user_id: null,
         vitrina_id: null,
+        estuche_id: null,
         estado_joya: 'Todos',
         linea: null,
         fecha: '',
@@ -335,6 +355,14 @@ export default {
       return this.vitrinas.map(vitrina => ({ label: vitrina.nombre, value: vitrina.id }))
     },
     estucheOptions () {
+      return this.vitrinas
+        .filter(vitrina => !this.filters.vitrina_id || vitrina.id === this.filters.vitrina_id)
+        .flatMap(vitrina => (vitrina.columnas || []).flatMap(columna => (columna.estuches || []).map(estuche => ({
+        label: `${vitrina.nombre} / ${columna.codigo} / ${estuche.nombre}`,
+        value: estuche.id
+        }))))
+    },
+    estucheOptionsFull () {
       return this.vitrinas.flatMap(vitrina => (vitrina.columnas || []).flatMap(columna => (columna.estuches || []).map(estuche => ({
         label: `${vitrina.nombre} / ${columna.codigo} / ${estuche.nombre}`,
         value: estuche.id
@@ -388,7 +416,16 @@ export default {
     },
     openReportDialog (type) {
       this.reportForm.type = type
+      this.reportEstucheOptions = this.estucheOptionsFull
       this.reportDialog = true
+    },
+    filterReportEstuches (value, update) {
+      const needle = (value || '').toLowerCase().trim()
+      update(() => {
+        this.reportEstucheOptions = !needle
+          ? this.estucheOptionsFull
+          : this.estucheOptionsFull.filter(option => option.label.toLowerCase().includes(needle))
+      })
     },
     getUsuarios () {
       this.$axios.get('users').then(({ data }) => {
@@ -398,6 +435,7 @@ export default {
     getVitrinas () {
       this.$axios.get('vitrinas').then(({ data }) => {
         this.vitrinas = data
+        this.reportEstucheOptions = this.estucheOptionsFull
       })
     },
     getVentas () {
@@ -516,6 +554,11 @@ export default {
       this.getVentas()
     },
     'filters.vitrina_id' () {
+      this.filters.estuche_id = null
+      this.pagination.page = 1
+      this.getVentas()
+    },
+    'filters.estuche_id' () {
       this.pagination.page = 1
       this.getVentas()
     },
