@@ -84,7 +84,7 @@
                       <q-item-label>Editar</q-item-label>
                     </q-item-section>
                   </q-item>
-                  <q-item clickable @click="joyaEliminar(props.row)" v-close-popup>
+                  <q-item clickable @click="joyaEliminarProtegida(props.row)" v-close-popup>
                     <q-item-section avatar>
                       <q-icon name="delete" />
                     </q-item-section>
@@ -493,6 +493,49 @@ export default {
     joyaEliminar(joya) {
       this.$alert.dialog(`¿Desea eliminar la joya ${joya.nombre}?`)
         .onOk(() => {
+          this.loading = true
+          this.$axios.delete(`joyas/${joya.id}`)
+            .then(() => {
+              this.$alert.success('Joya eliminada')
+              this.getEstuches()
+              this.joyasGet()
+            })
+            .catch(error => {
+              this.$alert.error(error.response?.data?.message || 'Error al eliminar joya')
+            })
+            .finally(() => {
+              this.loading = false
+            })
+        })
+    },
+    joyaEliminarProtegida(joya) {
+      this.$q.dialog({
+        title: 'Eliminar joya',
+        message: `Para eliminar la joya ${joya.nombre}, ingrese la contrasena de autorizacion.`,
+        prompt: {
+          model: '',
+          type: 'password',
+          label: 'Contrasena',
+          rules: [val => val === 'Rosa123' || 'La contrasena es incorrecta']
+        },
+        ok: {
+          label: 'Eliminar',
+          color: 'negative',
+          noCaps: true
+        },
+        cancel: {
+          label: 'Cancelar',
+          color: 'primary',
+          noCaps: true
+        },
+        persistent: true
+      })
+        .onOk(password => {
+          if (password !== 'Rosa123') {
+            this.$alert.error('Contrasena incorrecta')
+            return
+          }
+
           this.loading = true
           this.$axios.delete(`joyas/${joya.id}`)
             .then(() => {
