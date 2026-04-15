@@ -204,7 +204,17 @@
                   </div>
                   <div class="row q-col-gutter-sm q-mt-sm">
                     <div class="col-12 col-md-4">
-                      <q-input :model-value="item.venta.costo_total" label="Monto" type="number" outlined dense bg-color="white" @update:model-value="updateVentaItem(item.joya.id, 'costo_total', $event)">
+                      <q-input
+                        :model-value="item.venta.costo_total"
+                        label="Monto"
+                        type="number"
+                        outlined
+                        dense
+                        bg-color="white"
+                        :error="ventaMontoMenorReferencia(item)"
+                        :error-message="ventaMontoMenorReferencia(item) ? mensajeMontoMinimo(item.joya) : ''"
+                        @update:model-value="updateVentaItem(item.joya.id, 'costo_total', $event)"
+                      >
                         <template #append>
                           <q-btn flat round dense icon="restart_alt" @click="restoreVentaItemReferential(item.joya.id)">
                             <q-tooltip>Usar monto de joya</q-tooltip>
@@ -571,6 +581,12 @@ export default {
       const monto = this.toNumber(joya?.monto_bs)
       return monto > 0 ? monto : this.toNumber(joya?.precio_referencial)
     },
+    ventaMontoMenorReferencia (item) {
+      return this.toNumber(item?.venta?.costo_total) < this.joyaMontoVenta(item?.joya)
+    },
+    mensajeMontoMinimo (joya) {
+      return `El monto no puede ser menor a ${this.money(this.joyaMontoVenta(joya))} Bs.`
+    },
     buildVentaItem (joya, previous = null) {
       const referencia = this.joyaMontoVenta(joya)
       return {
@@ -670,6 +686,18 @@ export default {
 
         if (field === 'costo_total') {
           const monto = this.toNumber(value)
+          const joya = this.selectedJoyas.find(selected => selected.id === joyaId)
+          const referencia = this.joyaMontoVenta(joya)
+
+          if (monto < referencia) {
+            this.$alert.warning(this.mensajeMontoMinimo(joya))
+            return {
+              ...item,
+              costo_total: referencia,
+              adelanto: referencia
+            }
+          }
+
           return {
             ...item,
             costo_total: monto,
@@ -790,6 +818,12 @@ export default {
 
       if (this.ventaItems.some(item => this.toNumber(item.costo_total) <= 0)) {
         this.$alert.error('Cada joya debe tener un monto mayor a cero')
+        return
+      }
+
+      const ventaInvalida = this.selectedVentaJoyas.find(item => this.ventaMontoMenorReferencia(item))
+      if (ventaInvalida) {
+        this.$alert.error(this.mensajeMontoMinimo(ventaInvalida.joya))
         return
       }
 
@@ -968,7 +1002,6 @@ export default {
   }
 }
 </style>
-
 
 
 
