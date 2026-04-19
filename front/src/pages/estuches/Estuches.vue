@@ -59,7 +59,7 @@
                       <q-card-section class="row items-center no-wrap q-pa-sm">
                         <div class="col">
                           <div class="text-body2 text-weight-bold">{{ estuche.nombre }}</div>
-                          <div class="text-caption text-grey-7">{{ estuche.joyas?.length || 0 }} joya(s)</div>
+                          <div class="text-caption text-grey-7">{{ joyasVisiblesEstuche(estuche).length || 0 }} joya(s)</div>
                         </div>
                         <div class="row q-gutter-xs">
                           <q-btn v-if="isAdmin" flat round dense size="sm" icon="add" color="positive" @click="openAgregarJoyaDialog(estuche)" />
@@ -71,8 +71,8 @@
                       <q-separator />
 
                       <q-card-section class="q-pa-xs">
-                        <div v-if="estuche.joyas?.length" class="joyas-grid">
-                          <div v-for="joya in estuche.joyas" :key="joya.id" class="joya-mini">
+                        <div v-if="joyasVisiblesEstuche(estuche).length" class="joyas-grid">
+                          <div v-for="joya in joyasVisiblesEstuche(estuche)" :key="joya.id" class="joya-mini">
                             <div class="joya-mini__actions" v-if="isAdmin">
                               <q-btn flat round dense size="xs" icon="edit" color="primary" @click="openEditarJoyaDialog(joya)" />
                               <q-btn flat round dense size="xs" icon="close" color="negative" @click="quitarJoyaDeEstuche(joya)" />
@@ -357,6 +357,9 @@ export default {
       if (estado === 'Reservado') return 'warning'
       if (estado === 'Vendido') return 'negative'
       return 'positive'
+    },
+    joyasVisiblesEstuche(estuche) {
+      return (estuche?.joyas || []).filter(joya => this.estadoJoya(joya) !== 'Vendido')
     },
     getVitrinas() {
       this.loading = true

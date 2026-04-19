@@ -13,7 +13,6 @@ class VitrinaController extends Controller
 
         return Vitrina::with([
             'columnas.estuches.joyas' => fn ($query) => $query
-                ->where('vendido', false)
                 ->with([
                     'ventas' => fn ($ventaQuery) => $ventaQuery
                         ->where('tipo', 'Venta directa')
