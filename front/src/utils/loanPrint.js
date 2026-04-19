@@ -409,11 +409,9 @@ function buildPrestamoPagosModel (prestamo, pagos) {
     numero: prestamo?.numero || `PR-${prestamo?.id || ''}`,
     cliente: prestamo?.cliente?.name || '—',
     fechaCreacion: prestamo?.fecha_creacion ? moment(prestamo.fecha_creacion).format('DD/MM/YYYY') : '—',
-    emitido: moment().format('DD/MM/YYYY HH:mm'),
-    pagos: pagosNormalizados,
-    total: pagosNormalizados
-      .filter(pago => pago.estado === 'Activo')
-      .reduce((sum, pago) => sum + pago.monto, 0)
+    mesCancelado: prestamo?.fecha_limite ? moment(prestamo.fecha_limite).format('DD/MM/YYYY') : '—',
+    mesVencimiento: prestamo?.fecha_cancelacion ? moment(prestamo.fecha_cancelacion).format('DD/MM/YYYY') : '—',
+    pagos: pagosNormalizados
   }
 }
 
@@ -547,12 +545,12 @@ export async function printDetallePagosPrestamoDirecto (axiosInstance, prestamoI
       <table class="grid" style="margin-top:8px;">
         <tr>
           <td class="box" style="width:50%;">
-            <div class="label">Total pagos activos</div>
-            <div class="md" style="font-weight:700;">${escapeHtml(money(model.total))} Bs</div>
+            <div class="label">Mes cancelado</div>
+            <div class="md" style="font-weight:700;">${escapeHtml(model.mesCancelado)}</div>
           </td>
           <td class="box" style="width:50%;">
-            <div class="label">Emitido</div>
-            <div class="md">${escapeHtml(model.emitido)}</div>
+            <div class="label">Mes vencimiento</div>
+            <div class="md" style="font-weight:700;">${escapeHtml(model.mesVencimiento)}</div>
           </td>
         </tr>
       </table>
