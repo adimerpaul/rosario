@@ -508,7 +508,7 @@ class PrestamoController extends Controller
             : 'DATEDIFF(?, fecha_limite)';
 
         $q = Prestamo::with(['cliente', 'user'])
-            ->whereNotIn('estado', ['Entregado', 'Cancelado'])
+            ->where('estado', 'Activo')
             ->whereNotNull('fecha_limite')
             ->whereDate('fecha_limite', '<', $hoy)
             ->whereRaw("{$diffExpr} >= ?", [$hoy, $diasMin])

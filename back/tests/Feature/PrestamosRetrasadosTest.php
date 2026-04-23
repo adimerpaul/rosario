@@ -37,7 +37,47 @@ it('lists overdue loans with summary and pagination metadata', function () {
         'almacen' => 2,
         'celular' => '77770000',
         'detalle' => 'PRESTAMO EN RETRASO',
-        'estado' => 'Pendiente',
+        'estado' => 'Activo',
+    ]);
+
+    Prestamo::create([
+        'numero' => 'P0002-2026',
+        'fecha_creacion' => now()->subDays(25),
+        'fecha_limite' => now()->subDays(12)->toDateString(),
+        'fecha_cancelacion' => now()->addDays(18)->toDateString(),
+        'cliente_id' => $cliente->id,
+        'user_id' => $admin->id,
+        'peso' => 3,
+        'merma' => 0,
+        'peso_neto' => 3,
+        'precio_oro' => 1000,
+        'valor_total' => 3000,
+        'valor_prestado' => 1200,
+        'interes' => 3,
+        'almacen' => 2,
+        'celular' => '77770000',
+        'detalle' => 'PRESTAMO ENTREGADO',
+        'estado' => 'Entregado',
+    ]);
+
+    Prestamo::create([
+        'numero' => 'P0003-2026',
+        'fecha_creacion' => now()->subDays(25),
+        'fecha_limite' => now()->subDays(12)->toDateString(),
+        'fecha_cancelacion' => now()->addDays(18)->toDateString(),
+        'cliente_id' => $cliente->id,
+        'user_id' => $admin->id,
+        'peso' => 3,
+        'merma' => 0,
+        'peso_neto' => 3,
+        'precio_oro' => 1000,
+        'valor_total' => 3000,
+        'valor_prestado' => 1200,
+        'interes' => 3,
+        'almacen' => 2,
+        'celular' => '77770000',
+        'detalle' => 'PRESTAMO FUNDIDO',
+        'estado' => 'Fundido',
     ]);
 
     $this->getJson('/api/prestamosRetrasados?dias=1&per_page=10')
@@ -48,6 +88,12 @@ it('lists overdue loans with summary and pagination metadata', function () {
         ->assertJsonFragment([
             'numero' => 'P0001-2026',
             'detalle' => 'PRESTAMO EN RETRASO',
+        ])
+        ->assertJsonMissing([
+            'numero' => 'P0002-2026',
+        ])
+        ->assertJsonMissing([
+            'numero' => 'P0003-2026',
         ]);
 });
 
@@ -80,7 +126,7 @@ it('exports overdue loans as excel-compatible file with weight and gold price', 
         'almacen' => 2,
         'celular' => '77771111',
         'detalle' => 'PRESTAMO CSV',
-        'estado' => 'Pendiente',
+        'estado' => 'Activo',
     ]);
 
     $response = $this->get('/api/prestamosRetrasados/export?dias=1');

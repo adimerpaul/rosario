@@ -56,7 +56,7 @@
     <q-drawer
       v-model="leftDrawerOpen"
       show-if-above
-      :width="258"
+      :width="220"
       :breakpoint="700"
       class="drawer-shell text-white"
     >
