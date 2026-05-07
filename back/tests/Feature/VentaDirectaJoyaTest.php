@@ -5,6 +5,7 @@ use App\Models\Client;
 use App\Models\Joya;
 use App\Models\Orden;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -365,6 +366,56 @@ it('lists jewel showcase statuses for ventas joyas filtering', function () {
             'id' => $joyaVendida->id,
             'estado_joya' => 'VENDIDO',
         ]);
+});
+
+it('includes canceled direct sales as anuladas in inventory existence report data', function () {
+    $user = User::factory()->create(['role' => 'Administrador']);
+    Sanctum::actingAs($user);
+
+    $cliente = Client::create([
+        'name' => 'CLIENTE ANULADO',
+        'ci' => '111222',
+        'status' => 'Confiable',
+        'cellphone' => '70001122',
+        'address' => 'ORURO',
+    ]);
+
+    $joya = Joya::where('linea', 'Papa')->firstOrFail();
+
+    Orden::create([
+        'numero' => 'V0400-2026',
+        'tipo' => 'Venta directa',
+        'fecha_creacion' => '2026-03-28 21:05:00',
+        'fecha_entrega' => '2026-03-28',
+        'detalle' => 'VENTA DIRECTA ANULADA',
+        'celular' => $cliente->cellphone,
+        'costo_total' => 327,
+        'adelanto' => 0,
+        'saldo' => 327,
+        'estado' => 'Cancelada',
+        'peso' => $joya->peso,
+        'tipo_pago' => 'Efectivo',
+        'user_id' => $user->id,
+        'cliente_id' => $cliente->id,
+        'joya_id' => $joya->id,
+    ]);
+
+    $pdf = Mockery::mock(\Barryvdh\DomPDF\PDF::class);
+    $pdf->shouldReceive('setPaper')->once()->with('letter', 'portrait')->andReturnSelf();
+    $pdf->shouldReceive('download')->once()->with('inventario_existente_joyas.pdf')->andReturn(response('PDF'));
+
+    Pdf::shouldReceive('loadView')
+        ->once()
+        ->withArgs(function (string $view, array $data) use ($joya) {
+            return $view === 'pdf.inventario_existencias'
+                && collect($data['joyas'])->contains(fn (array $item) => $item['codigo'] === 'J'.str_pad((string) $joya->id, 4, '0', STR_PAD_LEFT)
+                    && $item['estado'] === 'ANULADO');
+        })
+        ->andReturn($pdf);
+
+    $this->get('/api/reportes/inventario/existencias/pdf')
+        ->assertOk()
+        ->assertSee('PDF');
 });
 
 it('marks every joya in a multi-jewel sale as reservada in vitrina', function () {

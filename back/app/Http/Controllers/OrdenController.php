@@ -187,12 +187,12 @@ class OrdenController extends Controller
                                 ->where(function ($nested) use ($search) {
                                     $nested->where('numero', 'like', "%{$search}%")
                                         ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
-                                        $clienteQuery->where('name', 'like', "%{$search}%")
-                                            ->orWhere('ci', 'like', "%{$search}%");
-                                    })->orWhereHas('user', function ($userQuery) use ($search) {
-                                        $userQuery->where('name', 'like', "%{$search}%")
-                                            ->orWhere('username', 'like', "%{$search}%");
-                                    });
+                                            $clienteQuery->where('name', 'like', "%{$search}%")
+                                                ->orWhere('ci', 'like', "%{$search}%");
+                                        })->orWhereHas('user', function ($userQuery) use ($search) {
+                                            $userQuery->where('name', 'like', "%{$search}%")
+                                                ->orWhere('username', 'like', "%{$search}%");
+                                        });
                                 });
                         })
                         ->orWhereHas('ventasItems', function ($ventaQuery) use ($search) {
@@ -200,12 +200,12 @@ class OrdenController extends Controller
                                 ->where(function ($nested) use ($search) {
                                     $nested->where('numero', 'like', "%{$search}%")
                                         ->orWhereHas('cliente', function ($clienteQuery) use ($search) {
-                                        $clienteQuery->where('name', 'like', "%{$search}%")
-                                            ->orWhere('ci', 'like', "%{$search}%");
-                                    })->orWhereHas('user', function ($userQuery) use ($search) {
-                                        $userQuery->where('name', 'like', "%{$search}%")
-                                            ->orWhere('username', 'like', "%{$search}%");
-                                    });
+                                            $clienteQuery->where('name', 'like', "%{$search}%")
+                                                ->orWhere('ci', 'like', "%{$search}%");
+                                        })->orWhereHas('user', function ($userQuery) use ($search) {
+                                            $userQuery->where('name', 'like', "%{$search}%")
+                                                ->orWhere('username', 'like', "%{$search}%");
+                                        });
                                 });
                         });
 
@@ -499,7 +499,7 @@ class OrdenController extends Controller
             ->get()
             ->map(fn (Joya $joya) => $this->mapJoyaVitrina($joya))
             ->filter(function (array $joya) {
-                return in_array($joya['estado_joya'] ?? null, ['EN VITRINA', 'RESERVADO'], true);
+                return in_array($joya['estado_joya'] ?? null, ['EN VITRINA', 'RESERVADO', 'ANULADO'], true);
             })
             ->map(function (array $joya) {
                 return [
@@ -1098,7 +1098,6 @@ class OrdenController extends Controller
             'user:id,name',
         ])
             ->where('tipo', 'Venta directa')
-            ->where('estado', '!=', 'Cancelada')
             ->when($request->filled('linea') && $request->input('linea') !== 'Todos', function ($query) use ($request) {
                 $query->whereHas('joyas', function ($joyaQuery) use ($request) {
                     $joyaQuery->where('linea', $request->input('linea'));
@@ -1125,7 +1124,7 @@ class OrdenController extends Controller
                         'detalle' => $joya->nombre ?: $venta->detalle,
                         'peso' => (float) ($joya->peso ?? 0),
                         'linea' => $this->lineaLabel($joya->linea),
-                        'estado' => 'VENDIDO',
+                        'estado' => $venta->estado === 'Cancelada' ? 'ANULADO' : 'VENDIDO',
                         'usuario' => $venta->user?->name ?: 'SIN USUARIO',
                         'timestamp' => $fecha->timestamp,
                     ];

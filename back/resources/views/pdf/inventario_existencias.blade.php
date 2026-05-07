@@ -9,6 +9,7 @@
     @php
         $joyasEnVitrina = collect($joyas)->filter(fn ($joya) => ($joya['estado'] ?? null) === 'EN VITRINA')->values();
         $joyasReservadas = collect($joyas)->filter(fn ($joya) => ($joya['estado'] ?? null) === 'RESERVADO')->values();
+        $joyasAnuladas = collect($joyas)->filter(fn ($joya) => ($joya['estado'] ?? null) === 'ANULADO')->values();
     @endphp
 
     <div class="report-shell">
@@ -29,6 +30,7 @@
             $secciones = [
                 'JOYAS EN VITRINA' => $joyasEnVitrina,
                 'JOYAS RESERVADAS' => $joyasReservadas,
+                'JOYAS ANULADAS' => $joyasAnuladas,
             ];
         @endphp
 
