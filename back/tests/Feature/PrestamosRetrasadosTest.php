@@ -85,6 +85,9 @@ it('lists overdue loans with summary and pagination metadata', function () {
         ->assertJsonPath('meta.current_page', 1)
         ->assertJsonPath('meta.per_page', 10)
         ->assertJsonPath('summary.total', 1)
+        ->assertJsonPath('summary.capital_invertido', 2000)
+        ->assertJsonPath('summary.capital_detalle.0.numero', 'P0001-2026')
+        ->assertJsonPath('summary.capital_detalle.0.valor_prestado', 2000)
         ->assertJsonFragment([
             'numero' => 'P0001-2026',
             'detalle' => 'PRESTAMO EN RETRASO',

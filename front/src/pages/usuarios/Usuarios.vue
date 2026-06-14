@@ -103,8 +103,9 @@
             <!--            <q-input v-model="user.email" label="Email" dense outlined hint="" />-->
             <q-input v-model="user.password" label="Contraseña" dense outlined
                      :rules="[val => !!val || 'Campo requerido']" v-if="!user.id"/>
-            <q-select v-model="user.role" label="Rol" dense outlined :options="roles"
+            <q-select v-if="isAdmin" v-model="user.role" label="Rol" dense outlined :options="roles"
                       :rules="[val => !!val || 'Campo requerido']"/>
+            <q-input v-else v-model="user.role" label="Rol" dense outlined readonly/>
 <!--            <q-select v-model="user.docente_id" label="Docente" dense outlined :options="docentes"-->
 <!--                      option-label="nombre" option-value="id" emit-value map-options-->
 <!--                      :rules="[val => !!val || 'Campo requerido']"/>-->
@@ -212,6 +213,11 @@ export default {
     this.usersGet()
     // this.permissionsGet()
   },
+  computed: {
+    isAdmin() {
+      return this.$store?.user?.role === 'Administrador'
+    }
+  },
   methods: {
     onFileChange(event) {
       const file = event.target.files[0]
@@ -295,7 +301,9 @@ export default {
     },
     userPost() {
       this.loading = true
-      this.$axios.post('users', this.user).then(res => {
+      const payload = { ...this.user }
+      if (!this.isAdmin) delete payload.role
+      this.$axios.post('users', payload).then(res => {
         this.userDialog = false
         this.$alert.success('User creado')
         this.usersGet()
@@ -308,7 +316,9 @@ export default {
     },
     userPut() {
       this.loading = true
-      this.$axios.put('users/' + this.user.id, this.user).then(res => {
+      const payload = { ...this.user }
+      if (!this.isAdmin) delete payload.role
+      this.$axios.put('users/' + this.user.id, payload).then(res => {
         this.usersGet()
         this.userDialog = false
         this.$alert.success('User actualizado')

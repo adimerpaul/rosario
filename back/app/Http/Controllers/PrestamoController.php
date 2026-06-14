@@ -547,6 +547,16 @@ class PrestamoController extends Controller
             'total' => $collection->count(),
             'saldo' => round((float) $collection->sum(fn ($prestamo) => (float) ($prestamo->saldo ?? 0)), 2),
             'capital_invertido' => round((float) $collection->sum(fn ($prestamo) => (float) ($prestamo->valor_prestado ?? 0)), 2),
+            'capital_detalle' => $collection->map(fn ($prestamo) => [
+                'id' => $prestamo->id,
+                'numero' => $prestamo->numero,
+                'cliente' => $prestamo->cliente?->name,
+                'ci' => $prestamo->cliente?->ci,
+                'usuario' => $prestamo->user?->name,
+                'fecha_limite' => $prestamo->fecha_limite,
+                'dias_retraso' => (int) $prestamo->dias_retraso,
+                'valor_prestado' => round((float) ($prestamo->valor_prestado ?? 0), 2),
+            ])->values(),
             'prom_dias' => round((float) $collection->avg('dias_retraso'), 1),
             'max_dias' => (int) $collection->max('dias_retraso'),
         ];

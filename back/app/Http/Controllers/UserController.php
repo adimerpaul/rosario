@@ -4,24 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Intervention\Image\ImageManager;
+use Illuminate\Validation\Rule;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
-class UserController extends Controller{
+class UserController extends Controller
+{
     public function updateAvatar(Request $request, $userId)
     {
         $user = User::find($userId);
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Usuario no encontrado'], 404);
         }
 
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $filename = time() . '.' . $file->getClientOriginalExtension();
-            $path = public_path('images/' . $filename);
+            $filename = time().'.'.$file->getClientOriginalExtension();
+            $path = public_path('images/'.$filename);
 
             // Crear instancia del gestor de imágenes
-            $manager = new ImageManager(new Driver()); // O new Imagick\Driver()
+            $manager = new ImageManager(new Driver); // O new Imagick\Driver()
 
             // Redimensionar y comprimir
             $manager->read($file->getPathname())
@@ -37,59 +39,107 @@ class UserController extends Controller{
 
         return response()->json(['message' => 'No se ha enviado un archivo'], 400);
     }
-    function login(Request $request){
+
+    public function login(Request $request)
+    {
         $credentials = $request->only('username', 'password');
         $user = User::where('username', $credentials['username'])->first();
-        if (!$user || !password_verify($credentials['password'], $user->password)) {
+        if (! $user || ! password_verify($credentials['password'], $user->password)) {
             return response()->json([
                 'message' => 'Usuario o contraseña incorrectos',
             ], 401);
         }
         $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'token' => $token,
             'user' => $user,
         ]);
     }
-    function logout(Request $request){
+
+    public function logout(Request $request)
+    {
         $request->user()->currentAccessToken()->delete();
+
         return response()->json([
             'message' => 'Token eliminado',
         ]);
     }
-    function me(Request $request){
+
+    public function me(Request $request)
+    {
         return $request->user();
     }
-    function index(){
+
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless($request->user()?->role === 'Administrador', 403, 'No autorizado');
+    }
+
+    public function index(Request $request)
+    {
         return User::where('id', '!=', 0)
 //            ->with('docente')
             ->orderBy('id', 'desc')
             ->get();
     }
-    function update(Request $request, $id){
-        $user = User::find($id);
-        $user->update($request->except('password'));
-        error_log('User' . json_encode($user));
+
+    public function update(Request $request, $id)
+    {
+        $isAdmin = $request->user()?->role === 'Administrador';
+        if ($request->has('role') && ! $isAdmin) {
+            abort(403, 'Solo el administrador puede cambiar el rol');
+        }
+
+        $user = User::findOrFail($id);
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string'],
+            'username' => ['sometimes', 'required', Rule::unique('users')->ignore($user->id)],
+            'role' => ['sometimes', 'required', Rule::in(['Administrador', 'Vendedor'])],
+            'email' => ['sometimes', 'nullable', 'email', Rule::unique('users')->ignore($user->id)],
+            'avatar' => ['sometimes', 'nullable', 'string'],
+        ]);
+
+        $user->update($validated);
+
         return $user;
     }
-    function updatePassword(Request $request, $id){
+
+    public function updatePassword(Request $request, $id)
+    {
+        $this->ensureAdmin($request);
+
         $user = User::find($id);
         $user->update([
             'password' => bcrypt($request->password),
         ]);
+
         return $user;
     }
-    function store(Request $request){
-        $validatedData = $request->validate([
+
+    public function store(Request $request)
+    {
+        $this->ensureAdmin($request);
+
+        $request->validate([
             'username' => 'required|unique:users',
             'password' => 'required',
             'name' => 'required',
-//            'email' => 'required|email|unique:users',
+            'role' => ['nullable', Rule::in(['Administrador', 'Vendedor'])],
+            //            'email' => 'required|email|unique:users',
         ]);
-        $user = User::create($request->all());
+        $user = User::create([
+            ...$request->only(['name', 'email', 'password', 'username', 'avatar', 'docente_id']),
+            'role' => $request->input('role', 'Vendedor'),
+        ]);
+
         return $user;
     }
-    function destroy($id){
+
+    public function destroy(Request $request, $id)
+    {
+        $this->ensureAdmin($request);
+
         return User::destroy($id);
     }
 }

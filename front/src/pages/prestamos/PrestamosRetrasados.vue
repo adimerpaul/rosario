@@ -109,7 +109,18 @@
             <q-card bordered flat class="bg-blue-1">
               <q-card-section class="q-pa-sm">
                 <div class="text-caption text-blue-9 text-weight-bold">Capital invertido</div>
-                <div class="text-h6">{{ money(summary.capital_invertido) }}</div>
+                <div class="row items-center justify-between q-gutter-sm">
+                  <div class="text-h6">{{ money(summary.capital_invertido) }}</div>
+                  <q-btn
+                    dense
+                    outline
+                    color="blue-9"
+                    icon="visibility"
+                    label="Detalle"
+                    no-caps
+                    @click="abrirCapitalDetalle"
+                  />
+                </div>
               </q-card-section>
             </q-card>
           </div>
@@ -231,6 +242,80 @@
       </q-card-section>
     </q-card>
 
+    <q-dialog v-model="dialogCapitalDetalle">
+      <q-card style="width: 980px; max-width: 95vw;">
+        <q-card-section class="row items-center q-pb-none">
+          <div>
+            <div class="text-h6">Detalle de capital invertido</div>
+            <div class="text-caption text-grey-7">
+              Se calcula sumando el valor prestado de todos los prestamos retrasados con los filtros actuales.
+            </div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="row q-col-gutter-sm q-mb-md">
+            <div class="col-12 col-md-4">
+              <q-card bordered flat class="bg-blue-1">
+                <q-card-section class="q-pa-sm">
+                  <div class="text-caption text-blue-9 text-weight-bold">Formula</div>
+                  <div class="text-body2">Capital invertido = suma de Prestado</div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-6 col-md-4">
+              <q-card bordered flat>
+                <q-card-section class="q-pa-sm">
+                  <div class="text-caption text-grey-7 text-weight-bold">Prestamos incluidos</div>
+                  <div class="text-h6">{{ capitalDetalle.length }}</div>
+                </q-card-section>
+              </q-card>
+            </div>
+            <div class="col-6 col-md-4">
+              <q-card bordered flat>
+                <q-card-section class="q-pa-sm">
+                  <div class="text-caption text-grey-7 text-weight-bold">Total calculado</div>
+                  <div class="text-h6">{{ money(capitalDetalleTotal) }}</div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
+
+          <q-table
+            flat
+            bordered
+            dense
+            :rows="capitalDetalle"
+            :columns="capitalDetalleColumns"
+            row-key="id"
+            :rows-per-page-options="[10, 20, 50, 0]"
+            no-data-label="No hay prestamos retrasados con los filtros actuales."
+          >
+            <template #body-cell-fecha_limite="props">
+              <q-td :props="props">
+                {{ date(props.row.fecha_limite) }}
+              </q-td>
+            </template>
+
+            <template #body-cell-valor_prestado="props">
+              <q-td :props="props">
+                <span class="text-weight-bold">{{ money(props.row.valor_prestado) }}</span>
+              </q-td>
+            </template>
+
+            <template #bottom-row>
+              <q-tr>
+                <q-td colspan="6" class="text-right text-weight-bold">Total</q-td>
+                <q-td class="text-right text-weight-bold">{{ money(capitalDetalleTotal) }}</q-td>
+              </q-tr>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="dialogMensajes">
       <q-card style="width: 900px; max-width: 95vw;">
         <q-card-section class="row items-center q-pb-none">
@@ -303,6 +388,7 @@ export default {
         total: 0,
         saldo: 0,
         capital_invertido: 0,
+        capital_detalle: [],
         prom_dias: 0,
         max_dias: 0
       },
@@ -326,6 +412,16 @@ export default {
         { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
         { name: 'user', label: 'Usuario', field: row => row.user?.name || '', align: 'left' }
       ],
+      capitalDetalleColumns: [
+        { name: 'numero', label: 'N°', field: 'numero', align: 'left' },
+        { name: 'cliente', label: 'Cliente', field: 'cliente', align: 'left' },
+        { name: 'ci', label: 'CI', field: 'ci', align: 'left' },
+        { name: 'usuario', label: 'Usuario', field: 'usuario', align: 'left' },
+        { name: 'fecha_limite', label: 'Vencimiento', field: 'fecha_limite', align: 'left' },
+        { name: 'dias_retraso', label: 'Dias', field: 'dias_retraso', align: 'right' },
+        { name: 'valor_prestado', label: 'Prestado', field: 'valor_prestado', align: 'right' }
+      ],
+      dialogCapitalDetalle: false,
       dialogMensajes: false,
       loadingMensajes: false,
       savingMensajes: false,
@@ -340,6 +436,16 @@ export default {
     this.getUsuarios()
     this.fetchMensajes()
     this.fetchData()
+  },
+  computed: {
+    capitalDetalle () {
+      return Array.isArray(this.summary?.capital_detalle) ? this.summary.capital_detalle : []
+    },
+    capitalDetalleTotal () {
+      return this.capitalDetalle.reduce((total, prestamo) => {
+        return total + Number(prestamo.valor_prestado || 0)
+      }, 0)
+    }
   },
   methods: {
     async getUsuarios () {
@@ -402,6 +508,9 @@ export default {
         prestamo_fundicion: this.mensajes.prestamo_fundicion || ''
       }
       this.dialogMensajes = true
+    },
+    abrirCapitalDetalle () {
+      this.dialogCapitalDetalle = true
     },
     async guardarMensajes () {
       this.savingMensajes = true
