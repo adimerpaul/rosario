@@ -559,21 +559,15 @@ export async function printDetallePagosPrestamoDirecto (axiosInstance, prestamoI
 }
 
 export async function printPrestamoDirecto (axiosInstance, prestamoId, prestamoData = null) {
-  const [prestamo, tipoCambio] = await Promise.all([
-    prestamoData?.cliente ? Promise.resolve(prestamoData) : fetchPrestamo(axiosInstance, prestamoId),
-    fetchTipoCambio(axiosInstance)
-  ])
-
+  const prestamo = prestamoData?.cliente ? prestamoData : await fetchPrestamo(axiosInstance, prestamoId)
+  const tipoCambio = Number(prestamo?.cambio_dolar) || await fetchTipoCambio(axiosInstance)
   const model = buildPrestamoModel(prestamo, tipoCambio)
   return printHtml(renderPrestamoContrato(model))
 }
 
 export async function printCambioMonedaDirecto (axiosInstance, prestamoId, prestamoData = null) {
-  const [prestamo, tipoCambio] = await Promise.all([
-    prestamoData?.cliente ? Promise.resolve(prestamoData) : fetchPrestamo(axiosInstance, prestamoId),
-    fetchTipoCambio(axiosInstance)
-  ])
-
+  const prestamo = prestamoData?.cliente ? prestamoData : await fetchPrestamo(axiosInstance, prestamoId)
+  const tipoCambio = Number(prestamo?.cambio_dolar) || await fetchTipoCambio(axiosInstance)
   const model = buildPrestamoModel(prestamo, tipoCambio)
   return printHtml(renderCambioMoneda(model))
 }

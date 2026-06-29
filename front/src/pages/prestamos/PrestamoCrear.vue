@@ -87,7 +87,7 @@
             <q-card flat bordered>
               <q-card-section class="text-bold q-pa-xs">
                 Crear Préstamo
-                <span class="text-grey text-caption">(Precio oro compra: {{ precioOro.value }})</span>
+                <span class="text-grey text-caption">(Precio oro compra: {{ precioOro.value }} | TC: {{ cambioDolar }} Bs/$us)</span>
               </q-card-section>
 
               <q-card-section class="q-pa-xs">
@@ -230,6 +230,7 @@ export default {
 
       precioOro: { value: 0 },
       precioVenta: { value: 0 },
+      cambioDolar: 0,
 
       prestamo: {
         fecha_limite: moment().add(1,'months').format('YYYY-MM-DD'),
@@ -271,10 +272,12 @@ export default {
 
   async mounted () {
     await this.getClientes()
-    let res = await this.$axios.get('cogs/3') // precio compra de oro
+    let res = await this.$axios.get('cogs/3')
     this.precioOro = res.data
-    res = await this.$axios.get('cogs/1') // precio compra de oro
+    res = await this.$axios.get('cogs/1')
     this.precioVenta = res.data
+    res = await this.$axios.get('cogs/4')
+    this.cambioDolar = Number(res.data?.value || 6.96)
     this.calcularTotales()
   },
 

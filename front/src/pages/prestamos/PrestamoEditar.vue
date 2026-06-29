@@ -111,6 +111,9 @@
                   <div class="col-12">
                     <q-input dense outlined label="Precio oro compra" :model-value="money(prestamo.precio_oro || 0)" readonly />
                   </div>
+                  <div class="col-12">
+                    <q-input dense outlined label="Cambio dólar (Bs/$us)" :model-value="money(prestamo.cambio_dolar || 0)" readonly />
+                  </div>
                 </div>
               </q-card-section>
             </q-card>

@@ -93,8 +93,7 @@ class PrestamoController extends Controller
         // Fecha/hora (uso la fecha de creación del préstamo si existe)
         $fechaAt = $prestamo->fecha_creacion ? Carbon::parse($prestamo->fecha_creacion) : now();
 
-        // Tipo de cambio desde COG id=4
-        $tc = optional(\App\Models\Cog::find(4))->value ?? 6.96;
+        $tc = (float) ($prestamo->cambio_dolar ?? 6.96);
         if ($tc <= 0) {
             $tc = 6.96;
         }
@@ -246,8 +245,7 @@ class PrestamoController extends Controller
         // $pesoTotalGr = round(($prestamo->peso ?? 0) * 1000, 3);
         // $mermaGr     = round(($prestamo->merma ?? 0) * 1000, 3);
         // $pesoOroGr   = max(0, round($pesoTotalGr - $mermaGr, 3));
-        //        $dolar =6.96;
-        $dolar = Cog::find(4)->value ?? 6.96;
+        $dolar = (float) ($prestamo->cambio_dolar ?? 6.96);
         $data = [
             'empresa' => $empresa,
 
@@ -715,7 +713,7 @@ class PrestamoController extends Controller
             $a = $this->resolveAlmacenRate($vp, $isAdmin, $data['almacen'] ?? null);
             $deuda = round($vp + ($vp * $i / 100) + ($vp * $a / 100), 2);
 
-            $tipoDeCambio = Cog::find(4);
+            $cambioDolar = (float) (Cog::find(4)?->value ?? 6.96);
 
             $prestamo = Prestamo::create([
                 'numero' => null,
@@ -726,16 +724,17 @@ class PrestamoController extends Controller
                 'user_id' => $data['user_id'],
                 'peso' => $pesoBruto,
                 'merma' => $merma,
-                'peso_neto' => $pesoNeto,    // opcional si tienes la columna
+                'peso_neto' => $pesoNeto,
                 'precio_oro' => $precioOro,
                 'precio_compra_oro' => $precioCompraOro,
+                'cambio_dolar' => $cambioDolar,
                 'valor_total' => $valorTotal,
                 'valor_prestado' => $vp,
-                'interes' => $i,          // %
-                'almacen' => $a,          // %
-                'saldo' => $deuda,      // total teórico
+                'interes' => $i,
+                'almacen' => $a,
+                'saldo' => $deuda,
                 'celular' => $data['celular'] ?? null,
-                'detalle' => ($data['detalle'] ?? null).(' [TC: '.($tipoDeCambio ? $tipoDeCambio->value : 'N/A').']'),
+                'detalle' => trim(($data['detalle'] ?? '').' [TC: '.$cambioDolar.']'),
                 'estado' => 'Activo',
             ]);
 

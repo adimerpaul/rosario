@@ -143,6 +143,7 @@
                         </div>
                       </div>
                       <div class="col-6">
+                        <div class="text-caption text-grey-7">TC: <b>{{ money(p.cambio_dolar || 0) }}</b> Bs/$us</div>
                         <div class="text-caption text-grey-7">Cargo mensual</div>
 <!--                        <div class="text-weight-medium">{{ money(cargosEstimados(p)) }}</div>-->
 <!--                        <div class="text-caption text-grey">{{ p.interes }}% + {{ p.almacen }}%</div>-->
@@ -169,6 +170,7 @@
 
                     <div class="row items-center q-mt-sm text-caption text-grey">
                       <q-icon name="account_circle" size="16px" class="q-mr-xs"/>
+<!--                      <pre>{{p}}</pre>-->
                       {{ p.user?.name || '—' }}
                       {{p.detalle}}
                     </div>
