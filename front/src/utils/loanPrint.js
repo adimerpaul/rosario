@@ -86,6 +86,8 @@ function buildPrestamoModel (prestamo, tipoCambio) {
   const pesoTotal = Number(prestamo?.peso || 0)
   const merma = Number(prestamo?.merma || 0)
   const pesoOro = Number(prestamo?.peso_neto || (pesoTotal - merma))
+  const precioCompraOro = Number(prestamo?.precio_compra_oro || 0)
+  const valorVenta = precioCompraOro > 0 ? pesoOro * precioCompraOro : valorBienes
   const vencimientoBase = prestamo?.fecha_limite ? moment(prestamo.fecha_limite) : moment(prestamo?.fecha_creacion || new Date())
 
   return {
@@ -97,8 +99,10 @@ function buildPrestamoModel (prestamo, tipoCambio) {
     fechaCreacion: prestamo?.fecha_creacion ? moment(prestamo.fecha_creacion).format('DD/MM/YYYY') : '—',
     fechaCambio: prestamo?.fecha_creacion ? moment(prestamo.fecha_creacion).format('D [de] MMMM [de] YYYY') : moment().format('D [de] MMMM [de] YYYY'),
     vencimiento: vencimientoBase.add(1, 'month').format('DD/MM/YYYY'),
-    monedaLarga: 'Dólares',
-    monedaCorta: 'SUS',
+    monedaLarga: 'Bolivianos',
+    monedaCorta: 'Bs',
+    valorVentaBs: money(valorVenta),
+    capitalBs: money(capital),
     valorBienesUsd: money(valorBienes / tipoCambio),
     capitalUsd: money(capital / tipoCambio),
     cargoMensualUsd: money(cargoMensual / tipoCambio),
@@ -173,16 +177,16 @@ function renderPrestamoContrato (model) {
             <div class="md">${escapeHtml(model.monedaLarga)}</div>
           </td>
           <td class="box" style="width:25%;">
-            <div class="label">Valor bienes</div>
-            <div class="md">${escapeHtml(model.valorBienesUsd)} ${escapeHtml(model.monedaCorta)}</div>
+            <div class="label">Valor de venta</div>
+            <div class="md">${escapeHtml(model.valorVentaBs)} ${escapeHtml(model.monedaCorta)}</div>
           </td>
           <td class="box" style="width:25%;">
             <div class="label">Capital solicitado</div>
-            <div class="md">${escapeHtml(model.capitalUsd)} ${escapeHtml(model.monedaCorta)}</div>
+            <div class="md">${escapeHtml(model.capitalBs)} ${escapeHtml(model.monedaCorta)}</div>
           </td>
           <td class="box" style="width:25%;">
             <div class="label">Cargo mensual</div>
-            <div class="md">${escapeHtml(model.cargoMensualUsd)} ${escapeHtml(model.monedaCorta)}</div>
+            <div class="md">${escapeHtml(model.cargoMensualBs)} ${escapeHtml(model.monedaCorta)}</div>
           </td>
         </tr>
       </table>
