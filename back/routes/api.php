@@ -126,6 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('prestamos/{prestamo}/fundir', [PrestamoController::class, 'fundir']);
     Route::get('dashboard', [DashboardController::class, 'show']);
     Route::get('dashboard/reportes', [DashboardController::class, 'reportes']);
+    Route::get('dashboard/ventas', [DashboardController::class, 'ventas']);
     Route::get('almacen', [AlmacenController::class, 'index']);
     Route::post('almacen/entradas', [AlmacenController::class, 'entrar']);
     Route::post('almacen/salidas', [AlmacenController::class, 'salir']);
