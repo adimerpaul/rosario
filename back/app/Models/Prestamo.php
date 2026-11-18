@@ -29,6 +29,8 @@ class Prestamo extends Model implements AuditableContract
         'cambio_dolar',
         'valor_total',
         'valor_prestado',
+        'entrega_efectivo',
+        'entrega_qr',
         'interes',
         'almacen',
         'saldo',
@@ -59,6 +61,35 @@ class Prestamo extends Model implements AuditableContract
     public function almacenMovimientos()
     {
         return $this->hasMany(AlmacenMovimiento::class, 'prestamo_id');
+    }
+
+    /**
+     * Monto entregado al otorgar el prestamo (sin el capital adicionado despues).
+     */
+    public function montoEntregaInicial(): float
+    {
+        $capitalAdicionado = (float) $this->pagos()
+            ->where('estado', 'Activo')
+            ->where('tipo_pago', 'ADICIONAR CAPITAL')
+            ->sum('monto');
+
+        return max(0, round((float) ($this->valor_prestado ?? 0) - $capitalAdicionado, 2));
+    }
+
+    /**
+     * Reparte un monto entregado entre EFECTIVO y QR segun el desglose guardado.
+     * Sin desglose, todo es EFECTIVO. Si el monto cambio, el QR se mantiene y el resto es EFECTIVO.
+     *
+     * @return array{EFECTIVO: float, QR: float}
+     */
+    public function desgloseEntrega(float $monto): array
+    {
+        $qr = min(max(0, round((float) ($this->entrega_qr ?? 0), 2)), $monto);
+
+        return [
+            'EFECTIVO' => round($monto - $qr, 2),
+            'QR' => $qr,
+        ];
     }
 
     /* =========================

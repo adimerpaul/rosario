@@ -6,12 +6,9 @@ use App\Models\DailyCash;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 
 class DailyCashController extends Controller
 {
-    private ?string $prestamoMetodoColumn = null;
-
     public function show(Request $request)
     {
         $date = $request->query('date', now()->toDateString());
@@ -49,29 +46,17 @@ class DailyCashController extends Controller
         $ordenes = \App\Models\Orden::with(['cliente', 'user'])
             ->whereDate('fecha_creacion', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', '!=', 'Cancelada')
+            // Las ordenes canceladas se mantienen: su reversion se registra como egreso
             ->orderBy('fecha_creacion')
             ->get();
 
-        $itemsOrden = $ordenes->map(function ($orden) {
-            return [
-                'id' => $orden->id,
-                'hora' => Carbon::parse($orden->fecha_creacion)->format('H:i'),
-                'descripcion' => 'Orden '.$orden->numero.' - '.($orden->cliente->name ?? 'N/A'),
-                'monto' => (float) ($orden->adelanto ?? 0),
-                'usuario' => $orden->user->username ?? $orden->user->name ?? 'N/A',
-                'metodo' => $this->normalizeMetodo($orden->tipo_pago),
-                'fuente' => 'ORDEN',
-                'estado' => 'Activo',
-                'key' => 'o-'.$orden->id,
-            ];
-        })->filter(fn ($item) => $item['monto'] > 0)->values();
+        $itemsOrden = $this->buildItemsOrdenAdelanto($ordenes);
 
         $pagosOrdenes = \App\Models\OrdenPago::with(['orden.cliente', 'user'])
             ->whereDate('fecha', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', 'Activo')
-            ->whereHas('orden', fn ($q) => $q->where('estado', '!=', 'Cancelada'))
+            // Los pagos anulados se mantienen: su reversion se registra como egreso
+            ->whereIn('estado', ['Activo', 'Anulado'])
             ->orderBy('created_at')
             ->get();
 
@@ -84,7 +69,7 @@ class DailyCashController extends Controller
                 'usuario' => $pago->user->username ?? $pago->user->name ?? 'N/A',
                 'metodo' => $this->normalizeMetodo($pago->metodo),
                 'fuente' => 'PAGO ORDEN',
-                'estado' => $pago->estado ?? 'Activo',
+                'estado' => 'Activo',
                 'key' => 'po-'.$pago->id,
             ];
         })->values();
@@ -151,22 +136,7 @@ class DailyCashController extends Controller
             ->orderBy('prestamos.created_at')
             ->get();
 
-        $itemsPrestamos = $prestamos->map(function ($prestamo) {
-            $metodoColumn = $this->prestamoMetodoColumn();
-            $montoInicial = $this->prestamoMontoInicial($prestamo);
-
-            return [
-                'id' => $prestamo->id,
-                'hora' => Carbon::parse($prestamo->fecha_creacion)->format('H:i'),
-                'descripcion' => 'Prestamo '.$prestamo->numero.' - '.($prestamo->cliente->name ?? 'N/A'),
-                'monto' => $montoInicial,
-                'usuario' => $prestamo->user->username ?? $prestamo->user->name ?? 'N/A',
-                'metodo' => $this->normalizeMetodo($metodoColumn ? $prestamo->{$metodoColumn} : 'EFECTIVO'),
-                'fuente' => 'PRESTAMO OTORGADO',
-                'estado' => 'Activo',
-                'key' => 'pr-'.$prestamo->id,
-            ];
-        })->filter(fn ($item) => $item['monto'] > 0)->values();
+        $itemsPrestamos = $this->buildItemsPrestamoOtorgado($prestamos);
 
         $pagosCapital = \App\Models\PrestamoPago::with(['prestamo.cliente', 'user'])
             ->whereDate('fecha', $date)
@@ -353,34 +323,60 @@ class DailyCashController extends Controller
         return round($runningTotal, 2);
     }
 
+    /**
+     * Una linea por metodo (EFECTIVO / QR) del adelanto de cada orden.
+     */
+    private function buildItemsOrdenAdelanto($ordenes)
+    {
+        return $ordenes->flatMap(function ($orden) {
+            $efectivo = (float) ($orden->adelanto_efectivo ?? 0);
+            $qr = (float) ($orden->adelanto_qr ?? 0);
+
+            // Registros sin desglose: todo al metodo de la orden
+            if ($efectivo + $qr <= 0) {
+                $metodo = $this->normalizeMetodo($orden->tipo_pago);
+                $efectivo = $metodo === 'QR' ? 0 : (float) ($orden->adelanto ?? 0);
+                $qr = $metodo === 'QR' ? (float) ($orden->adelanto ?? 0) : 0;
+            }
+
+            $mixto = $efectivo > 0 && $qr > 0;
+            $base = [
+                'id' => $orden->id,
+                'hora' => Carbon::parse($orden->fecha_creacion)->format('H:i'),
+                'descripcion' => 'Orden '.$orden->numero.' - '.($orden->cliente->name ?? 'N/A'),
+                'usuario' => $orden->user->username ?? $orden->user->name ?? 'N/A',
+                'fuente' => 'ORDEN',
+                'estado' => 'Activo',
+                'mixto' => $mixto,
+            ];
+
+            return collect([
+                ['metodo' => 'EFECTIVO', 'monto' => $efectivo],
+                ['metodo' => 'QR', 'monto' => $qr],
+            ])->filter(fn ($parte) => $parte['monto'] > 0)
+                ->map(fn ($parte) => array_merge($base, $parte, [
+                    'key' => 'o-'.$orden->id.($mixto ? '-'.strtolower($parte['metodo']) : ''),
+                ]))
+                ->values();
+        })->values();
+    }
+
     private function buildItemsIngresos(string $date, ?User $user = null)
     {
         $ordenes = \App\Models\Orden::with(['cliente', 'user'])
             ->whereDate('fecha_creacion', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', '!=', 'Cancelada')
+            // Las ordenes canceladas se mantienen: su reversion se registra como egreso
             ->orderBy('fecha_creacion')
             ->get();
 
-        $itemsOrden = $ordenes->map(function ($orden) {
-            return [
-                'id' => $orden->id,
-                'hora' => Carbon::parse($orden->fecha_creacion)->format('H:i'),
-                'descripcion' => 'Orden '.$orden->numero.' - '.($orden->cliente->name ?? 'N/A'),
-                'monto' => (float) ($orden->adelanto ?? 0),
-                'usuario' => $orden->user->username ?? $orden->user->name ?? 'N/A',
-                'metodo' => $this->normalizeMetodo($orden->tipo_pago),
-                'fuente' => 'ORDEN',
-                'estado' => 'Activo',
-                'key' => 'o-'.$orden->id,
-            ];
-        })->filter(fn ($item) => $item['monto'] > 0)->values();
+        $itemsOrden = $this->buildItemsOrdenAdelanto($ordenes);
 
         $pagosOrdenes = \App\Models\OrdenPago::with(['orden.cliente', 'user'])
             ->whereDate('fecha', $date)
             ->when($user, fn ($q) => $q->where('user_id', $user->id))
-            ->where('estado', 'Activo')
-            ->whereHas('orden', fn ($q) => $q->where('estado', '!=', 'Cancelada'))
+            // Los pagos anulados se mantienen: su reversion se registra como egreso
+            ->whereIn('estado', ['Activo', 'Anulado'])
             ->orderBy('created_at')
             ->get();
 
@@ -393,7 +389,7 @@ class DailyCashController extends Controller
                 'usuario' => $pago->user->username ?? $pago->user->name ?? 'N/A',
                 'metodo' => $this->normalizeMetodo($pago->metodo),
                 'fuente' => 'PAGO ORDEN',
-                'estado' => $pago->estado ?? 'Activo',
+                'estado' => 'Activo',
                 'key' => 'po-'.$pago->id,
             ];
         })->values();
@@ -462,22 +458,7 @@ class DailyCashController extends Controller
             ->orderBy('prestamos.created_at')
             ->get();
 
-        $itemsPrestamos = $prestamos->map(function ($prestamo) {
-            $metodoColumn = $this->prestamoMetodoColumn();
-            $montoInicial = $this->prestamoMontoInicial($prestamo);
-
-            return [
-                'id' => $prestamo->id,
-                'hora' => Carbon::parse($prestamo->fecha_creacion)->format('H:i'),
-                'descripcion' => 'Prestamo '.$prestamo->numero.' - '.($prestamo->cliente->name ?? 'N/A'),
-                'monto' => $montoInicial,
-                'usuario' => $prestamo->user->username ?? $prestamo->user->name ?? 'N/A',
-                'metodo' => $this->normalizeMetodo($metodoColumn ? $prestamo->{$metodoColumn} : 'EFECTIVO'),
-                'fuente' => 'PRESTAMO OTORGADO',
-                'estado' => 'Activo',
-                'key' => 'pr-'.$prestamo->id,
-            ];
-        })->filter(fn ($item) => $item['monto'] > 0)->values();
+        $itemsPrestamos = $this->buildItemsPrestamoOtorgado($prestamos);
 
         $pagosCapital = \App\Models\PrestamoPago::with(['prestamo.cliente', 'user'])
             ->whereDate('fecha', $date)
@@ -528,6 +509,43 @@ class DailyCashController extends Controller
             ->values();
     }
 
+    /**
+     * Una linea por metodo (EFECTIVO / QR) del dinero entregado en cada prestamo.
+     */
+    private function buildItemsPrestamoOtorgado($prestamos)
+    {
+        return $prestamos->flatMap(function ($prestamo) {
+            $montoInicial = $this->prestamoMontoInicial($prestamo);
+            if ($montoInicial <= 0) {
+                return [];
+            }
+
+            $partes = $prestamo->desgloseEntrega($montoInicial);
+            $mixto = $partes['EFECTIVO'] > 0 && $partes['QR'] > 0;
+            $base = [
+                'id' => $prestamo->id,
+                'hora' => Carbon::parse($prestamo->fecha_creacion)->format('H:i'),
+                'descripcion' => 'Prestamo '.$prestamo->numero.' - '.($prestamo->cliente->name ?? 'N/A'),
+                'usuario' => $prestamo->user->username ?? $prestamo->user->name ?? 'N/A',
+                'fuente' => 'PRESTAMO OTORGADO',
+                'estado' => 'Activo',
+                'mixto' => $mixto,
+                'monto_total' => $montoInicial,
+                'entrega_efectivo' => $partes['EFECTIVO'],
+                'entrega_qr' => $partes['QR'],
+            ];
+
+            return collect($partes)
+                ->filter(fn ($monto) => $monto > 0)
+                ->map(fn ($monto, $metodo) => array_merge($base, [
+                    'metodo' => $metodo,
+                    'monto' => $monto,
+                    'key' => 'pr-'.$prestamo->id.($mixto ? '-'.strtolower($metodo) : ''),
+                ]))
+                ->values();
+        })->values();
+    }
+
     private function prestamoMontoInicial(\App\Models\Prestamo $prestamo): float
     {
         $capitalAdicionado = (float) collect($prestamo->pagos ?? [])
@@ -575,22 +593,5 @@ class DailyCashController extends Controller
         }
 
         return $this->normalizeMetodo($metodoPago) === 'EFECTIVO' ? $openingAmount : 0.0;
-    }
-
-    private function prestamoMetodoColumn(): ?string
-    {
-        if ($this->prestamoMetodoColumn !== null) {
-            return $this->prestamoMetodoColumn;
-        }
-
-        if (Schema::hasColumn('prestamos', 'metodo')) {
-            return $this->prestamoMetodoColumn = 'metodo';
-        }
-
-        if (Schema::hasColumn('prestamos', 'metodo_entrega')) {
-            return $this->prestamoMetodoColumn = 'metodo_entrega';
-        }
-
-        return $this->prestamoMetodoColumn = '';
     }
 }

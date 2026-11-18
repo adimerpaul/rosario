@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reportes/inventario/movimientos/pdf', [OrdenController::class, 'inventarioMovimientosPdf']);
     Route::post('/ordenes', [OrdenController::class, 'store']);
     Route::get('/ordenes/{orden}', [OrdenController::class, 'show']);
+    Route::put('/ordenes/{orden}/venta', [OrdenController::class, 'actualizarVenta']);
     Route::put('/ordenes/{orden}', [OrdenController::class, 'update']);
     Route::delete('/ordenes/{orden}', [OrdenController::class, 'destroy']);
 
@@ -93,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('prestamos/pagos', [PrestamoController::class, 'pagar']);
     Route::put('prestamos/pagos/{pago}/anular', [PrestamoController::class, 'anularPago']);
     Route::post('prestamos/pagos/{pago}/toggle-metodo', [PrestamoController::class, 'toggleMetodoPago']);
+    Route::post('prestamos/{prestamo}/metodo-entrega', [PrestamoController::class, 'ajustarMetodoEntrega']);
 
     Route::post('ordenes/{orden}/pagar-todo', [OrdenController::class, 'pagarTodo']);
     Route::get('ordenes/{orden}/pagos', [OrdenPagoController::class, 'index']); // si no lo tienes aún

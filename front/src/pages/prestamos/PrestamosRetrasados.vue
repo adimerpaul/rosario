@@ -110,7 +110,12 @@
               <q-card-section class="q-pa-sm">
                 <div class="text-caption text-blue-9 text-weight-bold">Capital invertido</div>
                 <div class="row items-center justify-between q-gutter-sm">
-                  <div class="text-h6">{{ money(summary.capital_invertido) }}</div>
+                  <div>
+                    <div class="text-h6">{{ money(summary.capital_invertido) }}</div>
+                    <div class="text-caption text-grey-7">
+                      Prestado {{ money(summary.capital_prestado) }} - Pagado {{ money(summary.capital_pagado) }}
+                    </div>
+                  </div>
                   <q-btn
                     dense
                     outline
@@ -248,10 +253,19 @@
           <div>
             <div class="text-h6">Detalle de capital invertido</div>
             <div class="text-caption text-grey-7">
-              Se calcula sumando el valor prestado de todos los prestamos retrasados con los filtros actuales.
+              Capital que sigue prestado en los prestamos retrasados (filtros actuales): prestado menos pagos a capital.
             </div>
           </div>
           <q-space />
+          <q-btn
+            color="secondary"
+            icon="download"
+            label="Excel"
+            no-caps
+            class="q-mr-sm"
+            :loading="exporting"
+            @click="exportar"
+          />
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
 
@@ -261,7 +275,7 @@
               <q-card bordered flat class="bg-blue-1">
                 <q-card-section class="q-pa-sm">
                   <div class="text-caption text-blue-9 text-weight-bold">Formula</div>
-                  <div class="text-body2">Capital invertido = suma de Prestado</div>
+                  <div class="text-body2">Capital invertido = Prestado - Pagado a capital</div>
                 </q-card-section>
               </q-card>
             </div>
@@ -300,14 +314,24 @@
             </template>
 
             <template #body-cell-valor_prestado="props">
+              <q-td :props="props">{{ money(props.row.valor_prestado) }}</q-td>
+            </template>
+
+            <template #body-cell-capital_pagado="props">
+              <q-td :props="props" class="text-positive">{{ money(props.row.capital_pagado) }}</q-td>
+            </template>
+
+            <template #body-cell-capital_pendiente="props">
               <q-td :props="props">
-                <span class="text-weight-bold">{{ money(props.row.valor_prestado) }}</span>
+                <span class="text-weight-bold">{{ money(props.row.capital_pendiente) }}</span>
               </q-td>
             </template>
 
             <template #bottom-row>
               <q-tr>
                 <q-td colspan="6" class="text-right text-weight-bold">Total</q-td>
+                <q-td class="text-right text-weight-bold">{{ money(sumDetalle('valor_prestado')) }}</q-td>
+                <q-td class="text-right text-weight-bold">{{ money(sumDetalle('capital_pagado')) }}</q-td>
                 <q-td class="text-right text-weight-bold">{{ money(capitalDetalleTotal) }}</q-td>
               </q-tr>
             </template>
@@ -388,6 +412,8 @@ export default {
         total: 0,
         saldo: 0,
         capital_invertido: 0,
+        capital_prestado: 0,
+        capital_pagado: 0,
         capital_detalle: [],
         prom_dias: 0,
         max_dias: 0
@@ -419,7 +445,9 @@ export default {
         { name: 'usuario', label: 'Usuario', field: 'usuario', align: 'left' },
         { name: 'fecha_limite', label: 'Vencimiento', field: 'fecha_limite', align: 'left' },
         { name: 'dias_retraso', label: 'Dias', field: 'dias_retraso', align: 'right' },
-        { name: 'valor_prestado', label: 'Prestado', field: 'valor_prestado', align: 'right' }
+        { name: 'valor_prestado', label: 'Prestado', field: 'valor_prestado', align: 'right', sortable: true },
+        { name: 'capital_pagado', label: 'Pagado capital', field: 'capital_pagado', align: 'right', sortable: true },
+        { name: 'capital_pendiente', label: 'Capital invertido', field: 'capital_pendiente', align: 'right', sortable: true }
       ],
       dialogCapitalDetalle: false,
       dialogMensajes: false,
@@ -442,12 +470,13 @@ export default {
       return Array.isArray(this.summary?.capital_detalle) ? this.summary.capital_detalle : []
     },
     capitalDetalleTotal () {
-      return this.capitalDetalle.reduce((total, prestamo) => {
-        return total + Number(prestamo.valor_prestado || 0)
-      }, 0)
+      return this.sumDetalle('capital_pendiente')
     }
   },
   methods: {
+    sumDetalle (field) {
+      return this.capitalDetalle.reduce((total, prestamo) => total + Number(prestamo[field] || 0), 0)
+    },
     async getUsuarios () {
       try {
         const { data } = await this.$axios.get('users')

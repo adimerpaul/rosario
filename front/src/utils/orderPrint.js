@@ -43,6 +43,7 @@ const DIRECT_PRINT_STYLES = `
   .middle { vertical-align: middle; }
   .brand { color: #d50000; }
   .title { font-size: 24.5px; font-weight: 800; letter-spacing: .15px; }
+  .subtitle { font-size: 17px; font-weight: 800; letter-spacing: .3px; margin-top: 3px; }
   .sub { font-size: 12.2px; line-height: 1.18; }
   .small { font-size: 12.1px; line-height: 1.18; }
   .medium { font-size: 14.2px; line-height: 1.24; }
@@ -278,12 +279,13 @@ function renderOrderWorkSheet (model, variant = 'top') {
           <td class="center">
             <div class="small">${escapeHtml(model.fechaTrabajo.hoy)}</div>
             <div style="height:6px"></div>
-            <div class="brand title">ORDEN DE TRABAJO</div>
+            <div class="brand title">${escapeHtml(model.company.nombre)}</div>
             <div class="sub">
               ${escapeHtml(model.company.direccion)}<br>
               CEL. ${escapeHtml(model.company.cel)} TELF. ${escapeHtml(model.company.telefono)}<br>
               ${escapeHtml(model.company.sucursal)} - Bolivia
             </div>
+            <div class="brand subtitle">ORDEN DE TRABAJO</div>
           </td>
           <td class="right" style="width:174px">
             <table style="width:100%">
@@ -301,7 +303,7 @@ function renderOrderWorkSheet (model, variant = 'top') {
         </tr>
       </table>
 
-      <table class="grid" style="padding-top: 20px">
+      <table class="grid" style="padding-top: 8px">
         <tr>
           <td class="cell customer-box" style="width:54%">
             <span class="label">El Senor:</span>

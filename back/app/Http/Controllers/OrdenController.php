@@ -310,6 +310,10 @@ class OrdenController extends Controller
             return response()->json(['message' => 'No se puede cancelar una orden entregada'], 422);
         }
 
+        if ($orden->estado === 'Entregado' && $orden->tipo === 'Venta directa' && ! $this->esAdministrador($request)) {
+            return response()->json(['message' => 'Solo el administrador puede anular una venta pagada'], 403);
+        }
+
         DB::transaction(function () use ($orden, $request) {
             $adelantoActual = (float) ($orden->adelanto ?? 0);
             $pagosActivos = $orden->pagos()->where('estado', 'Activo')->get();
@@ -319,7 +323,8 @@ class OrdenController extends Controller
 
             if ($request->boolean('anular_pagos')) {
                 $orden->pagos()->where('estado', 'Activo')->update(['estado' => 'Anulado']);
-                $orden->adelanto = 0;
+                // No se pone el adelanto en 0: el libro diario lo necesita como ingreso
+                // historico; la reversion queda registrada como egreso.
                 $orden->saldo = max(0, (float) ($orden->costo_total ?? 0));
             } else {
                 $orden->saldo = max(0, (float) ($orden->costo_total ?? 0) - $adelantoActual - $totalPagosActivos);
@@ -335,17 +340,24 @@ class OrdenController extends Controller
                 'SALIDA AUTOMATICA POR ANULACION DE VENTA'
             );
 
-            $montoRevertido = $request->boolean('anular_pagos')
-                ? $adelantoActual + $totalPagosActivos
-                : $adelantoActual;
+            // Se revierte cada monto por su metodo (efectivo / QR)
+            $revertir = [
+                'EFECTIVO' => (float) ($orden->adelanto_efectivo ?? 0),
+                'QR' => (float) ($orden->adelanto_qr ?? 0),
+            ];
+            if ($revertir['EFECTIVO'] + $revertir['QR'] <= 0 && $adelantoActual > 0) {
+                $revertir[$this->normalizarMetodoCaja($orden->tipo_pago)] += $adelantoActual;
+            }
+            if ($request->boolean('anular_pagos')) {
+                foreach ($pagosActivos as $pago) {
+                    $revertir[$this->normalizarMetodoCaja($pago->metodo)] += (float) $pago->monto;
+                }
+            }
 
-            if ($montoRevertido > 0) {
-                $this->registrarEgresoAnulacionOrden(
-                    $request,
-                    $orden,
-                    $montoRevertido,
-                    $this->resolverMetodoAnulacionOrden($orden, $pagosActivos->pluck('metodo')->all())
-                );
+            foreach ($revertir as $metodo => $monto) {
+                if ($monto > 0) {
+                    $this->registrarEgresoAnulacionOrden($request, $orden, $monto, $metodo);
+                }
             }
         });
 
@@ -559,6 +571,8 @@ class OrdenController extends Controller
             'ventas.*.costo_total' => 'nullable|numeric|min:0',
             'ventas.*.adelanto' => 'nullable|numeric|min:0',
             'ventas.*.tipo_pago' => 'nullable|in:Efectivo,QR',
+            'ventas.*.adelanto_efectivo' => 'nullable|numeric|min:0',
+            'ventas.*.adelanto_qr' => 'nullable|numeric|min:0',
             'foto_modelo' => 'nullable|image|max:5120',
         ]);
 
@@ -614,6 +628,8 @@ class OrdenController extends Controller
                 'costo_total' => (float) data_get($venta, 'costo_total', 0),
                 'adelanto' => (float) data_get($venta, 'adelanto', 0),
                 'tipo_pago' => data_get($venta, 'tipo_pago', $request->input('tipo_pago', 'Efectivo')),
+                'adelanto_efectivo' => data_get($venta, 'adelanto_efectivo'),
+                'adelanto_qr' => data_get($venta, 'adelanto_qr'),
             ])
             ->values();
 
@@ -686,8 +702,16 @@ class OrdenController extends Controller
             return $ventasInput->map(function (array $venta) use ($joyas, $basePayload, $request) {
                 $joya = $joyas->get($venta['joya_id']);
                 $costoTotal = (float) ($venta['costo_total'] ?: $this->precioVentaJoya($joya));
-                $adelanto = (float) ($venta['adelanto'] ?? 0);
+                $tieneDesglose = isset($venta['adelanto_efectivo']) || isset($venta['adelanto_qr']);
+                $adelantoEfectivo = round((float) ($venta['adelanto_efectivo'] ?? 0), 2);
+                $adelantoQr = round((float) ($venta['adelanto_qr'] ?? 0), 2);
+                $adelanto = $tieneDesglose
+                    ? $adelantoEfectivo + $adelantoQr
+                    : (float) ($venta['adelanto'] ?? 0);
                 $saldo = max(0, $costoTotal - $adelanto);
+                $desglose = $tieneDesglose
+                    ? ['adelanto_efectivo' => $adelantoEfectivo, 'adelanto_qr' => $adelantoQr]
+                    : [];
 
                 $payload = array_merge($basePayload, [
                     'numero' => $this->numeroGet('V'),
@@ -700,7 +724,7 @@ class OrdenController extends Controller
                     'saldo' => $saldo,
                     'estado' => $saldo <= 0 ? 'Entregado' : 'Reservado',
                     'tipo_pago' => $venta['tipo_pago'] ?: ($basePayload['tipo_pago'] ?? 'Efectivo'),
-                ]);
+                ], $desglose);
 
                 $orden = Orden::create($payload);
                 $orden->joyas()->sync([$joya->id]);
@@ -732,16 +756,51 @@ class OrdenController extends Controller
 
     public function pagarTodo(Request $request, Orden $orden)
     {
-        $metodo = $request->input('metodo', 'EFECTIVO');
-        $saldo = (($orden->costo_total ?? 0) - $orden->pagos()->where('estado', 'Activo')->sum('monto')) - $orden->adelanto;
+        if ($orden->estado === 'Cancelada') {
+            return response()->json(['message' => 'No se puede entregar una orden cancelada'], 422);
+        }
 
-        $orden->pagos()->create([
-            'monto' => $saldo,
-            'metodo' => $metodo,
-            'estado' => 'Activo',
-            'fecha' => now(),
-            'user_id' => $request->user()->id ?? null,
+        $request->validate([
+            'metodo' => 'nullable|string|max:50',
+            'monto_efectivo' => 'nullable|numeric|min:0',
+            'monto_qr' => 'nullable|numeric|min:0',
         ]);
+
+        $saldo = round((($orden->costo_total ?? 0) - $orden->pagos()->where('estado', 'Activo')->sum('monto')) - $orden->adelanto, 2);
+
+        // Desglose del pago: con monto_efectivo/monto_qr se permite pago mixto;
+        // sin ellos, todo el saldo va al "metodo" indicado (EFECTIVO por defecto).
+        $tieneDesglose = $request->has('monto_efectivo') || $request->has('monto_qr');
+        if ($tieneDesglose) {
+            $partes = [
+                'EFECTIVO' => round((float) $request->input('monto_efectivo', 0), 2),
+                'QR' => round((float) $request->input('monto_qr', 0), 2),
+            ];
+            if ($saldo > 0 && abs(array_sum($partes) - $saldo) > 0.01) {
+                return response()->json([
+                    'message' => 'La suma de efectivo y QR debe ser igual al saldo: '.number_format($saldo, 2, '.', '').' Bs.',
+                ], 422);
+            }
+        } else {
+            $metodo = strtoupper((string) $request->input('metodo', 'EFECTIVO')) === 'QR' ? 'QR' : 'EFECTIVO';
+            $partes = [$metodo => $saldo];
+        }
+
+        // Si hay saldo pendiente se registra un pago por metodo; si no, solo se marca como entregado
+        if ($saldo > 0) {
+            foreach ($partes as $metodo => $monto) {
+                if ($monto <= 0) {
+                    continue;
+                }
+                $orden->pagos()->create([
+                    'monto' => $monto,
+                    'metodo' => $metodo,
+                    'estado' => 'Activo',
+                    'fecha' => now(),
+                    'user_id' => $request->user()->id ?? null,
+                ]);
+            }
+        }
 
         $orden->saldo = 0;
         $orden->save();
@@ -785,7 +844,80 @@ class OrdenController extends Controller
         $actual = strtoupper((string) $orden->tipo_pago);
         $nuevoMetodo = $actual === 'QR' ? 'Efectivo' : 'QR';
 
-        $orden->update(['tipo_pago' => $nuevoMetodo]);
+        // Intercambia los montos por metodo (si era todo de un metodo, pasa al otro)
+        $orden->fill([
+            'adelanto_efectivo' => (float) ($orden->adelanto_qr ?? 0),
+            'adelanto_qr' => (float) ($orden->adelanto_efectivo ?? 0),
+        ]);
+        if (! $orden->isDirty(['adelanto_efectivo', 'adelanto_qr'])) {
+            $orden->tipo_pago = $nuevoMetodo;
+        }
+        $orden->save();
+
+        return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']));
+    }
+
+    public function actualizarVenta(Request $request, Orden $orden)
+    {
+        if (! $this->esAdministrador($request)) {
+            return response()->json(['message' => 'Solo el administrador puede modificar ventas'], 403);
+        }
+
+        if ($orden->tipo !== 'Venta directa') {
+            return response()->json(['message' => 'La orden no es una venta directa'], 422);
+        }
+
+        if ($orden->estado === 'Cancelada') {
+            return response()->json(['message' => 'No se puede modificar una venta anulada'], 422);
+        }
+
+        $data = $request->validate([
+            'costo_total' => 'required|numeric|min:0',
+            'adelanto' => 'nullable|numeric|min:0',
+            'adelanto_efectivo' => 'nullable|numeric|min:0',
+            'adelanto_qr' => 'nullable|numeric|min:0',
+            'tipo_pago' => 'nullable|in:Efectivo,QR',
+            'detalle' => 'nullable|string|max:1000',
+        ]);
+
+        $tieneDesglose = array_key_exists('adelanto_efectivo', $data) || array_key_exists('adelanto_qr', $data);
+        $adelantoEfectivo = round((float) ($data['adelanto_efectivo'] ?? 0), 2);
+        $adelantoQr = round((float) ($data['adelanto_qr'] ?? 0), 2);
+
+        $pagado = (float) $orden->pagos()->where('estado', 'Activo')->sum('monto');
+        $costoTotal = round((float) $data['costo_total'], 2);
+        $adelanto = $tieneDesglose
+            ? round($adelantoEfectivo + $adelantoQr, 2)
+            : round((float) ($data['adelanto'] ?? 0), 2);
+
+        if ($adelanto + $pagado > $costoTotal) {
+            return response()->json(['message' => 'El adelanto mas los pagos no puede superar el precio de venta'], 422);
+        }
+
+        DB::transaction(function () use ($orden, $data, $costoTotal, $adelanto, $pagado, $request, $tieneDesglose, $adelantoEfectivo, $adelantoQr) {
+            $orden->costo_total = $costoTotal;
+            $orden->adelanto = $adelanto;
+            if ($tieneDesglose) {
+                // El modelo recalcula tipo_pago a partir del desglose
+                $orden->adelanto_efectivo = $adelantoEfectivo;
+                $orden->adelanto_qr = $adelantoQr;
+            } else {
+                $orden->tipo_pago = $data['tipo_pago'] ?? $orden->tipo_pago;
+            }
+            if (filled($data['detalle'] ?? null)) {
+                $orden->detalle = $data['detalle'];
+            }
+            $orden->saldo = max(0, round($costoTotal - $adelanto - $pagado, 2));
+            $orden->estado = $orden->saldo <= 0 ? 'Entregado' : 'Reservado';
+            $orden->save();
+
+            $this->syncVentaDirectaJoyaVendida($orden->fresh());
+            $this->syncVentaDirectaAlmacen(
+                $orden->fresh(),
+                $request->user()?->id,
+                'SINCRONIZACION AUTOMATICA DE ALMACEN POR MODIFICACION DE VENTA'
+            );
+        });
 
         return response()->json($orden->fresh(['cliente', 'user', 'joya.estucheItem.columna.vitrina', 'joyas.estucheItem.columna.vitrina']));
     }
@@ -976,16 +1108,6 @@ class OrdenController extends Controller
         ]);
     }
 
-    private function resolverMetodoAnulacionOrden(Orden $orden, array $metodosPagos = []): string
-    {
-        $metodos = collect($metodosPagos)
-            ->prepend($orden->tipo_pago)
-            ->filter(fn ($metodo) => filled($metodo))
-            ->values();
-
-        return (string) ($metodos->first() ?: 'EFECTIVO');
-    }
-
     private function normalizarMetodoCaja(?string $metodo): string
     {
         $valor = strtoupper(trim((string) $metodo));
@@ -995,6 +1117,11 @@ class OrdenController extends Controller
             'EFECTIVO' => 'EFECTIVO',
             default => 'EFECTIVO',
         };
+    }
+
+    private function esAdministrador(Request $request): bool
+    {
+        return in_array(strtolower((string) ($request->user()?->role ?? '')), ['admin', 'administrador', 'administrator'], true);
     }
 
     private function authorizeVentasAccess(Request $request): void
@@ -1287,6 +1414,8 @@ class OrdenController extends Controller
             'detalle' => $ultimaVenta?->detalle ?: 'DISPONIBLE EN VITRINA',
             'costo_total' => (float) ($ultimaVenta?->costo_total ?? $precioReferencial),
             'adelanto' => (float) ($ultimaVenta?->adelanto ?? 0),
+            'adelanto_efectivo' => (float) ($ultimaVenta?->adelanto_efectivo ?? 0),
+            'adelanto_qr' => (float) ($ultimaVenta?->adelanto_qr ?? 0),
             'saldo' => (float) ($ultimaVenta?->saldo ?? 0),
             'tipo_pago' => $ultimaVenta?->tipo_pago ?: 'Efectivo',
             'cliente' => $ultimaVenta?->cliente ? [

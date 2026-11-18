@@ -415,6 +415,7 @@ function buildPrestamoPagosModel (prestamo, pagos) {
     fechaCreacion: prestamo?.fecha_creacion ? moment(prestamo.fecha_creacion).format('DD/MM/YYYY') : '—',
     mesCancelado: prestamo?.fecha_limite ? moment(prestamo.fecha_limite).format('DD/MM/YYYY') : '—',
     mesVencimiento: prestamo?.fecha_cancelacion ? moment(prestamo.fecha_cancelacion).format('DD/MM/YYYY') : '—',
+    saldoActual: Number(prestamo?.saldo || 0),
     pagos: pagosNormalizados
   }
 }
@@ -522,6 +523,11 @@ export async function printDetallePagosPrestamoDirecto (axiosInstance, prestamoI
           </td>
         </tr>
       </table>
+
+      <div class="box center" style="margin-top:8px; border-width:2px;">
+        <div class="label">Saldo actual</div>
+        <div style="font-size:18px; font-weight:800;">${escapeHtml(money(model.saldoActual))} Bs</div>
+      </div>
 
       <div class="box" style="margin-top:8px;">
         <table style="width:100%; border-collapse:collapse;">

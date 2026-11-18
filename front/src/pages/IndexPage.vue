@@ -114,7 +114,17 @@
             </div>
           </q-card-section>
           <q-separator />
-          <q-card-section>
+          <q-card-section class="row q-col-gutter-sm">
+            <div class="col-6">
+              <div class="text-caption text-grey-7">Monto efectivo</div>
+              <div class="text-h6 text-green-8">{{ money(donutSeries[0]) }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-caption text-grey-7">Monto QR</div>
+              <div class="text-h6 text-blue-8">{{ money(donutSeries[1]) }}</div>
+            </div>
+          </q-card-section>
+          <q-card-section class="q-pt-none">
             <apexchart
               type="donut"
               height="260"

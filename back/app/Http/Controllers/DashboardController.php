@@ -51,8 +51,8 @@ class DashboardController extends Controller
         $ordenes = DB::table('ordenes')
             ->selectRaw("DATE(fecha_creacion) as fecha")
             ->selectRaw("SUM(COALESCE(adelanto,0)) as total")
-            ->selectRaw("SUM(CASE WHEN UPPER(COALESCE(tipo_pago,''))='QR' THEN COALESCE(adelanto,0) ELSE 0 END) as total_qr")
-            ->selectRaw("SUM(CASE WHEN UPPER(COALESCE(tipo_pago,''))='EFECTIVO' OR COALESCE(tipo_pago,'')='Efectivo' THEN COALESCE(adelanto,0) ELSE 0 END) as total_efectivo")
+            ->selectRaw("SUM(COALESCE(adelanto_qr,0)) as total_qr")
+            ->selectRaw("SUM(COALESCE(adelanto_efectivo,0)) as total_efectivo")
             ->whereBetween(DB::raw("DATE(fecha_creacion)"), [$start->toDateString(), $end->toDateString()])
             ->where('estado', '!=', 'Cancelada')
             ->when($userId, fn($q) => $q->where('user_id', $userId))
@@ -390,14 +390,19 @@ class DashboardController extends Controller
         // 4) Métodos de pago (solo ingresos)
         $metodos = [];
 
-        $mpOrdenes = DB::table('ordenes')
-            ->selectRaw(sprintf("$normalize as metodo", 'tipo_pago','tipo_pago','tipo_pago','tipo_pago'))
-            ->selectRaw("SUM(COALESCE(adelanto,0)) as total")
+        // Adelantos de ordenes: desglosados en efectivo y QR
+        $mpOrdenesTotales = DB::table('ordenes')
+            ->selectRaw("SUM(COALESCE(adelanto_efectivo,0)) as efectivo")
+            ->selectRaw("SUM(COALESCE(adelanto_qr,0)) as qr")
             ->where('estado','!=','Cancelada')
             ->whereBetween(DB::raw('DATE(fecha_creacion)'), [$from->toDateString(), $to->toDateString()])
             ->when(count($filterUserIds), fn($q) => $q->whereIn('user_id', $filterUserIds))
-            ->groupBy('metodo')
-            ->get();
+            ->first();
+
+        $mpOrdenes = collect([
+            (object) ['metodo' => 'EFECTIVO', 'total' => (float) ($mpOrdenesTotales->efectivo ?? 0)],
+            (object) ['metodo' => 'QR', 'total' => (float) ($mpOrdenesTotales->qr ?? 0)],
+        ])->filter(fn ($r) => $r->total > 0);
 
         $mpOP = DB::table('orden_pagos')
             ->selectRaw(sprintf("$normalize as metodo", 'metodo','metodo','metodo','metodo'))

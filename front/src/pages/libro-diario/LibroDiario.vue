@@ -193,6 +193,27 @@
                 </td>
 
                 <td class="text-right" v-if="isAdmin">
+                  <template v-if="it.fuente === 'PRESTAMO OTORGADO'">
+                    <q-btn
+                      v-if="!it.mixto"
+                      dense flat color="primary" icon="swap_horiz"
+                      :label="it.metodo === 'QR' ? 'Cambiar a EFECTIVO' : 'Cambiar a QR'"
+                      no-caps size="10px"
+                      @click="toggleMetodoPrestamoOtorgado(it)"
+                    />
+                    <q-btn
+                      dense flat color="secondary" icon="tune" label="Ajustar"
+                      no-caps size="10px"
+                      @click="openAjustePrestamo(it)"
+                    />
+                  </template>
+                  <q-btn
+                    v-if="it.fuente === 'ADICIONAR CAPITAL' && it.estado === 'Activo'"
+                    dense flat color="primary" icon="swap_horiz"
+                    :label="it.metodo === 'QR' ? 'Cambiar a EFECTIVO' : 'Cambiar a QR'"
+                    no-caps size="10px"
+                    @click="toggleMetodoPagoPrestamo(it)"
+                  />
                   <q-btn
                     v-if="it.fuente === 'EGRESO' && it.estado === 'Activo'"
                     dense flat color="primary" icon="swap_horiz"
@@ -261,6 +282,51 @@
         <q-card-actions align="right">
           <q-btn flat label="Cancelar" color="grey" v-close-popup />
           <q-btn color="negative" icon="save" label="Guardar" :loading="loadingSave" @click="guardarEgreso" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="dlgAjustePrestamo" persistent>
+      <q-card style="width: 420px; max-width: 95vw;">
+        <q-card-section>
+          <div class="text-h6">Ajustar metodo de entrega</div>
+          <div class="text-caption text-grey-7">{{ ajustePrestamo.descripcion }}</div>
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="q-gutter-sm">
+          <div class="text-body2">
+            Monto entregado: <b>{{ currency(ajustePrestamo.total) }}</b>
+          </div>
+          <div class="row q-col-gutter-sm">
+            <div class="col-6">
+              <q-input
+                v-model.number="ajustePrestamo.efectivo"
+                type="number" min="0" step="0.01"
+                label="EFECTIVO (Bs.)" dense outlined
+                @update:model-value="onAjusteEfectivo"
+              />
+            </div>
+            <div class="col-6">
+              <q-input
+                v-model.number="ajustePrestamo.qr"
+                type="number" min="0" step="0.01"
+                label="QR (Bs.)" dense outlined
+                @update:model-value="onAjusteQr"
+              />
+            </div>
+          </div>
+          <div class="row q-gutter-xs">
+            <q-btn dense outline no-caps size="sm" label="Todo EFECTIVO" @click="setAjuste(ajustePrestamo.total, 0)" />
+            <q-btn dense outline no-caps size="sm" label="Todo QR" @click="setAjuste(0, ajustePrestamo.total)" />
+          </div>
+          <div v-if="!ajusteCuadra" class="text-negative text-caption">
+            La suma ({{ currency(ajusteSuma) }}) debe ser igual a {{ currency(ajustePrestamo.total) }}
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="grey" v-close-popup />
+          <q-btn color="primary" icon="save" label="Guardar" :disable="!ajusteCuadra" :loading="loadingSave" @click="guardarAjustePrestamo" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -370,7 +436,10 @@ export default {
       egresoForm: { fecha: '', descripcion: '', metodo: 'EFECTIVO', monto: null },
 
       dlgDetalle: false,
-      detalleContext: { tipo: 'ingresos', metodo: 'EFECTIVO' }
+      detalleContext: { tipo: 'ingresos', metodo: 'EFECTIVO' },
+
+      dlgAjustePrestamo: false,
+      ajustePrestamo: { id: null, descripcion: '', total: 0, efectivo: 0, qr: 0 }
     }
   },
 
@@ -393,6 +462,16 @@ export default {
 
     egresosActivos () {
       return (this.items_egresos || []).filter(x => (x.estado || 'Activo') === 'Activo')
+    },
+
+    ajusteSuma () {
+      return this.round2(Number(this.ajustePrestamo.efectivo || 0) + Number(this.ajustePrestamo.qr || 0))
+    },
+
+    ajusteCuadra () {
+      return Math.abs(this.ajusteSuma - Number(this.ajustePrestamo.total || 0)) <= 0.01 &&
+        Number(this.ajustePrestamo.efectivo || 0) >= 0 &&
+        Number(this.ajustePrestamo.qr || 0) >= 0
     },
 
     detalleFiltrado () {
@@ -570,6 +649,8 @@ export default {
 
     canToggleIngresoMetodo (item) {
       if ((item?.estado || 'Activo') !== 'Activo') return false
+      // Adelanto mixto (efectivo + QR): se corrige editando la venta
+      if (item?.fuente === 'ORDEN' && item?.mixto) return false
       return item?.fuente === 'INGRESO' ||
         item?.fuente === 'ORDEN' ||
         String(item?.key || '').startsWith('po-') ||
@@ -605,6 +686,68 @@ export default {
           this.$alert?.error?.(e.response?.data?.message || 'No se pudo cambiar el metodo')
         })
         .finally(() => { this.loading = false })
+    },
+
+    round2 (n) { return Math.round(Number(n || 0) * 100) / 100 },
+
+    // Prestamo otorgado: todo a un solo metodo (el contrario al actual)
+    toggleMetodoPrestamoOtorgado (item) {
+      const total = Number(item.monto_total ?? item.monto ?? 0)
+      const aQr = item.metodo !== 'QR'
+      this.enviarAjustePrestamo(item.id, aQr ? 0 : total, aQr ? total : 0)
+    },
+
+    openAjustePrestamo (item) {
+      this.ajustePrestamo = {
+        id: item.id,
+        descripcion: item.descripcion,
+        total: Number(item.monto_total ?? item.monto ?? 0),
+        efectivo: Number(item.entrega_efectivo ?? 0),
+        qr: Number(item.entrega_qr ?? 0)
+      }
+      this.dlgAjustePrestamo = true
+    },
+
+    // Al escribir en un campo, el otro se completa con el resto
+    onAjusteEfectivo (val) {
+      const total = Number(this.ajustePrestamo.total || 0)
+      this.ajustePrestamo.qr = this.round2(Math.max(0, total - Number(val || 0)))
+    },
+
+    onAjusteQr (val) {
+      const total = Number(this.ajustePrestamo.total || 0)
+      this.ajustePrestamo.efectivo = this.round2(Math.max(0, total - Number(val || 0)))
+    },
+
+    setAjuste (efectivo, qr) {
+      this.ajustePrestamo.efectivo = this.round2(efectivo)
+      this.ajustePrestamo.qr = this.round2(qr)
+    },
+
+    guardarAjustePrestamo () {
+      if (!this.ajusteCuadra) return
+      this.enviarAjustePrestamo(this.ajustePrestamo.id, this.ajustePrestamo.efectivo, this.ajustePrestamo.qr)
+    },
+
+    enviarAjustePrestamo (id, efectivo, qr) {
+      this.loadingSave = true
+      this.loading = true
+      this.$axios.post(`prestamos/${id}/metodo-entrega`, {
+        entrega_efectivo: this.round2(efectivo),
+        entrega_qr: this.round2(qr)
+      })
+        .then(() => {
+          this.$alert?.success?.('Metodo actualizado')
+          this.dlgAjustePrestamo = false
+          this.fetchDiario()
+        })
+        .catch((e) => {
+          this.$alert?.error?.(e.response?.data?.message || 'No se pudo cambiar el metodo')
+        })
+        .finally(() => {
+          this.loadingSave = false
+          this.loading = false
+        })
     },
 
     toggleMetodoEgreso (item) {

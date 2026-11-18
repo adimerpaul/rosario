@@ -151,7 +151,7 @@
                   <div class="row items-center q-mt-sm text-caption text-grey-7">
                     <q-icon name="account_circle" size="16px" class="q-mr-xs" />
                     {{ venta.user?.name || 'Sin usuario' }}
-                    <span class="q-ml-sm"> {{ venta.tipo_pago || 'Efectivo' }}</span>
+                    <span class="q-ml-sm">{{ metodoPagoTexto(venta) }}</span>
                   </div>
                 </q-card-section>
 
@@ -180,7 +180,17 @@
                       @click="imprimirVenta(venta.venta_id)"
                     />
                     <q-btn
-                      v-if="venta.estado_joya === 'RESERVADO' && venta.venta_id"
+                      v-if="isAdmin && venta.venta_id && ['RESERVADO', 'VENDIDO'].includes(venta.estado_joya)"
+                      dense
+                      flat
+                      color="orange-8"
+                      icon="edit"
+                      label="Modificar"
+                      no-caps
+                      @click="openEditDialog(venta)"
+                    />
+                    <q-btn
+                      v-if="venta.venta_id && (venta.estado_joya === 'RESERVADO' || (isAdmin && venta.estado_joya === 'VENDIDO'))"
                       dense
                       flat
                       color="negative"
@@ -234,6 +244,82 @@
         </q-card-section>
       </q-card>
     </div>
+
+    <q-dialog v-model="editDialog" persistent>
+      <q-card style="width: 520px; max-width: 96vw;">
+        <q-card-section class="row items-center q-pb-sm">
+          <div>
+            <div class="text-h6">Modificar venta</div>
+            <div class="text-caption text-grey-7">{{ editForm.numero }} - {{ editForm.joya }}</div>
+          </div>
+          <q-space />
+          <q-btn flat round dense icon="close" :disable="editLoading" @click="editDialog = false" />
+        </q-card-section>
+        <q-card-section class="q-pt-none">
+          <div class="row q-col-gutter-sm">
+            <div class="col-12 col-sm-6">
+              <q-input v-model.number="editForm.costo_total" type="number" min="0" step="0.01" outlined dense label="Precio de venta (Bs)" @update:model-value="onEditPrecio" />
+            </div>
+            <div class="col-12 col-sm-6">
+              <q-input v-model.number="editForm.adelanto_efectivo" type="number" min="0" step="0.01" outlined dense label="Monto efectivo (Bs)" />
+            </div>
+            <div class="col-12 col-sm-6">
+              <q-input v-model.number="editForm.adelanto_qr" type="number" min="0" step="0.01" outlined dense label="Monto QR (Bs)" />
+            </div>
+            <div class="col-12 col-sm-6">
+              <q-input :model-value="money(editSaldo)" readonly outlined dense label="Saldo resultante" />
+            </div>
+            <div class="col-12">
+              <q-input v-model="editForm.detalle" type="textarea" autogrow outlined dense label="Detalle" />
+            </div>
+            <div v-if="editForm.totalPagos > 0" class="col-12 text-caption text-grey-7">
+              Pagos registrados aparte: {{ money(editForm.totalPagos) }}
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat color="negative" no-caps label="Cancelar" :disable="editLoading" @click="editDialog = false" />
+          <q-btn color="primary" no-caps icon="save" label="Guardar" :loading="editLoading" @click="guardarEdicion" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="pagoDialog" persistent>
+      <q-card style="width: 420px; max-width: 96vw;">
+        <q-card-section class="row items-center q-pb-sm">
+          <div>
+            <div class="text-h6">Pagar venta</div>
+            <div class="text-caption text-grey-7">{{ pagoForm.numero }}</div>
+          </div>
+          <q-space />
+          <q-btn flat round dense icon="close" :disable="pagoLoading" @click="pagoDialog = false" />
+        </q-card-section>
+        <q-card-section class="q-pt-none">
+          <div class="text-body2 q-mb-sm">
+            Saldo a pagar: <b class="text-green-8">{{ money(pagoForm.saldo) }} Bs</b>
+          </div>
+          <div class="row q-col-gutter-sm">
+            <div class="col-6">
+              <q-input v-model.number="pagoForm.monto_efectivo" type="number" min="0" step="0.01" outlined dense label="Monto efectivo (Bs)" @update:model-value="onPagoEfectivo" />
+            </div>
+            <div class="col-6">
+              <q-input v-model.number="pagoForm.monto_qr" type="number" min="0" step="0.01" outlined dense label="Monto QR (Bs)" @update:model-value="onPagoQr" />
+            </div>
+          </div>
+          <div class="row q-gutter-xs q-mt-xs">
+            <q-btn dense outline no-caps size="sm" label="Todo efectivo" @click="setPago(pagoForm.saldo, 0)" />
+            <q-btn dense outline no-caps size="sm" label="Todo QR" @click="setPago(0, pagoForm.saldo)" />
+          </div>
+          <div v-if="!pagoCuadra" class="text-negative text-caption q-mt-sm">
+            La suma ({{ money(pagoSuma) }}) debe ser igual al saldo ({{ money(pagoForm.saldo) }})
+          </div>
+        </q-card-section>
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat color="negative" no-caps label="Cancelar" :disable="pagoLoading" @click="pagoDialog = false" />
+          <q-btn color="green" no-caps icon="payment" label="Registrar pago" :disable="!pagoCuadra" :loading="pagoLoading" @click="confirmarPago" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <q-dialog v-model="reportDialog" persistent>
       <q-card style="width: 560px; max-width: 96vw;">
@@ -301,6 +387,7 @@
 
 <script>
 import moment from 'moment'
+import { printOrdenTrabajoDirecto } from 'src/utils/orderPrint'
 
 export default {
   name: 'VentasJoyasPage',
@@ -313,6 +400,22 @@ export default {
       reportLoading: false,
       reportDialog: false,
       reportEstucheOptions: [],
+      pagoDialog: false,
+      pagoLoading: false,
+      pagoForm: { id: null, numero: '', saldo: 0, monto_efectivo: 0, monto_qr: 0 },
+      editDialog: false,
+      editLoading: false,
+      editForm: {
+        id: null,
+        numero: '',
+        joya: '',
+        costo_total: 0,
+        adelanto_efectivo: 0,
+        adelanto_qr: 0,
+        detalle: '',
+        totalPagos: 0,
+        syncAdelanto: false
+      },
       filters: {
         user_id: null,
         vitrina_id: null,
@@ -339,6 +442,24 @@ export default {
     }
   },
   computed: {
+    pagoSuma () {
+      return this.round2(Number(this.pagoForm.monto_efectivo || 0) + Number(this.pagoForm.monto_qr || 0))
+    },
+    pagoCuadra () {
+      return Math.abs(this.pagoSuma - Number(this.pagoForm.saldo || 0)) <= 0.01 &&
+        Number(this.pagoForm.monto_efectivo || 0) >= 0 &&
+        Number(this.pagoForm.monto_qr || 0) >= 0
+    },
+    isAdmin () {
+      return this.$store.user?.role === 'Administrador'
+    },
+    editSaldo () {
+      const f = this.editForm
+      return Math.max(0, Number(f.costo_total || 0) - this.editAdelanto - Number(f.totalPagos || 0))
+    },
+    editAdelanto () {
+      return Number(this.editForm.adelanto_efectivo || 0) + Number(this.editForm.adelanto_qr || 0)
+    },
     lineaOptions () {
       return [
         { label: 'Todos', value: null },
@@ -504,32 +625,133 @@ export default {
     },
     async imprimirVenta (id) {
       try {
-        await this.descargarPdf(`ordenes/${id}/pdf`)
+        await printOrdenTrabajoDirecto(this.$axios, id)
       } catch (err) {
         this.$alert.error(err.response?.data?.message || 'Error al imprimir la venta')
       }
     },
+    round2 (n) {
+      return Math.round(Number(n || 0) * 100) / 100
+    },
     pagarTodo (venta) {
-      this.$q.dialog({
-        title: 'Pagar venta',
-        message: `Registrar pago total de ${this.money(venta.saldo)} para ${venta.numero}?`,
-        cancel: true,
-        persistent: true
-      }).onOk(() => {
-        this.$axios.post(`ordenes/${venta.venta_id}/pagar-todo`)
-          .then(() => {
-            this.$alert.success('Pago registrado')
-            this.getVentas()
-          })
-          .catch(err => {
-            this.$alert.error(err.response?.data?.message || 'Error al pagar la venta')
-          })
+      const saldo = this.round2(venta.saldo)
+      this.pagoForm = {
+        id: venta.venta_id,
+        numero: venta.numero,
+        saldo,
+        monto_efectivo: saldo,
+        monto_qr: 0
+      }
+      this.pagoDialog = true
+    },
+    // Al escribir en un campo, el otro se completa con el resto del saldo
+    onPagoEfectivo (val) {
+      this.pagoForm.monto_qr = this.round2(Math.max(0, this.pagoForm.saldo - Number(val || 0)))
+    },
+    onPagoQr (val) {
+      this.pagoForm.monto_efectivo = this.round2(Math.max(0, this.pagoForm.saldo - Number(val || 0)))
+    },
+    setPago (efectivo, qr) {
+      this.pagoForm.monto_efectivo = this.round2(efectivo)
+      this.pagoForm.monto_qr = this.round2(qr)
+    },
+    confirmarPago () {
+      if (!this.pagoCuadra) return
+      this.pagoLoading = true
+      this.$axios.post(`ordenes/${this.pagoForm.id}/pagar-todo`, {
+        monto_efectivo: this.round2(this.pagoForm.monto_efectivo),
+        monto_qr: this.round2(this.pagoForm.monto_qr)
+      })
+        .then(() => {
+          this.$alert.success('Pago registrado')
+          this.pagoDialog = false
+          this.getVentas()
+        })
+        .catch(err => {
+          this.$alert.error(err.response?.data?.message || 'Error al pagar la venta')
+        })
+        .finally(() => {
+          this.pagoLoading = false
+        })
+    },
+    openEditDialog (venta) {
+      const costo = Number(venta.costo_total || 0)
+      const adelanto = Number(venta.adelanto || 0)
+      const totalPagos = Number(venta.totalPagos || 0)
+      const { efectivo, qr } = this.desgloseAdelanto(venta)
+      this.editForm = {
+        id: venta.venta_id,
+        numero: venta.numero,
+        joya: venta.joya?.nombre || '',
+        costo_total: costo,
+        adelanto_efectivo: efectivo,
+        adelanto_qr: qr,
+        detalle: venta.detalle || '',
+        totalPagos,
+        // Si la venta estaba pagada completa con el adelanto, el adelanto sigue al precio
+        syncAdelanto: totalPagos === 0 && Math.abs(adelanto - costo) < 0.005
+      }
+      this.editDialog = true
+    },
+    desgloseAdelanto (venta) {
+      let efectivo = Number(venta.adelanto_efectivo || 0)
+      let qr = Number(venta.adelanto_qr || 0)
+      if (efectivo + qr <= 0) {
+        const adelanto = Number(venta.adelanto || 0)
+        const esQr = String(venta.tipo_pago || '').toUpperCase() === 'QR'
+        efectivo = esQr ? 0 : adelanto
+        qr = esQr ? adelanto : 0
+      }
+      return { efectivo, qr }
+    },
+    metodoPagoTexto (venta) {
+      const { efectivo, qr } = this.desgloseAdelanto(venta)
+      if (efectivo > 0 && qr > 0) return `Efectivo ${this.money(efectivo)} + QR ${this.money(qr)}`
+      if (qr > 0) return `QR ${this.money(qr)}`
+      if (efectivo > 0) return `Efectivo ${this.money(efectivo)}`
+      return venta.tipo_pago || 'Efectivo'
+    },
+    onEditPrecio (value) {
+      // Si estaba pagada completa, el monto cobrado sigue al precio en el metodo principal
+      if (this.editForm.syncAdelanto) {
+        const precio = Number(value || 0)
+        if (Number(this.editForm.adelanto_qr || 0) > 0 && Number(this.editForm.adelanto_efectivo || 0) <= 0) {
+          this.editForm.adelanto_qr = precio
+        } else {
+          this.editForm.adelanto_efectivo = Math.max(0, precio - Number(this.editForm.adelanto_qr || 0))
+        }
+      }
+    },
+    guardarEdicion () {
+      const f = this.editForm
+      if (Number(f.costo_total) < 0 || Number(f.adelanto_efectivo) < 0 || Number(f.adelanto_qr) < 0) {
+        this.$alert.error('Los montos no pueden ser negativos')
+        return
+      }
+      if (this.editAdelanto + Number(f.totalPagos || 0) > Number(f.costo_total || 0) + 0.005) {
+        this.$alert.error('Efectivo + QR mas los pagos no puede superar el precio de venta')
+        return
+      }
+      this.editLoading = true
+      this.$axios.put(`ordenes/${f.id}/venta`, {
+        costo_total: Number(f.costo_total || 0),
+        adelanto_efectivo: Number(f.adelanto_efectivo || 0),
+        adelanto_qr: Number(f.adelanto_qr || 0),
+        detalle: f.detalle
+      }).then(() => {
+        this.$alert.success('Venta modificada')
+        this.editDialog = false
+        this.getVentas()
+      }).catch(err => {
+        this.$alert.error(err.response?.data?.message || 'Error al modificar la venta')
+      }).finally(() => {
+        this.editLoading = false
       })
     },
     anularVenta (venta) {
       this.$q.dialog({
         title: 'Anular venta',
-        message: `Se anulara ${venta.numero} y se revertiran sus pagos activos. Desea continuar?`,
+        message: `Se anulara ${venta.numero}${venta.estado_joya === 'VENDIDO' ? ' (venta ya pagada)' : ''}, se revertiran sus pagos y la joya volvera a vitrina. Desea continuar?`,
         cancel: true,
         persistent: true
       }).onOk(() => {

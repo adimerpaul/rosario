@@ -512,6 +512,9 @@ class PrestamoController extends Controller
             ->whereRaw("{$diffExpr} >= ?", [$hoy, $diasMin])
             ->select('*')
             ->selectRaw("{$diffExpr} as dias_retraso", [$hoy])
+            ->withSum(['pagos as capital_pagado' => function ($p) {
+                $p->where('estado', 'Activo')->whereIn('tipo_pago', ['TOTAL', 'SALDO']);
+            }], 'monto')
             ->orderBy('dias_retraso')
             ->orderBy('fecha_limite');
 
@@ -541,20 +544,25 @@ class PrestamoController extends Controller
         $items = $q->paginate($perPage)->appends($request->query());
         $collection = $q->get();
 
+        $detalle = $collection->map(fn ($prestamo) => [
+            'id' => $prestamo->id,
+            'numero' => $prestamo->numero,
+            'cliente' => $prestamo->cliente?->name,
+            'ci' => $prestamo->cliente?->ci,
+            'usuario' => $prestamo->user?->name,
+            'fecha_limite' => $prestamo->fecha_limite,
+            'dias_retraso' => (int) $prestamo->dias_retraso,
+            ...$this->capitalPrestamo($prestamo),
+        ])->values();
+
         $summary = [
             'total' => $collection->count(),
             'saldo' => round((float) $collection->sum(fn ($prestamo) => (float) ($prestamo->saldo ?? 0)), 2),
-            'capital_invertido' => round((float) $collection->sum(fn ($prestamo) => (float) ($prestamo->valor_prestado ?? 0)), 2),
-            'capital_detalle' => $collection->map(fn ($prestamo) => [
-                'id' => $prestamo->id,
-                'numero' => $prestamo->numero,
-                'cliente' => $prestamo->cliente?->name,
-                'ci' => $prestamo->cliente?->ci,
-                'usuario' => $prestamo->user?->name,
-                'fecha_limite' => $prestamo->fecha_limite,
-                'dias_retraso' => (int) $prestamo->dias_retraso,
-                'valor_prestado' => round((float) ($prestamo->valor_prestado ?? 0), 2),
-            ])->values(),
+            // Capital invertido = lo que realmente sigue prestado (prestado - pagos a capital)
+            'capital_invertido' => round((float) $detalle->sum('capital_pendiente'), 2),
+            'capital_prestado' => round((float) $detalle->sum('valor_prestado'), 2),
+            'capital_pagado' => round((float) $detalle->sum('capital_pagado'), 2),
+            'capital_detalle' => $detalle,
             'prom_dias' => round((float) $collection->avg('dias_retraso'), 1),
             'max_dias' => (int) $collection->max('dias_retraso'),
         ];
@@ -592,6 +600,8 @@ class PrestamoController extends Controller
                 'Peso',
                 'Precio oro',
                 'Capital prestado',
+                'Capital pagado',
+                'Capital invertido (pendiente)',
                 'Saldo actual',
                 'Estado',
                 'Usuario',
@@ -602,7 +612,16 @@ class PrestamoController extends Controller
 
             fwrite($handle, '</tr></thead><tbody>');
 
+            $totales = ['prestado' => 0.0, 'pagado' => 0.0, 'pendiente' => 0.0, 'saldo' => 0.0];
+
             foreach ($rows as $prestamo) {
+                $capital = $this->capitalPrestamo($prestamo);
+                $saldo = (float) ($prestamo->saldo ?? 0);
+                $totales['prestado'] += $capital['valor_prestado'];
+                $totales['pagado'] += $capital['capital_pagado'];
+                $totales['pendiente'] += $capital['capital_pendiente'];
+                $totales['saldo'] += $saldo;
+
                 fwrite($handle, '<tr>');
 
                 foreach ([
@@ -614,8 +633,10 @@ class PrestamoController extends Controller
                     $prestamo->dias_retraso,
                     number_format((float) ($prestamo->peso ?? 0), 2, '.', ''),
                     number_format((float) ($prestamo->precio_oro ?? 0), 2, '.', ''),
-                    number_format((float) ($prestamo->valor_prestado ?? 0), 2, '.', ''),
-                    number_format((float) ($prestamo->saldo ?? 0), 2, '.', ''),
+                    number_format($capital['valor_prestado'], 2, '.', ''),
+                    number_format($capital['capital_pagado'], 2, '.', ''),
+                    number_format($capital['capital_pendiente'], 2, '.', ''),
+                    number_format($saldo, 2, '.', ''),
                     $prestamo->estado,
                     $prestamo->user?->name,
                     $prestamo->detalle,
@@ -626,12 +647,33 @@ class PrestamoController extends Controller
                 fwrite($handle, '</tr>');
             }
 
-            fwrite($handle, '</tbody></table></body></html>');
+            fwrite($handle, '</tbody><tfoot><tr>');
+            fwrite($handle, '<td colspan="8" style="text-align:right"><b>TOTAL ('.$rows->count().' prestamos)</b></td>');
+            foreach (['prestado', 'pagado', 'pendiente', 'saldo'] as $key) {
+                fwrite($handle, '<td><b>'.number_format($totales[$key], 2, '.', '').'</b></td>');
+            }
+            fwrite($handle, '<td colspan="3"></td></tr></tfoot>');
+            fwrite($handle, '</table></body></html>');
 
             fclose($handle);
         }, $fileName, [
             'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * @return array{valor_prestado: float, capital_pagado: float, capital_pendiente: float}
+     */
+    private function capitalPrestamo(Prestamo $prestamo): array
+    {
+        $prestado = round((float) ($prestamo->valor_prestado ?? 0), 2);
+        $pagado = round((float) ($prestamo->capital_pagado ?? 0), 2);
+
+        return [
+            'valor_prestado' => $prestado,
+            'capital_pagado' => $pagado,
+            'capital_pendiente' => round(max(0, $prestado - $pagado), 2),
+        ];
     }
 
     private function escapeExcelCell(string $value): string
@@ -877,5 +919,38 @@ class PrestamoController extends Controller
         $pago->update(['metodo' => $nuevoMetodo]);
 
         return response()->json($pago->fresh()->load('user'));
+    }
+
+    /**
+     * Ajusta cuanto del prestamo otorgado se entrego en EFECTIVO y cuanto por QR.
+     */
+    public function ajustarMetodoEntrega(Request $request, Prestamo $prestamo)
+    {
+        $user = $request->user();
+        if (! $user || ($user->role ?? null) !== 'Administrador') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $data = $request->validate([
+            'entrega_efectivo' => 'required|numeric|min:0',
+            'entrega_qr' => 'required|numeric|min:0',
+        ]);
+
+        $efectivo = round((float) $data['entrega_efectivo'], 2);
+        $qr = round((float) $data['entrega_qr'], 2);
+        $monto = $prestamo->montoEntregaInicial();
+
+        if (abs(($efectivo + $qr) - $monto) > 0.01) {
+            return response()->json([
+                'message' => 'La suma de efectivo y QR debe ser igual al monto entregado: '.number_format($monto, 2, '.', '').' Bs.',
+            ], 422);
+        }
+
+        $prestamo->update([
+            'entrega_efectivo' => $efectivo,
+            'entrega_qr' => $qr,
+        ]);
+
+        return response()->json($prestamo->fresh());
     }
 }

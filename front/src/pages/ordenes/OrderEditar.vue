@@ -70,15 +70,6 @@
               <div class="col-12">
                 <q-input type="textarea" label="Detalle" outlined dense v-model="form.detalle" autogrow />
               </div>
-
-              <div class="col-6 col-sm-3">
-                <q-input label="Costo" outlined dense v-model.number="form.costo_total" type="number" :readonly="!isAdmin" />
-              </div>
-
-              <div v-if="form.tipo === 'Orden'" class="col-6 col-sm-3">
-                <q-input label="Precio oro" outlined dense :model-value="money(form.precio_oro_historico)" readonly />
-              </div>
-
               <div class="col-6 col-sm-3">
                 <q-input
                   label="Peso"
@@ -89,11 +80,25 @@
                   @update:model-value="val => syncCostByWeight(val)"
                 />
               </div>
-
-              <div v-if="form.tipo === 'Orden'" class="col-6 col-sm-3">
-                <q-input label="Costo oro" outlined dense :model-value="money(form.costo_total_oro)" readonly />
+              <div class="col-6 col-sm-3">
+                <q-input label="Costo" outlined dense v-model.number="form.costo_total" type="number" :readonly="!isAdmin" />
               </div>
 
+<!--              <div v-if="form.tipo === 'Orden'" class="col-6 col-sm-3">-->
+<!--                <q-input label="Precio oro" outlined dense :model-value="money(form.precio_oro_historico)" readonly />-->
+<!--              </div>-->
+
+
+
+<!--              <div v-if="form.tipo === 'Orden'" class="col-6 col-sm-3">-->
+<!--                <q-input label="Costo oro" outlined dense :model-value="money(form.costo_total_oro)" readonly />-->
+<!--              </div>-->
+              <div class="col-4">
+                <q-input label="Adelanto" outlined dense v-model="form.adelanto" readonly />
+              </div>
+              <div class="col-4">
+                <q-input label="Saldo" outlined dense v-model="form.saldo" readonly />
+              </div>
               <div class="col-6 col-sm-3">
                 <q-select label="Estado" outlined dense v-model="form.estado" :options="estados" :readonly="!isAdmin" />
               </div>
@@ -102,12 +107,7 @@
                 <q-input label="Entrega" outlined dense v-model="form.fecha_entrega" type="date" :readonly="!isAdmin" />
               </div>
 
-              <div class="col-4">
-                <q-input label="Adelanto" outlined dense v-model="form.adelanto" readonly />
-              </div>
-              <div class="col-4">
-                <q-input label="Saldo" outlined dense v-model="form.saldo" readonly />
-              </div>
+
               <div class="col-4 flex flex-center">
                 <q-chip :style="{ backgroundColor: getEstadoColor(form.estado) }" text-color="white" dense>
                   {{ form.estado }}

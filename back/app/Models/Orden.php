@@ -23,6 +23,8 @@ class Orden extends Model implements AuditableContract
         'precio_oro',
         'tipo_pago',
         'adelanto',
+        'adelanto_efectivo',
+        'adelanto_qr',
         'saldo',
         'estado',
         'peso',
@@ -45,6 +47,45 @@ class Orden extends Model implements AuditableContract
         //        'user_id',
         //        'cliente_id'
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Orden $orden) {
+            $orden->sincronizarAdelantoPorMetodo();
+        });
+    }
+
+    /**
+     * Mantiene adelanto = adelanto_efectivo + adelanto_qr.
+     * Si se fijo el desglose, recalcula el total y el metodo principal;
+     * si solo se cambio adelanto/tipo_pago, asigna todo al metodo de la orden.
+     */
+    public function sincronizarAdelantoPorMetodo(): void
+    {
+        $desgloseCambiado = $this->isDirty('adelanto_efectivo') || $this->isDirty('adelanto_qr');
+
+        if ($desgloseCambiado) {
+            $efectivo = round(max(0, (float) ($this->adelanto_efectivo ?? 0)), 2);
+            $qr = round(max(0, (float) ($this->adelanto_qr ?? 0)), 2);
+            $this->adelanto_efectivo = $efectivo;
+            $this->adelanto_qr = $qr;
+            $this->adelanto = round($efectivo + $qr, 2);
+            if ($efectivo > 0 || $qr > 0) {
+                $this->tipo_pago = $qr > $efectivo ? 'QR' : 'Efectivo';
+            }
+
+            return;
+        }
+
+        if ($this->exists && ! $this->isDirty('adelanto') && ! $this->isDirty('tipo_pago')) {
+            return;
+        }
+
+        $adelanto = round((float) ($this->adelanto ?? 0), 2);
+        $esQr = strtoupper(trim((string) $this->tipo_pago)) === 'QR';
+        $this->adelanto_efectivo = $esQr ? 0 : $adelanto;
+        $this->adelanto_qr = $esQr ? $adelanto : 0;
+    }
 
     public function user()
     {

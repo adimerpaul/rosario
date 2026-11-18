@@ -156,7 +156,20 @@
                                 class="hidden-file-input"
                                 @change="onFotoModeloPicked"
                               />
-                              <q-btn round dense color="primary" icon="edit" @click="$refs.fotoModeloInput.click()" />
+                              <input
+                                ref="fotoModeloCamara"
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                class="hidden-file-input"
+                                @change="onFotoModeloPicked"
+                              />
+                              <q-btn round dense color="primary" icon="photo_camera" class="q-mr-xs" @click="$refs.fotoModeloCamara.click()">
+                                <q-tooltip>Tomar foto con la cámara</q-tooltip>
+                              </q-btn>
+                              <q-btn round dense outline color="primary" icon="photo_library" @click="$refs.fotoModeloInput.click()">
+                                <q-tooltip>Elegir de la galería</q-tooltip>
+                              </q-btn>
                             </div>
                           </div>
                         </q-card-section>
@@ -388,6 +401,8 @@ export default {
     },
     onFotoModeloPicked (event) {
       const file = event?.target?.files?.[0] || null
+      if (event?.target) event.target.value = ''
+      if (!file) return
       this.orden.foto_modelo = file
       this.onFotoModeloSelected(file)
     },

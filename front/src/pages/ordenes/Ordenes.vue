@@ -201,14 +201,14 @@
                       <q-btn dense flat no-caps icon="payment" @click="pagarTodo(orden)" />
                       <q-btn-dropdown dense flat no-caps dropdown-icon="arrow_drop_down" icon="print">
                         <q-list dense style="min-width: 220px">
-                          <q-item clickable v-close-popup @click="imprimirOrdenPdf(orden.id)">
-                            <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
-                            <q-item-section>Orden de trabajo PDF</q-item-section>
-                          </q-item>
-                          <q-item clickable v-close-popup @click="imprimirGarantiaPdf(orden.id)">
-                            <q-item-section avatar><q-icon name="assignment" /></q-item-section>
-                            <q-item-section>Garantia PDF</q-item-section>
-                          </q-item>
+<!--                          <q-item clickable v-close-popup @click="imprimirOrdenPdf(orden.id)">-->
+<!--                            <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>-->
+<!--                            <q-item-section>Orden de trabajo PDF</q-item-section>-->
+<!--                          </q-item>-->
+<!--                          <q-item clickable v-close-popup @click="imprimirGarantiaPdf(orden.id)">-->
+<!--                            <q-item-section avatar><q-icon name="assignment" /></q-item-section>-->
+<!--                            <q-item-section>Garantia PDF</q-item-section>-->
+<!--                          </q-item>-->
                           <q-item clickable v-close-popup @click="imprimirOrdenDirecto(orden.id)">
                             <q-item-section avatar><q-icon name="print" /></q-item-section>
                             <q-item-section>Orden de trabajo directo</q-item-section>
@@ -278,7 +278,7 @@
     <q-dialog v-model="dlgPagarTodo">
       <q-card class="pago-total-dialog">
         <q-card-section class="q-pb-sm">
-          <div class="text-subtitle1 text-weight-bold">Registrar pago total</div>
+          <div class="text-subtitle1 text-weight-bold">Registrar pago total y entregar</div>
           <div class="text-caption text-grey-7">
             Orden #{{ pagoTodoOrden?.numero || '-' }}
           </div>
@@ -309,7 +309,7 @@
           <q-btn flat label="Cancelar" v-close-popup no-caps />
           <q-btn
             color="green"
-            label="Registrar pago"
+            label="Pagar y entregar"
             no-caps
             :loading="savingPagoTodo"
             @click="confirmarPagarTodo"
@@ -531,9 +531,31 @@ export default {
       }
     },
     pagarTodo (orden) {
+      if (orden.estado === 'Cancelada') {
+        this.$alert?.error('La orden está cancelada')
+        return
+      }
       const saldo = Number(orden.saldo || 0)
       if (saldo <= 0) {
-        this.$alert?.error('La orden no tiene saldo pendiente')
+        if (orden.estado === 'Entregado') {
+          this.$alert?.success('La orden ya fue entregada')
+          return
+        }
+        this.$q.dialog({
+          title: 'Entregar orden',
+          message: `La orden #${orden.numero} no tiene saldo pendiente. ¿Desea marcarla como ENTREGADA?`,
+          cancel: true,
+          persistent: true
+        }).onOk(() => {
+          this.$axios.post(`/ordenes/${orden.id}/pagar-todo`)
+            .then(() => {
+              this.$alert?.success('Orden marcada como entregada')
+              this.getOrdenes()
+            })
+            .catch(err => {
+              this.$alert?.error(err.response?.data?.message || 'Error al entregar la orden')
+            })
+        })
         return
       }
       this.pagoTodoOrden = orden
